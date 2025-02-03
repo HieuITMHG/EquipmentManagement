@@ -1,0 +1,22 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+<div>
+    <form action="/login" method="post">
+        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />  
+        <label>Mã Tài Khoản</label>
+        <input name="account_id" type="text"/>
+
+        <label>Mật Khẩu</label>
+        <input name="password" type="password"/>
+
+        <button type="submit">
+            Login
+        </button>
+    </form>
+</div>
+{% endblock %}
