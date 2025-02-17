@@ -12,6 +12,6 @@ class Staff(db.Model):
     phone = db.Column(db.String(10), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False)
     is_working = db.Column(db.Boolean, default=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False, unique=True)
 
-    account = db.relationship('Account', backref=db.backref('staffs', lazy=True))
+    account = db.relationship('Account', back_populates='staff', uselist=False)

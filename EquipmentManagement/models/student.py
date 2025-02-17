@@ -13,7 +13,7 @@ class Student(db.Model):
     email = db.Column(db.String(100), nullable=False)
     is_studying = db.Column(db.Boolean, default=False)
     classroom_id = db.Column(db.String(20), db.ForeignKey('classroom.id'), nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), unique=True)
 
     classroom = db.relationship('Classroom', backref=db.backref('students', lazy=True))
-    account = db.relationship('Account', backref=db.backref('students', lazy=True))
+    account = db.relationship('Account', back_populates='student', uselist=False)

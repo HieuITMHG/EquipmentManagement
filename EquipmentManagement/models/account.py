@@ -8,3 +8,5 @@ class Account(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
 
     role = db.relationship('Role', backref=db.backref('accounts', lazy=True))
+    staff = db.relationship('Staff', back_populates='account', uselist=False)
+    student = db.relationship('Student', back_populates='account', uselist=False)
