@@ -1,8 +1,7 @@
-from .database import db
+class Department:
+    def __init__(self, **kwargs):
+        self.id = kwargs['id'] if 'id' in kwargs else None
+        self.department_name = kwargs['department_name'] if 'department_name' in kwargs else None
 
-class Department(db.Model):
-    __tablename__ = 'department'
-    
-    id = db.Column(db.String(10), primary_key=True)
-    department_name = db.Column(db.String(50), nullable=False, unique=True)
-
+    def to_dict(self):
+        return self.__dict__

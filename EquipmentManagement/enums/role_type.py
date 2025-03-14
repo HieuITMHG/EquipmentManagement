@@ -6,6 +6,6 @@ class RoleType(Enum):
     MANAGER = 'Manager'
 
 class RoleID(Enum):
-    STUDENT = 3
-    STAFF = 2
     MANAGER = 1
+    STUDENT = 2
+    STAFF = 3

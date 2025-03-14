@@ -1,10 +1,13 @@
-from .database import db
+from datetime import datetime
 
-class DisposalForm(db.Model):
-    __tablename__ = 'disposal_form'
+class DisposalForm:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.liquidation_date = self._parse_date(kwargs.get('liquidation_date'))
+        self.staff_id = kwargs.get('staff_id')
 
-    id = db.Column(db.String(10), primary_key=True)
-    liquidation_date = db.Column(db.Date, nullable=False)
-    staff_id = db.Column(db.String(10), db.ForeignKey('staff.id'), nullable=False)
+    def _parse_date(self, value):
+        return datetime.strptime(value, '%Y-%m-%d').date() if isinstance(value, str) else value
 
-    staff = db.relationship('Staff')
+    def to_dict(self):
+        return self.__dict__

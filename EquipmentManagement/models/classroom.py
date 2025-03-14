@@ -1,11 +1,9 @@
-from .database import db
+class Classroom:
+    def __init__(self, **kwargs):
+        self.id = kwargs['id'] if 'id' in kwargs else None
+        self.classroom_name = kwargs['classroom_name'] if 'classroom_name' in kwargs else None
+        self.academic_year = kwargs['academic_year'] if 'academic_year' in kwargs else None
+        self.department_id = kwargs['department_id'] if 'department_id' in kwargs else None
 
-class Classroom(db.Model):
-    __tablename__ = 'classroom'
-    
-    id = db.Column(db.String(20), primary_key=True, nullable=False)
-    classroom_name = db.Column(db.String(50), nullable=False)
-    academic_year = db.Column(db.String(9), nullable=False)
-    department_id = db.Column(db.String(10), db.ForeignKey('department.id'), nullable=False)
-
-    department = db.relationship('Department', backref=db.backref('classrooms', lazy=True))
+    def to_dict(self):
+        return self.__dict__

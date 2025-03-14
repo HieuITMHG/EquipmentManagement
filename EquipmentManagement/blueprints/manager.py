@@ -1,17 +1,12 @@
-from flask import Blueprint, render_template, request, session, flash, redirect
+from flask import Blueprint, render_template, request, session
 
-from helpers.helpers import login_required
-from models.account import Account
+from services.equipment_service import EquipmentService
 
 manager_blueprint = Blueprint('manager', __name__)
 
-@manager_blueprint.route('/manager', methods=['GET'])
-@login_required
+@manager_blueprint.route('/', methods=['GET'])
 def index():
     if request.method == "GET":
-        current_account = Account.query.filter_by(id=int(session.get('account_id'))).first()
-        current_manager = current_account.staff
-        print(current_account)
-        print(current_manager.firstname)
+        lst_equipment = EquipmentService.get_all_equipment()
 
-        return render_template('manager/manager_dashboard.html', current_manager = current_manager)
+        return render_template('manager/manager_dashboard.html', lst_equipment=lst_equipment)

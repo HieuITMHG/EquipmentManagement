@@ -1,17 +1,7 @@
-from .database import db
+class Staff:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.is_working = kwargs.get('is_working', False)
 
-class Staff(db.Model):
-    __tablename__ = 'staff'
-    
-    id = db.Column(db.String(10), primary_key=True)
-    lastname = db.Column(db.String(50), nullable=False)
-    firstname = db.Column(db.String(50), nullable=False)
-    gender = db.Column(db.Boolean, nullable=False)
-    birthdate = db.Column(db.Date, nullable=False)
-    address = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(10), nullable=False, unique=True)
-    email = db.Column(db.String(100), nullable=False)
-    is_working = db.Column(db.Boolean, default=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False, unique=True)
-
-    account = db.relationship('Account', back_populates='staff', uselist=False)
+    def to_dict(self):
+        return self.__dict__

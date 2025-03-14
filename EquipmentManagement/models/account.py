@@ -1,12 +1,14 @@
-from .database import db
+from  werkzeug.security import generate_password_hash
 
-class Account(db.Model):
-    __tablename__ = 'account'
+from enums.account_status import AccountStatus
+
+class Account():
+    def __init__(self, **kwargs):
+        self.password = generate_password_hash(kwargs['password']) if 'password' in kwargs.keys() else None
+        self.role_id = kwargs['role_id'] if 'role_id' in kwargs.keys() else None
+        self.is_active = AccountStatus.ACTIVE.value
+
+    def to_dict(self):
+        return self.__dict__
+
     
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
-    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
-
-    role = db.relationship('Role', backref=db.backref('accounts', lazy=True))
-    staff = db.relationship('Staff', back_populates='account', uselist=False)
-    student = db.relationship('Student', back_populates='account', uselist=False)

@@ -1,11 +1,15 @@
-from .database import db
+import datetime
 
-class RepairTicket(db.Model):
-    __tablename__ = 'repair_ticket'
+class RepairTicket:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.start_date = self._parse_date(kwargs.get('start_date'))
+        self.end_date = self._parse_date(kwargs.get('end_date'))
+        self.status = kwargs.get('status')
+        self.staff_id = kwargs.get('staff_id')
 
-    id = db.Column(db.String(10), primary_key=True)
-    start_date = db.Column(db.Date, nullable=True)
-    end_date = db.Column(db.Date)
-    staff_id = db.Column(db.String(10), db.ForeignKey('staff.id'), nullable=True)
+    def _parse_date(self, value):
+        return datetime.strptime(value, '%Y-%m-%d').date() if isinstance(value, str) else value
 
-    staff = db.relationship('Staff', backref=db.backref('repair_tickets', lazy=True))
+    def to_dict(self):
+        return self.__dict__

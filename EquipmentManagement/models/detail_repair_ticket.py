@@ -1,8 +1,8 @@
-from .database import db
+class DetailRepairTicket:
+    def __init__(self, **kwargs):
+        self.repair_ticket_id = kwargs['repair_ticket_id'] if 'repair_ticket_id' in kwargs else None
+        self.equipment_id = kwargs['equipment_id'] if 'equipment_id' in kwargs else None
+        self.price = kwargs['price'] if 'price' in kwargs else None
 
-class DetailRepairTicket(db.Model):
-    __tablename__ = 'detail_repair_ticket'
-
-    repair_ticket_id = db.Column(db.String(10), db.ForeignKey('repair_ticket.id'),  primary_key=True)
-    equipment_id = db.Column(db.String(10), db.ForeignKey('equipment.id'), primary_key=True)
-    price = db.Column(db.Integer)
+    def to_dict(self):
+        return self.__dict__

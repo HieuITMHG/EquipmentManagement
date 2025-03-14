@@ -1,10 +1,15 @@
-from .database import db
+from datetime import datetime
 
-class PenaltyTicket(db.Model):
-    __tablename__ = 'penalty_ticket'
+class PenaltyTicket:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.date = self._parse_date(kwargs.get('date'))
+        self.staff_id = kwargs.get('staff_id')
+        self.student_id = kwargs.get('student_id')
+        self.status = kwargs.get('status')
 
-    id = db.Column(db.String(10), primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    staff_id = db.Column(db.String(10), db.ForeignKey('staff.id'), nullable=False)
-    student_id = db.Column(db.String(10), db.ForeignKey('student.id'), nullable=False)
-    
+    def _parse_date(self, value):
+        return datetime.strptime(value, '%Y-%m-%d').date() if isinstance(value, str) else value
+
+    def to_dict(self):
+        return self.__dict__

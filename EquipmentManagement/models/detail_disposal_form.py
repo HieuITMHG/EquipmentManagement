@@ -1,7 +1,7 @@
-from .database import db
+class DetailDisposalForm:
+    def __init__(self, **kwargs):
+        self.disposal_form_id = kwargs['disposal_form_id'] if 'disposal_form_id' in kwargs else None
+        self.equipment_id = kwargs['equipment_id'] if 'equipment_id' in kwargs else None
 
-class DetailDisposalForm(db.Model):
-    __tablename__ = 'detail_disposal_form'
-
-    disposal_form_id = db.Column(db.String(10), db.ForeignKey('disposal_form.id'), primary_key=True)
-    equipment_id = db.Column(db.String(10), db.ForeignKey('equipment.id'), primary_key=True)
+    def to_dict(self):
+        return self.__dict__

@@ -1,9 +1,9 @@
-from .database import db
+class Room:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.floor = kwargs.get('floor')
+        self.section = kwargs.get('section')
+        self.max_people = kwargs.get('max_people')
 
-class Room(db.Model):
-    __tablename__ = 'room'
-    
-    id = db.Column(db.String(5), primary_key=True)
-    floor = db.Column(db.Integer, nullable=False)
-    section = db.Column(db.String(1), nullable=False)
-    max_people = db.Column(db.Integer, nullable=False)
+    def to_dict(self):
+        return self.__dict__

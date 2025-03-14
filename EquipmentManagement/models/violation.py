@@ -1,10 +1,7 @@
-from .database import db
+class Violation:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.violation_content = kwargs.get('violation_content')
 
-class Violation(db.Model):
-    __tablename__ = 'violation'
-
-    id = db.Column(db.String(10), primary_key=True)
-    content = db.Column(db.String(100), nullable=False)
-    form = db.Column(db.String(30), nullable=False)
-    price = db.Column(db.Integer)
-    
+    def to_dict(self):
+        return self.__dict__

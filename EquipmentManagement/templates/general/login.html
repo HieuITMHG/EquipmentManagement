@@ -6,27 +6,32 @@
 
 {% block content %}
 <div class="h-screen w-screen fixed left-0 top-0">
-    <div class="w-full h-full flex justify-center items-center bg-gray-200">
-        <form action="/login" method="post" class="w-[500px] flex flex-col bg-white space-y-6 rounded-md p-10">
-            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}"/>
-            <h2 class="font-bold text-4xl">
-                Login
-            </h2>
-
-            <div class="flex flex-col">
-                <label for="user_id" class="font-bold">Mã Tài Khoản</label>
-                <input name="user_id" type="text" placeholder="e.g.N22DCCN001" class="input_field"/>
+    <div class="w-full h-full flex justify-center items-center bg-gray-200 ">
+        <div class="flex md:flex-row flex-col bg-white rounded-xl items-center">
+            <div class="">
+                <img src="{{ url_for('static', filename='img/logo_ptit.png') }}" alt="logo_ptit"/>
             </div>
-
-            <div class="flex flex-col">
-                <label for="password" class="font-bold">Mật Khẩu</label>
-                <input name="password" type="password" placeholder="e.g.********" class="input_field"/>
-            </div>
-        
-            <button type="submit" class="bg-blue-500 h-9 rounded-md text-gray-300 hover:bg-blue-400 cursor-pointer">
-                Login
-            </button>
-        </form>
+            <form action="/login" method="post" class="w-[350px] flex flex-col space-y-6 rounded-md p-10  md:w-[500px]">
+                <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}"/>
+                <h2 class="font-bold text-4xl">
+                    Login
+                </h2>
+    
+                <div class="flex flex-col">
+                    <label for="user_id" class="font-bold">Mã Tài Khoản</label>
+                    <input name="user_id" type="text" placeholder="e.g.N22DCCN001" class="input_field"/>
+                </div>
+    
+                <div class="flex flex-col">
+                    <label for="password" class="font-bold">Mật Khẩu</label>
+                    <input name="password" type="password" placeholder="e.g.********" class="input_field"/>
+                </div>
+            
+                <button type="submit" class="bg-blue-500 h-9 rounded-md text-gray-300 hover:bg-blue-400 cursor-pointer">
+                    Login
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

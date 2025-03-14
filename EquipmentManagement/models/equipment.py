@@ -1,14 +1,11 @@
-from .database import db
+class Equipment:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.equipment_name = kwargs.get('equipment_name')
+        self.equipment_type = kwargs.get('equipment_type')
+        self.equipment_status = kwargs.get('equipment_status')
+        self.room_id = kwargs.get('room_id')
+        self.account_id = kwargs.get('account_id')
 
-class Equipment(db.Model):
-    __tablename__ = 'equipment'
-    
-    id = db.Column(db.String(10), primary_key=True)
-    equipment_name = db.Column(db.String(50), nullable=True)
-    equipment_type = db.Column(db.Integer, nullable=True)
-    equipment_status = db.Column(db.Integer, nullable=True)
-    room_id = db.Column(db.String(5), db.ForeignKey('room.id'), nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
-
-    room = db.relationship('Room', backref=db.backref('equipments', lazy=True))
-    account = db.relationship('Account', backref=db.backref('students', lazy=True))
+    def to_dict(self):
+        return self.__dict__
