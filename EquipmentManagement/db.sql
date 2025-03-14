@@ -237,8 +237,8 @@ INSERT INTO account (password, role_id, is_active) VALUES
 
 -- Chèn tài khoản cho nhân viên
 INSERT INTO account (password, role_id, is_active) VALUES 
-('staff123', 1, TRUE),  -- Tài khoản cho 'STF2001'
-('staff456', 1, TRUE);  -- Tài khoản cho 'STF2002'
+('staff123', 3, TRUE),  -- Tài khoản cho 'STF2001'
+('staff456', 3, TRUE);  -- Tài khoản cho 'STF2002'
 
 -- Chèn thông tin cá nhân cho sinh viên
 INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
@@ -328,6 +328,24 @@ SELECT
 FROM student AS s  
 INNER JOIN person AS p ON s.id = p.id  
 INNER JOIN account AS a ON p.account_id = a.id;
+
+CREATE VIEW AccountInfo AS
+SELECT
+    p.id AS person_id,
+    p.cccd,  
+    p.first_name,  
+    p.last_name,  
+    p.gender,  
+    p.email,  
+    p.phone,  
+    p.address,  
+    p.img_url,
+    a.password,  
+    a.role_id,  
+    a.is_active
+FROM person AS p 
+INNER JOIN account AS a ON p.account_id = a.id;
+
 
 
 /* PROCEDURE */

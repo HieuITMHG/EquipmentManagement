@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, session, flash, redirect
 
-from helpers.helpers import login_required
-from services.student_service import StudentService
+from services.account_service import AccountService
 from enums.role_type import RoleID
 from messages import messages_success, messages_failure
 
@@ -13,7 +12,7 @@ def login():
         password = request.form.get('password')
         user_id = request.form.get('user_id')
 
-        login_account = StudentService.get_student_by_id(user_id)
+        login_account = AccountService.get_account_by_person_id(user_id)
 
         if login_account == None:
             flash(messages_failure["invalid_information"], 'error')
@@ -22,9 +21,9 @@ def login():
         if login_account['password'] == password and login_user_id == user_id:
             session["account_id"] = str(login_user_id)
             flash(messages_success['login_success'],'success')
-            if login_user_id == RoleID.MANAGER.value:
+            if login_account['role_id'] == RoleID.MANAGER.value:
                 return redirect('/manager')
-            elif login_user_id == RoleID.STAFF.value:
+            elif login_account['role_id'] == RoleID.STAFF.value:
                 return redirect('/staff')
             else:
                 return redirect('/student')
