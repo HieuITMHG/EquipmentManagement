@@ -89,8 +89,8 @@ CREATE TABLE equipment (
 CREATE TABLE borrow_request (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     student_id CHAR(10) NOT NULL,
-    staff_id CHAR(10) NOT NULL,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL,
+    staff_id CHAR(10),
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
@@ -306,23 +306,75 @@ INSERT INTO liquidation_slip (liquidation_date, staff_id) VALUES
 INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id) VALUES 
 (1, 5);
 
+/* VIEWS */
+CREATE VIEW StudentInfo AS  
+SELECT   
+    s.id AS student_id,  
+    p.id AS person_id,  
+    a.id AS account_id,  
+    s.class_id,  
+    s.is_studing,  
+    p.cccd,  
+    p.first_name,  
+    p.last_name,  
+    p.gender,  
+    p.email,  
+    p.phone,  
+    p.address,  
+    p.img_url,  
+    a.password,  
+    a.role_id,  
+    a.is_active  
+FROM student AS s  
+INNER JOIN person AS p ON s.id = p.id  
+INNER JOIN account AS a ON p.account_id = a.id;
+
+
 /* PROCEDURE */
 
 DELIMITER $$  
-CREATE PROCEDURE GetStudentInfoById(IN studentId VARCHAR(20))  
+
+CREATE PROCEDURE CreateBorrowRequestWithItems(
+    IN p_student_id VARCHAR(20),
+    IN p_equipment_ids TEXT,  -- Danh sách các equipment_id, phân tách bằng dấu phẩy
+    IN p_expect_returning_time DATETIME
+)
 BEGIN  
-    SELECT   
-        s.id AS student_id,  
-        p.id AS person_id,  
-        a.id AS account_id,  
-        s.*,  
-        p.*,  
-        a.*  
-    FROM student AS s  
-    INNER JOIN person AS p ON s.id = p.id  
-    INNER JOIN account AS a ON p.account_id = a.id  
-    WHERE s.id = studentId;  
+    DECLARE v_borrow_request_id INTEGER;
+    DECLARE v_equipment_id INTEGER;
+    DECLARE v_equipment_list TEXT;
+    DECLARE v_equipment_pos INT;
+    DECLARE v_equipment_len INT;
+    
+    -- 1. Tạo borrow_request
+    INSERT INTO borrow_request (student_id) VALUES (p_student_id);
+    SET v_borrow_request_id = LAST_INSERT_ID();
+
+    -- 2. Duyệt từng equipment_id trong p_equipment_ids
+    SET v_equipment_list = p_equipment_ids;
+
+    WHILE LENGTH(v_equipment_list) > 0 DO
+        -- Tìm vị trí dấu phẩy
+        SET v_equipment_pos = LOCATE(',', v_equipment_list);
+        
+        IF v_equipment_pos = 0 THEN
+            -- Nếu không còn dấu phẩy, lấy giá trị cuối cùng
+            SET v_equipment_id = CAST(v_equipment_list AS UNSIGNED);
+            SET v_equipment_list = '';
+        ELSE
+            -- Cắt lấy phần tử đầu tiên
+            SET v_equipment_id = CAST(LEFT(v_equipment_list, v_equipment_pos - 1) AS UNSIGNED);
+            SET v_equipment_list = SUBSTRING(v_equipment_list, v_equipment_pos + 1);
+        END IF;
+        
+        -- Chèn vào borrow_item
+        INSERT INTO borrow_item (borrow_request_id, equipment_id, expect_returning_time)
+        VALUES (v_borrow_request_id, v_equipment_id, p_expect_returning_time);
+    END WHILE;
 END $$  
-DELIMITER ;  
+    
+DELIMITER ;
+
+
 
 

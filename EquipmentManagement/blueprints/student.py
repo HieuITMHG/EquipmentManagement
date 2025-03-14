@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request, session, redirect
+from flask import Blueprint, render_template, request, session, redirect, flash
 
-from helpers.helpers import login_required
+from helpers.helpers import login_required, get_expect_returning_time
 from services.student_service import StudentService
 from services.room_service import RoomService
 from services.equipment_service import EquipmentService
+from services.borrow_service import BorrowService
 
 student_blueprint = Blueprint('student', __name__)
 
@@ -25,6 +26,26 @@ def student_dashboard():
 @login_required
 def student_borrow():
     if request.method == "POST":
-        lst_item = request.form.getlist('items')
-        print(lst_item)
+        lst_item = request.form.getlist('items')  # Danh sách thiết bị
+        student_id = session.get("account_id")  # Lấy ID sinh viên từ session
+
+        if not lst_item:
+            flash("Vui lòng chọn ít nhất một thiết bị!", "danger")
+            return redirect('/student')
+
+        expect_returning_time = get_expect_returning_time()
+
+        if not expect_returning_time:
+            flash("Không thể mượn thiết bị ngoài khung giờ quy định!", "danger")
+            return redirect('/student')
+
+        # Gọi service để thêm borrow request
+        equipment_ids = ",".join(lst_item)  # Chuyển danh sách thành chuỗi "1,2,3"
+        borrow_request_id = BorrowService.create_borrow_request(student_id, equipment_ids, expect_returning_time)
+
+        if borrow_request_id:
+            flash(f"✅ Mượn thiết bị thành công! Mã yêu cầu: {borrow_request_id}", "success")
+        else:
+            flash("❌ Lỗi khi mượn thiết bị!", "danger")
+
         return redirect('/student')

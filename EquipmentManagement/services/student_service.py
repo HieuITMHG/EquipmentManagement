@@ -19,7 +19,7 @@ class StudentService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("CALL GetStudentInfoById(%s)", (student_id,))
+            cursor.execute("SELECT * FROM StudentInfo WHERE student_id = %s", (student_id,))
             student = cursor.fetchone()
             return student if student else None  
         finally:
