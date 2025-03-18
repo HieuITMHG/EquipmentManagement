@@ -8,4 +8,8 @@
     .nav_item {
         @apply w-72 bg-blue-400 p-2 rounded-md hover:bg-blue-200 cursor-pointer text-gray-600
     } 
+
+    .hightlight {
+        @apply bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg rounded-md
+    }
 }

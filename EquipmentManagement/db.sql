@@ -91,14 +91,14 @@ CREATE TABLE borrow_request (
     student_id CHAR(10) NOT NULL,
     staff_id CHAR(10),
     status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expect_returning_time DATETIME NOT NULL,
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
 
 CREATE TABLE borrow_item (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expect_returning_time DATETIME NOT NULL,
     actual_returning_time DATETIME,
     borrow_request_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
@@ -261,16 +261,6 @@ INSERT INTO staff (id, is_working) VALUES
 ('STF2001', TRUE), 
 ('STF2002', TRUE);
 
--- Insert sample data for borrow_request
-INSERT INTO borrow_request (student_id, staff_id, status) VALUES 
-('N22DCCN127', 'STF2001', 'PENDING'), 
-('N22DCCN078', 'STF2002', 'ACCEPTED');
-
--- Insert sample data for borrow_item
-INSERT INTO borrow_item (borrowing_time, expect_returning_time, actual_returning_time, borrow_request_id, equipment_id) VALUES 
-('2024-03-10 10:00:00', '2024-03-12 10:00:00', NULL, 1, 1), 
-('2024-03-11 09:00:00', '2024-03-13 09:00:00', NULL, 2, 2);
-
 -- Insert sample data for penalty_form
 INSERT INTO penalty_form (form_name, price) VALUES 
 ('Late Return', 50.00), 
@@ -346,7 +336,44 @@ SELECT
 FROM person AS p 
 INNER JOIN account AS a ON p.account_id = a.id;
 
+CREATE VIEW BorrowDetails AS
+SELECT 
+    br.id AS borrow_request_id,
+    br.student_id,
+    br.staff_id,
+    br.status AS borrow_status,
+    br.borrowing_time,
+    br.expect_returning_time,
+    bi.id AS borrow_item_id,
+    bi.actual_returning_time,
+    e.id AS equipment_id,
+    e.equipment_name,
+    e.status AS equipment_status,
+    e.equipment_type,
+    e.room_id
+FROM borrow_request br
+JOIN borrow_item bi ON br.id = bi.borrow_request_id
+JOIN equipment e ON bi.equipment_id = e.id;
 
+CREATE VIEW PenaltyDetails AS
+SELECT 
+    pt.id AS penalty_ticket_id,
+    pt.staff_id,
+    pt.student_id,
+    pt.create_time,
+    pt.status AS ticket_status,
+
+    v.id AS violation_id,
+    v.violation_content,
+
+    pf.id AS penalty_form_id,
+    pf.form_name,
+    pf.price
+
+FROM penalty_ticket pt
+JOIN detail_penalty_ticket dpt ON pt.id = dpt.penalty_ticket_id
+JOIN violation v ON dpt.violation_id = v.id
+JOIN penalty_form pf ON v.penalty_form_id = pf.id;
 
 /* PROCEDURE */
 
@@ -365,7 +392,7 @@ BEGIN
     DECLARE v_equipment_len INT;
     
     -- 1. Tạo borrow_request
-    INSERT INTO borrow_request (student_id) VALUES (p_student_id);
+    INSERT INTO borrow_request (student_id, expect_returning_time) VALUES (p_student_id, p_expect_returning_time);
     SET v_borrow_request_id = LAST_INSERT_ID();
 
     -- 2. Duyệt từng equipment_id trong p_equipment_ids
@@ -386,12 +413,18 @@ BEGIN
         END IF;
         
         -- Chèn vào borrow_item
-        INSERT INTO borrow_item (borrow_request_id, equipment_id, expect_returning_time)
-        VALUES (v_borrow_request_id, v_equipment_id, p_expect_returning_time);
+        INSERT INTO borrow_item (borrow_request_id, equipment_id)
+        VALUES (v_borrow_request_id, v_equipment_id);
+
+        -- Cập nhật trạng thái của thiết bị thành 'BORROWED'
+        UPDATE equipment
+        SET status = 'BORROWED'
+        WHERE id = v_equipment_id;
     END WHILE;
 END $$  
     
 DELIMITER ;
+
 
 
 

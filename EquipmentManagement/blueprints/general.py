@@ -9,6 +9,7 @@ general_blueprint = Blueprint('general', __name__)
 @general_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        session.permanent = False
         password = request.form.get('password')
         user_id = request.form.get('user_id')
 

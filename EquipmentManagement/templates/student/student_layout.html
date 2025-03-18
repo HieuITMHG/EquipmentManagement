@@ -7,22 +7,22 @@
 {% block content %}
     <div class="fixed h-screen w-screen flex bg-[rgba(204,_204,_204,_0.5)]">
         <ul class="space-y-4 h-screen bg-white ml-5 p-4">
-            <li class="nav_item">
-                <a href="#" class="flex items-center">
+            <li class="nav_item {% if 'profile' in request.path %} hightlight{% endif %}">
+                <a href="/student/profile" class="flex items-center">
                     <img src="{{ url_for('static', filename='avatar/avt_man.png') }}" 
                         alt="avatar" 
                         class="h-12 w-12 rounded-full mr-2">
                     <h2>{{student.last_name}} {{student.first_name}} - {{student.person_id}}</h2>
                 </a>
             </li>
-            <li class="nav_item">
-                <a href="#">Thiết bị</a>
+            <li class="nav_item {% if request.path == '/student' %} hightlight{% endif %}">
+                <a href="/student">Thiết bị</a>
             </li>
-            <li class="nav_item">
-                <a href="#">Lịch sử mượn</a>
+            <li class="nav_item {% if 'history' in request.path %} hightlight{% endif %}">
+                <a href="/student/borrow_history">Lịch sử mượn</a>
             </li>
-            <li class="nav_item">
-                <a href="#">Lỗi vi phạm</a>
+            <li class="nav_item {% if 'violation' in request.path %} hightlight{% endif %}">
+                <a href="/student/violation">Lỗi vi phạm</a>
             </li>
         </ul>
         
