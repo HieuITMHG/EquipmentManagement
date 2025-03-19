@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, session, flash, redirect
 
+from helpers.helpers import login_required
 from services.account_service import AccountService
 from enums.role_type import RoleID
 from messages import messages_success, messages_failure
@@ -33,3 +34,8 @@ def login():
             flash(messages_failure["invalid_information"], 'error')
             return render_template('general/login.html')
     return render_template('general/login.html')
+
+@general_blueprint.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")

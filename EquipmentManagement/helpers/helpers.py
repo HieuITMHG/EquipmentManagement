@@ -21,4 +21,4 @@ def get_expect_returning_time():
     elif time(17, 0) <= now <= time(20, 0):
         return datetime.combine(datetime.today(), time(20, 0))
     else:
-        return None  # Nếu ngoài khung giờ, không cho mượn
+        return datetime.combine(datetime.today(), time(20, 0))

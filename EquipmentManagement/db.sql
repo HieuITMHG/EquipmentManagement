@@ -415,14 +415,38 @@ BEGIN
         -- Chèn vào borrow_item
         INSERT INTO borrow_item (borrow_request_id, equipment_id)
         VALUES (v_borrow_request_id, v_equipment_id);
-
-        -- Cập nhật trạng thái của thiết bị thành 'BORROWED'
-        UPDATE equipment
-        SET status = 'BORROWED'
-        WHERE id = v_equipment_id;
     END WHILE;
 END $$  
     
+CREATE PROCEDURE accept_borrow_request(
+    IN request_id INT,
+    IN staff_id CHAR(10)
+)
+BEGIN
+    -- Cập nhật trạng thái của thiết bị thành 'BORROWED'
+    UPDATE equipment e
+    JOIN borrow_item bi ON e.id = bi.equipment_id
+    SET e.status = 'BORROWED'
+    WHERE bi.borrow_request_id = request_id;
+
+    -- Cập nhật trạng thái của yêu cầu mượn thành 'ACCEPTED'
+    UPDATE borrow_request br
+    SET br.status = 'ACCEPTED', br.staff_id = staff_id
+    WHERE br.id = request_id;
+    
+END$$
+
+CREATE PROCEDURE reject_borrow_request(
+    IN request_id INT,
+    IN staff_id CHAR(10)
+)
+BEGIN
+    -- Cập nhật trạng thái của yêu cầu mượn thành 'REJECTED' và cập nhật staff_id
+    UPDATE borrow_request br
+    SET br.status = 'REJECTED', br.staff_id = staff_id
+    WHERE br.id = request_id;
+
+END$$
 DELIMITER ;
 
 

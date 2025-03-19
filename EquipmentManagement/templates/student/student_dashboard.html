@@ -34,10 +34,11 @@
         <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px]">
                 {% for equipment in borrow_equipment %}
-                <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
-                    <label for="equipment-{{equipment.id}}" class="flex items-center cursor-pointer">
+                <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200 justify-between">
+                    <div class="flex items-center cursor-pointer">
                         {{equipment.equipment_name}} - {{equipment.room_id}}
-                    </label>
+                    </div>
+                    <div>{{equipment.borrow_status}}</div>
                 </div>
                 {% endfor %}
             </div>
