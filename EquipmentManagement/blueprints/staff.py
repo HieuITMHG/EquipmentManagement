@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, session, redirect
 
 from helpers.helpers import login_required
 from services.account_service import AccountService
+from services.staff_service import StaffService
 from services.borrow_service import BorrowService
 from enums.action_type import ActionType
 
@@ -34,4 +35,15 @@ def staff_borrow_request(request_id=None):
     return redirect("borrow_request")
 
 
+@staff_blueprint.route('/staff/staff_manage_equiment', methods=['GET'])
+@staff_blueprint.route('/staff/staff_manage_equiment', methods=['GET', 'POST'])
+@login_required
+def staff_manage_equiment():
+    if request.method == "GET":
+        login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
+        lst_equipment = StaffService.get_all_equipment_with_room()
+        for equi in lst_equipment:
+            print (equi)
+        return render_template('staff/staff_manage_equiment.html', login_staff = login_staff,
+                               lst_equipment=lst_equipment)
     
