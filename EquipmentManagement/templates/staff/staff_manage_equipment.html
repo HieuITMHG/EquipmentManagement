@@ -1,0 +1,71 @@
+{% extends "staff/staff_layout.html" %}
+
+{% block staff_content %}
+<div class="flex flex-1 p-3">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <div class=" flex-1 flex px-6 justify-between items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center">
+                <h2 class="font-bold text-3xl">Thiết bị hiện thời</h2>
+            </div>
+        </div>
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px]">
+                <div class="flex-10 flex flex-col px-6 overflow-auto">
+                    <div class="flex-10 space-y-3 p-4 max-h-[600px]">
+                        {% if lst_equipment %}
+                            {% for equipment in lst_equipment %}
+                            <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
+                                <a class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer" type="submit"
+                                href="{{ url_for('staff.staff_manage_equipment', equipment_id=equipment.id) }}">
+                                {{equipment.equipment_name}}-{{equipment.room_id}}
+                            </a>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-red-500 font-bold">Không có thiết bị nào.</p>
+                        {% endif %}
+                    </div>   
+                </div>
+            </div>
+            </div>   
+        </div>
+        <div class="flex-1 flex flex-col bg-white rounded-md">
+            <div class=" flex-1 flex px-6 justify-between items-center">
+                <div>
+                    <h2 class="font-bold text-3xl">Phiếu chỉnh sửa thiết bị</h2>
+                </div>
+            </div>
+            
+            <div class="flex-10 flex flex-col px-6">
+                <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] bg-white rounded-lg shadow-lg relative">
+                    <form class="space-y-4 " >
+                        <div class="flex flex-col">
+                            <label class="font-bold text-gray-700">Tên thiết bị:</label>
+                            <input class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" value="{{equi.equipment_name}}" />
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="font-bold text-gray-700">Phòng:</label>
+                            <select class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                {% for r in room %}
+                                <option value="{{r.id}}">{{r.id}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="font-bold text-gray-700">Trạng thái:</label>
+                            <p class="text-gray-600">{{equi.status}}</p>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="font-bold text-gray-700">Loại thiết bị:</label>
+                            <p class="text-gray-600">{{equi.equipment_type}}</p>
+                        </div>
+                        <div>
+                            <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 absolute bottom-[40px] right-[40px]">
+                                Sửa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+    </div>
+   
+{% endblock %}
