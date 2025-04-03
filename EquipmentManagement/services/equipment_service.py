@@ -46,3 +46,45 @@ class EquipmentService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def add_equipment(new_name, new_status, new_type, new_room):
+        """Thêm thiết bị mới vào hệ thống"""
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Gọi stored procedure để thêm thiết bị mới
+            cursor.callproc('add_equipment', [new_name, new_status, new_type, new_room])
+
+            # Commit để xác nhận thay đổi
+            conn.commit()
+            return True
+        except Exception as e:
+            # Nếu có lỗi, rollback transaction
+            conn.rollback()
+            print(f"Error: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def delete_equipment_by_id(equipment_id):
+        """Xóa thiết bị theo ID"""
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Gọi stored procedure để xóa thiết bị
+            cursor.callproc('delete_equipment_by_id', [equipment_id])
+
+            # Commit để xác nhận thay đổi
+            conn.commit()
+            return True
+        except Exception as e:
+            # Nếu có lỗi, rollback transaction
+            conn.rollback()
+            print(f"Error: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()

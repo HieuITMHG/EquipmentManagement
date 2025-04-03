@@ -125,3 +125,73 @@ class BorrowService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def get_accepted_or_returned_borrow_request():
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+            SELECT borrow_request_id, student_id, staff_id, borrow_status, 
+                   borrowing_time, expect_returning_time
+            FROM BorrowDetails
+            WHERE borrow_status = 'ACCEPTED' OR borrow_status = 'RETURNED'
+            GROUP BY borrow_request_id
+        """)  
+            lst_borrow = cursor.fetchall()
+            return lst_borrow
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def return_equi(request_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.callproc('return_equi', [request_id])
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_accepted_borrow_request():
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT borrow_request_id, student_id, staff_id, borrow_status, 
+                    borrowing_time, expect_returning_time
+                FROM BorrowDetails
+                WHERE borrow_status = 'ACCEPTED'
+                GROUP BY borrow_request_id
+            """)  
+            lst_borrow = cursor.fetchall()
+            return lst_borrow
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_returned_borrow_request():
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT borrow_request_id, student_id, staff_id, borrow_status, 
+                    borrowing_time, expect_returning_time
+                FROM BorrowDetails
+                WHERE borrow_status = 'RETURNED'
+                GROUP BY borrow_request_id
+            """)  
+            lst_borrow = cursor.fetchall()
+            return lst_borrow
+        finally:
+            cursor.close()
+            conn.close()

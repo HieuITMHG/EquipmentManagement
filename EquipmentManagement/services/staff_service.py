@@ -23,3 +23,24 @@ class StaffService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def change_equi_info(new_id,new_name,new_room):
+        """Lấy danh sách tất cả thiết bị kèm room_id"""
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Gọi stored procedure để từ chối yêu cầu mượn
+            cursor.callproc('change_equi_info', [new_id, new_name,new_room])
+
+            # Commit để xác nhận thay đổi
+            conn.commit()
+            return True
+        except Exception as e:
+            # Nếu có lỗi, rollback transaction
+            conn.rollback()
+            print(f"Error: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()

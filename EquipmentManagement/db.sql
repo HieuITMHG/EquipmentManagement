@@ -90,7 +90,7 @@ CREATE TABLE borrow_request (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     student_id CHAR(10) NOT NULL,
     staff_id CHAR(10),
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL DEFAULT 'PENDING',
     borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expect_returning_time DATETIME NOT NULL,
     FOREIGN KEY (student_id) REFERENCES student(id),
@@ -117,7 +117,7 @@ CREATE TABLE penalty_ticket (
     staff_id CHAR(10) NOT NULL,
     student_id CHAR(10) NOT NULL,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id),
     FOREIGN KEY (student_id) REFERENCES student(id)
 );
@@ -141,7 +141,7 @@ CREATE TABLE repair_ticket (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     start_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_date DATETIME,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
@@ -296,6 +296,20 @@ INSERT INTO liquidation_slip (liquidation_date, staff_id) VALUES
 INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id) VALUES 
 (1, 5);
 
+
+
+
+INSERT INTO borrow_request (id, student_id, staff_id, status, borrowing_time, expect_returning_time) VALUES
+(1, 'N22DCCN127', 'STF2001', 'ACCEPTED', '2024-04-01 6:30:00', '2024-04-07 10:40:00'),
+(2, 'N22DCCN078', 'STF2001', 'RETURNED', '2024-03-25 07:00:00', '2024-03-30 10:40:00');
+
+INSERT INTO borrow_item (borrow_request_id, equipment_id, actual_returning_time) VALUES
+(1, 5, NULL), -- Mượn Microphone cho yêu cầu 1
+(1, 6, NULL), -- Mượn Microphone khác cho yêu cầu 1
+(1, 7, NULL),
+(2, 11, '2024-03-30 10:30:00'), -- Trả Key cho yêu cầu 2
+(2, 13, '2024-03-30 10:30:00'); -- Trả Key khác cho yêu cầu 2
+
 /* VIEWS */
 CREATE VIEW StudentInfo AS  
 SELECT   
@@ -447,9 +461,83 @@ BEGIN
     WHERE br.id = request_id;
 
 END$$
-DELIMITER ;
 
 
+CREATE PROCEDURE change_equi_info(
+    IN new_id INT,
+    IN new_name CHAR(50),
+    IN new_room CHAR(5)
+)
+BEGIN
+    -- Cập nhật thiết bị
+    UPDATE equipment e
+    SET e.equipment_name = new_name, e.room_id = new_room
+    WHERE  e.id=new_id;
+
+END$$
+
+CREATE PROCEDURE add_equipment(
+    IN p_equipment_name VARCHAR(50),
+    IN p_status ENUM('AVAILABLE', 'UNDERREPAIR', 'BORROWED', 'BROKEN', 'LIQUIDATED'),
+    IN p_equipment_type ENUM('MOBILE', 'FIXED', 'SHARED'),
+    IN p_room_id CHAR(5)
+)
+BEGIN
+    -- Thêm thiết bị vào bảng equipment
+    INSERT INTO equipment (equipment_name, status, equipment_type, room_id)
+    VALUES (p_equipment_name, p_status, p_equipment_type, p_room_id);
+END $$
+
+
+CREATE PROCEDURE delete_equipment_by_id(
+    IN p_equipment_id INT
+)
+BEGIN
+    DECLARE max_id INT;
+
+    -- Xóa thiết bị theo ID
+    DELETE FROM equipment WHERE id = p_equipment_id;
+
+    -- Cập nhật lại ID của các thiết bị còn lại để duy trì thứ tự liên tục
+    UPDATE equipment 
+    SET id = id - 1
+    WHERE id > p_equipment_id;
+
+    -- Lấy ID lớn nhất còn lại
+    SELECT MAX(id) INTO max_id FROM equipment;
+
+    -- Đặt lại AUTO_INCREMENT cho bảng equipment
+    IF max_id IS NOT NULL THEN
+        SET @query = CONCAT('ALTER TABLE equipment AUTO_INCREMENT = ', max_id + 1);
+        PREPARE stmt FROM @query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSE
+        -- Nếu bảng trống, đặt AUTO_INCREMENT về 1
+        ALTER TABLE equipment AUTO_INCREMENT = 1;
+    END IF;
+
+END $$
+
+CREATE PROCEDURE return_equi(
+    IN request_id INT
+)
+BEGIN
+    -- Cập nhật trạng thái của thiết bị thành 'AVAILABLE'
+    UPDATE equipment e
+    JOIN borrow_item bi ON e.id = bi.equipment_id
+    SET e.status = 'AVAILABLE'
+    WHERE bi.borrow_request_id = request_id;
+
+    -- Cập nhật trạng thái của yêu cầu mượn thành 'RETURNED'
+    UPDATE borrow_request br
+    SET br.status = 'RETURNED'
+    WHERE br.id = request_id;
+    
+END$$
+
+
+DELIMITER ; 
 
 
 
