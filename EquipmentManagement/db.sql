@@ -566,6 +566,13 @@ BEGIN
 END$$
 
 
+CREATE PROCEDURE get_all_repair_ticket()
+BEGIN
+    SELECT * FROM repair_ticket;
+END$$
+
+
+
 DELIMITER ; 
 
 

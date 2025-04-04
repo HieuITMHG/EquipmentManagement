@@ -114,29 +114,8 @@ def borrow_history(request_id=None):
         lst_request = BorrowService.get_accepted_or_returned_borrow_request()
         #print(lst_request,"***")
         if(request_id!=None):
-            status = request.args.get("status", "")
-        if (status==""):
-            login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
             lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
-            lst_request = BorrowService.get_accepted_or_returned_borrow_request()
-           
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status)   
-            
-        if (status=='ACCEPTED'):
-            print("1")
-            login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-            lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
-            lst_request = BorrowService.get_accepted_borrow_request()
-            print(lst_request)
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
-        if (status=='RETURNED'):
-            print("returned")
-            print("1")
-            login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-            lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
-            lst_request = BorrowService.get_returned_borrow_request()
-            print(lst_request)
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
+            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment)
         return render_template('staff/borrow_history.html', login_staff = login_staff,lst_request=lst_request)
     
     borrow_request_id = int(request.form.get('request_id'))
@@ -148,28 +127,32 @@ def borrow_history(request_id=None):
 @login_required
 def bh_filter(request_id=None):
     if request.method == "GET":
-        
+        login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
+        lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
         status = request.args.get("status", "")
-        if (status==""):
-            login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-            lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
+        if (status==''):
             lst_request = BorrowService.get_accepted_or_returned_borrow_request()
-           
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status)   
-            
         if (status=='ACCEPTED'):
             print("1")
-            login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-            lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
             lst_request = BorrowService.get_accepted_borrow_request()
             print(lst_request)
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
         if (status=='RETURNED'):
             print("returned")
             print("1")
-            login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-            lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
             lst_request = BorrowService.get_returned_borrow_request()
             print(lst_request)
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
+        return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
         
+
+
+@staff_blueprint.route('/staff/repair_ticket/<int:request_id>', methods=['GET'])
+@staff_blueprint.route('/staff/repair_ticket', methods=['GET', 'POST'])
+@login_required
+def repair_ticket(request_id=None):
+    login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
+    ticket = StaffService.get_detail_repair_ticket_by_id(1)
+    if ticket:
+        print(ticket)
+    else:
+        print("Không tìm thấy phiếu sửa chữa.")
+    return render_template('staff/repair_ticket.html',login_staff=login_staff)
