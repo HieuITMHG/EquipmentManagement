@@ -16,15 +16,19 @@
                 </a>
             </li>
             <li class="nav_item {% if request.path == '/student' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/key_icon_2.svg') }}" class="w-6"/>
                 <a href="/student">Thiết bị</a>
             </li>
             <li class="nav_item {% if 'history' in request.path %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/history.png') }}" class="w-6"/>
                 <a href="/student/borrow_history">Lịch sử mượn</a>
             </li>
             <li class="nav_item {% if 'violation' in request.path %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
                 <a href="/student/violation">Lỗi vi phạm</a>
             </li>
             <li class="nav_item">
+                <img src="{{ url_for('static', filename='icon/logout.svg') }}" class="w-6"/>
                 <a href="/logout">Đăng Xuất</a>
             </li>
         </ul>

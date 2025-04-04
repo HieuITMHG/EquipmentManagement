@@ -203,18 +203,31 @@ INSERT INTO class (id, class_name, academic_year, department_id) VALUES
 -- Insert sample data for room
 INSERT INTO room (id, floor_number, section, max_people) VALUES 
 ('2B25', 2, 'B', 80), 
-('2A16', 1, 'A', 100);
+('2A16', 1, 'A', 100),
+('2E21', 2, 'E', 50), 
+('2E22', 2, 'E', 80);
 
 -- Insert sample data for fixed equipment (each room has one speaker and one projector)
+-- Insert fixed equipment
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
 ('Speaker', 'AVAILABLE', 'FIXED', '2B25'), 
 ('Speaker', 'AVAILABLE', 'FIXED', '2A16'), 
 ('Projector', 'AVAILABLE', 'FIXED', '2B25'), 
-('Projector', 'AVAILABLE', 'FIXED', '2A16');
+('Projector', 'AVAILABLE', 'FIXED', '2A16'), 
+('Blackboard', 'AVAILABLE', 'FIXED', '2B25'), 
+('Blackboard', 'AVAILABLE', 'FIXED', '2A16'), 
+('Table', 'AVAILABLE', 'FIXED', '2B25'), 
+('Table', 'AVAILABLE', 'FIXED', '2A16'), 
+('Chair', 'AVAILABLE', 'FIXED', '2B25'), 
+('Chair', 'AVAILABLE', 'FIXED', '2A16'), 
+('Screen', 'AVAILABLE', 'FIXED', '2B25'), 
+('Screen', 'AVAILABLE', 'FIXED', '2A16'), 
+('Fan', 'AVAILABLE', 'FIXED', '2B25'), 
+('Fan', 'AVAILABLE', 'FIXED', '2A16');
 
--- Insert sample data for mobile equipment (each room gets 2 microphones, 2 keys, 2 remotes)
+-- Insert mobile equipment
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
--- Equipment for Room 2B25
+-- Room 2B25
 ('Microphone', 'AVAILABLE', 'MOBILE', '2B25'), 
 ('Microphone', 'AVAILABLE', 'MOBILE', '2B25'), 
 ('Key', 'AVAILABLE', 'MOBILE', '2B25'), 
@@ -222,13 +235,29 @@ INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES
 ('Projector Remote', 'AVAILABLE', 'MOBILE', '2B25'), 
 ('Projector Remote', 'AVAILABLE', 'MOBILE', '2B25'), 
 
--- Equipment for Room 2A16
+-- Room 2A16
 ('Microphone', 'AVAILABLE', 'MOBILE', '2A16'), 
 ('Microphone', 'AVAILABLE', 'MOBILE', '2A16'), 
 ('Key', 'AVAILABLE', 'MOBILE', '2A16'), 
 ('Key', 'AVAILABLE', 'MOBILE', '2A16'), 
 ('Projector Remote', 'AVAILABLE', 'MOBILE', '2A16'), 
 ('Projector Remote', 'AVAILABLE', 'MOBILE', '2A16');
+
+-- Insert shared equipment
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+('Microphone', 'AVAILABLE', 'SHARED', NULL), 
+('Key', 'AVAILABLE', 'SHARED', NULL);
+
+-- Insert special equipment in 2E21, 2E22
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+-- Room 2E21
+('IoT Toolkit', 'AVAILABLE', 'FIXED', '2E21'), 
+('Electronics Practice Kit', 'AVAILABLE', 'FIXED', '2E21'), 
+
+-- Room 2E22
+('IoT Toolkit', 'AVAILABLE', 'FIXED', '2E22'), 
+('Electronics Practice Kit', 'AVAILABLE', 'FIXED', '2E22');
+
 
 -- Chèn tài khoản cho sinh viên
 INSERT INTO account (password, role_id, is_active) VALUES 
