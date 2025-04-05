@@ -18,6 +18,28 @@
             </div>
         </div>
         <div class="flex-10 flex flex-col px-6 overflow-auto">
+                    <div class="flex-10 space-y-3 p-4 max-h-[600px]">
+                        {% for tickets in ticket %}
+                        <form method="post" action="{{ url_for('staff.repair_ticket') }}" 
+                         class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                            <a class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer" type="submit"
+                                href="{{ url_for('staff.repair_ticket', repair_ticket_id=tickets.id) }}">
+                                {{tickets.staff_id}} - {{tickets.start_date}}
+                            </a>
+                            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                            <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
+                            <div class="flex space-x-1">
+                                <button class="bg-blue-300 p-2 w-28 rounded-lg hover:bg-blue-200 cursor-pointer text-center flex items-center justify-center"
+                                type="submit"
+                                value="0"
+                                name="action"
+                                type="submit" value="0" name="action">Hoàn thành</button>
+                            </div>
+                        </form>
+                        {% endfor %}
+                    </div>   
+                </div>
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px]">
                 <div class="flex-10 flex flex-col px-6 overflow-auto">
                 </div>
@@ -30,15 +52,20 @@
                     <h2 class="font-bold text-3xl">Chi tiết phiếu sửa chữa</h2>
                 </div>
             </div>
-            
-            <div class="flex-10 flex flex-col px-6">
-                <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] bg-white rounded-lg shadow-lg relative">
-                   
-                    
-                </div>  
-               
-            </div>
-             
+            <form class="flex-10 flex flex-col px-6" method="post" action="/student/borrow">
+                <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
+                <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] ">
+                    <div class="space-y-3 ">
+                    {% for infor in infor_detail_ticket %}
+                        <div class="h-12 w-full bg-blue-500 rounded-md text-white shadow-2xs flex items-center justify-center p-2 hover:bg-blue-200">
+                            <label class="flex items-center ">
+                                {{infor.equipment_name}} - {{infor.room_id}}- {{infor.price}}$
+                            </label>
+                        </div>
+                    {% endfor %}
+                    </div>       
+                </div>
+            </form>       
     </div>
     <a href="{{ url_for('staff.add_items') }}" class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 fixed top-8 right-10 font-bold flex items-center justify-center">
                     Thêm

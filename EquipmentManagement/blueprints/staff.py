@@ -145,14 +145,20 @@ def bh_filter(request_id=None):
         
 
 
-@staff_blueprint.route('/staff/repair_ticket/<int:request_id>', methods=['GET'])
+@staff_blueprint.route('/staff/repair_ticket/<int:repair_ticket_id>', methods=['GET'])
 @staff_blueprint.route('/staff/repair_ticket', methods=['GET', 'POST'])
 @login_required
-def repair_ticket(request_id=None):
+def repair_ticket(repair_ticket_id=None):
     login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-    ticket = StaffService.get_detail_repair_ticket_by_id(1)
-    if ticket:
-        print(ticket)
-    else:
-        print("Không tìm thấy phiếu sửa chữa.")
-    return render_template('staff/repair_ticket.html',login_staff=login_staff)
+    if (request.method=="GET"):
+        if (repair_ticket_id==None):
+            ticket = StaffService.get_all_repair_ticket()
+            for t in ticket:
+                print(t)
+            return render_template('staff/repair_ticket.html',login_staff=login_staff,ticket=ticket)
+        ticket = StaffService.get_all_repair_ticket()
+        infor_detail_ticket=StaffService.get_infor_detail_ticket(repair_ticket_id)
+
+        return render_template('staff/repair_ticket.html',login_staff=login_staff,ticket=ticket,infor_detail_ticket=infor_detail_ticket)
+    
+    

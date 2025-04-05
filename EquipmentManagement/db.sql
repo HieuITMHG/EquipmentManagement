@@ -311,7 +311,7 @@ INSERT INTO detail_penalty_ticket (violation_id, penalty_ticket_id) VALUES
 
 -- Insert sample data for repair_ticket
 INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES 
-('2024-03-10 10:00:00', NULL, 'PENDING', 'STF2002');
+('2024-03-15 10:00:00', NULL, 'PENDING', 'STF2002'); 
 
 -- Insert sample data for detail_repair_ticket
 INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) VALUES 
@@ -417,6 +417,18 @@ FROM penalty_ticket pt
 JOIN detail_penalty_ticket dpt ON pt.id = dpt.penalty_ticket_id
 JOIN violation v ON dpt.violation_id = v.id
 JOIN penalty_form pf ON v.penalty_form_id = pf.id;
+
+CREATE VIEW RepairEquipmentDetails AS
+SELECT 
+    drt.repair_ticket_id,
+    drt.equipment_id,
+    e.equipment_name,
+    e.status AS equipment_status,
+    e.equipment_type,
+    e.room_id,
+    drt.price
+FROM detail_repair_ticket drt
+JOIN equipment e ON drt.equipment_id = e.id;
 
 /* PROCEDURE */
 

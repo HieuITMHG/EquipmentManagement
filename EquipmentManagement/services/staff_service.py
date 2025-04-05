@@ -78,3 +78,20 @@ class StaffService:
         finally:
             cursor.close()
             conn.close()
+    
+    @staticmethod
+    def get_infor_detail_ticket(ticket_id):
+        """Lấy thông tin chi tiết thiết bị của một phiếu sửa chữa theo repair_ticket_id"""
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            query = "SELECT * FROM RepairEquipmentDetails WHERE repair_ticket_id = %s"
+            cursor.execute(query, (ticket_id,))
+            result = cursor.fetchall()
+            return result if result else []
+        except Exception as e:
+            print(f"[get_infor_detail_ticket] Error: {e}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()
