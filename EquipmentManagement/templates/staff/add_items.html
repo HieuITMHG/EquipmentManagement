@@ -13,12 +13,20 @@
             <input class="input_field border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="equi_name" />
         </div>
         <div class="flex flex-col mt-4">
-            <label class="font-bold text-gray-700">Phòng:</label>
-            <select class="input_field border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="room">
+            <label for="room" class="font-bold">Phòng:</label>
+            <input
+                list="rooms"
+                name="room"
+                id="room"
+                class="input_field"
+                placeholder="--room--"
+            />
+            <datalist id="rooms">
                 {% for r in room %}
-                <option value="{{r.id}}">{{r.id}}</option>
+                    <option value="{{ r.id }}"></option>
                 {% endfor %}
-            </select>
+            </datalist>
+
         </div>
         <div class="flex flex-col mt-4">
             <label class="font-bold text-gray-700">Trạng thái:</label>

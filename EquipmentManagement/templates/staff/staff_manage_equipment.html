@@ -4,8 +4,25 @@
 <div class="flex flex-1 p-3">
     <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
         <div class=" flex-1 flex px-6 justify-between items-center">
-            <div class="h-full w-full border-b-2 border-gray-500 flex items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center justify-between">
                 <h2 class="font-bold text-3xl">Thiết bị hiện thời</h2>
+                <form action="/staff/staff_manage_equipment" method="get" class="flex items-center gap-4">      
+                    <input
+                        list="rooms"
+                        name="room"
+                        id="room"
+                        class="w-36 border-2 border-black rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value="{{ selected_value or '' }}"
+                        onchange="this.form.submit()"
+                        placeholder="--room--"
+                    />
+                    
+                    <datalist id="rooms">
+                        {% for room in lst_room %}
+                            <option value="{{ room.id }}"></option>
+                        {% endfor %}
+                    </datalist>
+                </form>
             </div>
         </div>
         <div class="flex-10 flex flex-col px-6 overflow-auto">
@@ -47,16 +64,22 @@
                             <input class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" value="{{equi.equipment_name}}" name="equi_name" />
                         </div>
                         <div class="flex flex-col">
-                            <label class="font-bold text-gray-700">Phòng:</label>
-                            <select class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="room">
-                                <!-- Hiển thị room_id của equi mặc định -->
-                                <option value="{{ equi.room_id }}" selected>{{ equi.room_id }}</option>
+                            <label for="room" class="font-bold">Phòng:</label>
+                
+                            <input
+                                list="rooms"
+                                name="room"
+                                id="room"
+                                class="input_field"
+                                value="{{ equi.room_id }}"
+                                placeholder="--room--"
+                            />
+                            <datalist id="rooms">
                                 {% for r in room %}
-                                    {% if r.id != equi.room_id %}
-                                        <option value="{{ r.id }}">{{ r.id }}</option>
-                                    {% endif %}
+                                    <option value="{{ r.id }}"></option>
                                 {% endfor %}
-                            </select>
+                            </datalist>
+
                         </div>
                         <div class="flex flex-col">
                             <label class="font-bold text-gray-700">Trạng thái:</label>

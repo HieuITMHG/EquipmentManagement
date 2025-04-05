@@ -49,18 +49,24 @@
             <div>
                 <h2 class="font-bold text-3xl">Mượn thiết bị</h2>
             </div>
-            <form action="/student" method="get">
-                <label class="font-bold" for="room">Phòng:</label>
-                <select class="w-28 border-2 border-black" onchange="this.form.submit()" name="room" id="room">
-                    <option value="">--room--</option>
+            <form action="/student" method="get" class="flex items-center gap-4">
+                <label for="room" class="font-bold">Phòng:</label>
+                
+                <input
+                    list="rooms"
+                    name="room"
+                    id="room"
+                    class="w-36 border-2 border-black rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value="{{ selected_value or '' }}"
+                    onchange="this.form.submit()"
+                    placeholder="--room--"
+                />
+                
+                <datalist id="rooms">
                     {% for room in lst_room %}
-                        {% if room.id == selected_value %}
-                            <option value="{{room.id}}" selected>{{room.id}}</option>
-                        {% else %}
-                            <option value="{{room.id}}">{{room.id}}</option>
-                        {% endif %}
+                        <option value="{{ room.id }}"></option>
                     {% endfor %}
-                </select>
+                </datalist>
             </form>
         </div>
         <!-- form các thiết bị có thể mượn -->
