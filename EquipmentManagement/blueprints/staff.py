@@ -37,34 +37,33 @@ def staff_borrow_request(request_id=None):
     return redirect("borrow_request")
 
 
-@staff_blueprint.route('/staff/staff_manage_equipment/<int:equipment_id>', methods=['GET'])
+@staff_blueprint.route('/staff/staff_manage_equipment/<int:equipment_id>/', methods=['GET'])
 @staff_blueprint.route('/staff/staff_manage_equipment', methods=['GET', 'POST'])
 @login_required
 def staff_manage_equipment(equipment_id=None):
     if request.method == "GET":
+        room_id = request.args.get("room", "")
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
         lst_equipment = StaffService.get_all_equipment()
         room=RoomService.get_all_room()
+        equipment = None
+        if equipment_id != None:
+            equipment = EquipmentService.get_equipment_by_id(equipment_id)
+        if room_id != "":
+            lst_equipment = EquipmentService.get_equipment_by_room(room_id)
 
-        if equipment_id==None:
-            return render_template('staff/staff_manage_equipment.html', login_staff = login_staff,
-                               lst_equipment=lst_equipment,equi=None)
-        equi=EquipmentService.get_equipment_by_id(equipment_id)
-        print(equi)
-        
         return render_template('staff/staff_manage_equipment.html', login_staff = login_staff,
                                 lst_equipment=lst_equipment,
-                                equi=equi,
+                                equi=equipment,
                                 room=room)
-    
-    
-    
+        
     new_name=request.form.get("equi_name")
     new_id=request.form.get("equi_id")
     new_room=request.form.get("room")
-    print(new_name) 
-    print(new_id)
-    print(new_room)
+    if RoomService.get_room_by_id(new_room) == None:
+        flash("Phòng không tồn tại", "danger")
+        return redirect("staff_manage_equipment")
+
     StaffService.change_equi_info(new_id,new_name,new_room)
     return redirect("staff_manage_equipment")
 
@@ -81,12 +80,10 @@ def add_items():
     
     equi_name = request.form.get('equi_name')  # Tên thiết bị
     room_id = request.form.get('room')  # ID phòng
-    equi_type = request.form.get('equi_t')  # Kiểu thiết bị (BỊ TRÙNG NAME -> CẦN SỬA)
-    equi_status = "AVAILABLE"  # Mặc định là AVAILABLE  
-    print(request.form.get('equi_t'))
-    print(equi_name)
-    print(room_id)
-    print(equi_status)
+    if RoomService.get_room_by_id(room_id) == None:
+        flash("Phòng không tồn tại", "danger")
+        return redirect("/staff/add_items")
+    equi_type = request.form.get('equi_t')  # Kiểu thiết bị (BỊ TRÙNG NAME -> CẦN SỬA)  
     if(equi_name):
         EquipmentService.add_equipment(equi_name, "AVAILABLE", equi_type, room_id)
     return redirect("staff_manage_equipment")
