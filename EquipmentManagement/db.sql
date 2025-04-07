@@ -317,6 +317,13 @@ INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES
 INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) VALUES 
 (1, 3, 100);
 
+INSERT INTO repair_ticket (start_date, end_date, status, staff_id) 
+VALUES ('2024-04-01 09:30:00', '2024-04-05 15:00:00', 'RETURNED', 'STF2001');
+
+-- Insert sample data for detail_repair_ticket (assumes this ticket has id = 2)
+INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) 
+VALUES (2, 5, 150);
+
 -- Insert sample data for disposal_form
 INSERT INTO liquidation_slip (liquidation_date, staff_id) VALUES 
 ('2024-03-15', 'STF2001');
@@ -429,6 +436,27 @@ SELECT
     drt.price
 FROM detail_repair_ticket drt
 JOIN equipment e ON drt.equipment_id = e.id;
+
+CREATE VIEW view_repair_ticket_detail AS
+SELECT
+    rt.id AS repair_ticket_id,
+    rt.start_date,
+    rt.end_date,
+    rt.status AS repair_status,
+    rt.staff_id,
+    drt.equipment_id,
+    e.equipment_name,
+    e.status AS equipment_status,
+    e.equipment_type,
+    drt.price,
+    e.room_id
+FROM
+    repair_ticket rt
+JOIN
+    detail_repair_ticket drt ON rt.id = drt.repair_ticket_id
+JOIN
+    equipment e ON drt.equipment_id = e.id;
+
 
 /* PROCEDURE */
 
@@ -583,6 +611,57 @@ BEGIN
     SELECT * FROM repair_ticket;
 END$$
 
+
+
+CREATE PROCEDURE update_ticket_status_returned(
+    IN p_ticket_id INT
+)
+BEGIN
+    UPDATE repair_ticket
+    SET status = 'RETURNED'
+    WHERE id = p_ticket_id;
+END $$
+
+CREATE PROCEDURE check_equipment_in_room(IN room_id char(10), IN equipment_id VARCHAR(50))
+BEGIN
+    SELECT * FROM equipment
+    WHERE id = equipment_id AND room_id = room_id;
+END$$
+
+CREATE PROCEDURE create_repair_ticket (
+    IN in_staff_id CHAR(10),
+    IN in_equipment_id VARCHAR(50),
+    IN in_price INT,
+    IN in_room_id CHAR(10)
+)
+BEGIN
+    DECLARE new_ticket_id INT;
+
+    -- 1. Kiểm tra thiết bị có đúng thuộc room không (tùy mục đích, có thể bỏ nếu không cần)
+    IF EXISTS (
+        SELECT 1 FROM equipment
+        WHERE id = in_equipment_id AND room_id = in_room_id
+    ) THEN
+        -- 2. Tạo một repair_ticket mới
+        INSERT INTO repair_ticket (staff_id, status)
+        VALUES (in_staff_id, 'PENDING');
+
+        -- 3. Lấy ID của ticket mới tạo
+        SET new_ticket_id = LAST_INSERT_ID();
+
+        -- 4. Thêm vào detail_repair_ticket
+        INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price)
+        VALUES (new_ticket_id, in_equipment_id, in_price);
+
+        -- 5. Cập nhật trạng thái thiết bị thành 'UNDERREPAIR'
+        UPDATE equipment
+        SET status = 'UNDERREPAIR'
+        WHERE id = in_equipment_id;
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Thiết bị không thuộc phòng đã chọn hoặc không tồn tại.';
+    END IF;
+END$$
 
 
 DELIMITER ; 

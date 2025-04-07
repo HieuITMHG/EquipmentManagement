@@ -88,3 +88,27 @@ class EquipmentService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def get_equipment_id_by_name_and_room(equipment_name, room_id):
+        """Tìm equipment.id bằng equipment_name và room_id"""
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Truy vấn tìm kiếm thiết bị theo tên và room_id
+            cursor.execute("""
+                SELECT id 
+                FROM equipment 
+                WHERE equipment_name LIKE %s AND room_id = %s
+            """, (f"%{equipment_name}%", room_id))  # Dùng LIKE để tìm kiếm gần đúng tên
+
+            # Đọc kết quả
+            result = cursor.fetchone()  # Trả về một kết quả nếu tìm thấy
+
+            return result['id'] if result else None  # Trả về id nếu tìm thấy, ngược lại trả về None
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()

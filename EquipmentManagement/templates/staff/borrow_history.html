@@ -31,9 +31,10 @@
                         href="{{ url_for('staff.borrow_history', request_id=request.borrow_request_id) }}">
                         {{request.student_id}} - {{request.borrowing_time}}
                     </a>
-                    {%if request.borrow_status == "ACCEPTED" %}
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value = "{{ request.borrow_request_id }}" /> 
+                    {%if request.borrow_status == "ACCEPTED" %}
+                    
                     <div class="flex space-x-1">
                         <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
                         type="submit" value="1" name="action">Duyệt Trả</button>

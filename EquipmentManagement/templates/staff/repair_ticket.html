@@ -27,7 +27,9 @@
                                 {{tickets.staff_id}} - {{tickets.start_date}}
                             </a>
                             <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
-                            <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
+                            <input type="hidden" name="repair_ticket_id" value = "{{ tickets.id }}" /> 
+                            {%if tickets.status == 'PENDING'%}
+                            
                             <div class="flex space-x-1">
                                 <button class="bg-blue-300 p-2 w-28 rounded-lg hover:bg-blue-200 cursor-pointer text-center flex items-center justify-center"
                                 type="submit"
@@ -35,6 +37,7 @@
                                 name="action"
                                 type="submit" value="0" name="action">Hoàn thành</button>
                             </div>
+                            {%endif%}
                         </form>
                         {% endfor %}
                     </div>   
@@ -67,7 +70,7 @@
                 </div>
             </form>       
     </div>
-    <a href="{{ url_for('staff.add_items') }}" class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 fixed top-8 right-10 font-bold flex items-center justify-center">
+    <a href="{{ url_for('staff.add_repair_ticket') }}" class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 fixed top-8 right-10 font-bold flex items-center justify-center">
                     Thêm
                 </a>
    

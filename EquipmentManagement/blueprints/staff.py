@@ -150,12 +150,39 @@ def repair_ticket(repair_ticket_id=None):
     if (request.method=="GET"):
         if (repair_ticket_id==None):
             ticket = StaffService.get_all_repair_ticket()
-            for t in ticket:
-                print(t)
             return render_template('staff/repair_ticket.html',login_staff=login_staff,ticket=ticket)
         ticket = StaffService.get_all_repair_ticket()
+        
         infor_detail_ticket=StaffService.get_infor_detail_ticket(repair_ticket_id)
-
         return render_template('staff/repair_ticket.html',login_staff=login_staff,ticket=ticket,infor_detail_ticket=infor_detail_ticket)
     
+    if(repair_ticket_id != None):
+        repair_ticket_id=int(request.form.get('repair_ticket_id'))
+    StaffService.update_ticket_status_returned(repair_ticket_id)
+    return redirect ('repair_ticket')
+    
+    
+@staff_blueprint.route('/staff/add_repair_ticket', methods=['GET', 'POST'])
+@login_required
+def add_repair_ticket():
+    equipment=StaffService.get_equipment_to_select()
+    login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
+    if request.method=='GET':
+        login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
+        room=RoomService.get_all_room() 
+        return render_template ('staff/add_repair_ticket.html',login_staff=login_staff,equipment=equipment,room=room)
+    selected_equipment = request.form.get('equi_name')
+
+    print(selected_equipment)
+    equips_room = request.form.get('room')
+    price=request.form.get('price')
+    psid=AccountService.get_account_personal_id_by_person_id(session.get('account_id'))
+    person_id = psid['person_id']
+    print(psid)
+    check_right_equi_in_room=StaffService.check_equipment_in_room(selected_equipment,equips_room)
+    check_id=EquipmentService.get_equipment_id_by_name_and_room(selected_equipment,equips_room)
+    print(check_id)
+    
+    #StaffService.create_repair_ticket(person_id, selected_equipment,price , equips_room)
+    return redirect('repair_ticket')
     

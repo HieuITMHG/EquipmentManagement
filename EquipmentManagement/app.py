@@ -14,7 +14,7 @@ from blueprints import general
 from blueprints import manager
 from blueprints import student
 from blueprints import staff
-
+    
 app.register_blueprint(general.general_blueprint)
 # app.register_blueprint(add_data.add_data_blueprint)
 app.register_blueprint(manager.manager_blueprint)
