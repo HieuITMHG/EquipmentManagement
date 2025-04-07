@@ -1,0 +1,59 @@
+{% extends "manager/manager_layout.html" %}
+
+{% block manager_content %}
+
+<div class="flex items-center min-h-screen w-full">
+    <form class="bg-gradient-to-r from-blue-500 to-blue-400 p-6 rounded-lg shadow-lg w-96 ml-auto mr-100" method="post" action="{{url_for('manager.add_items')}}">
+        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
+        <div class="flex flex-col relative ">
+            <p class="font-bold text-gray-700 text-center uppercase text-xl" >Phiếu thêm thiết bị</p>
+        </div>
+        <div class="flex flex-col relative mt-4">
+            <label class="font-bold text-gray-700">Tên thiết bị:</label>
+            <input class="input_field border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="equi_name" />
+        </div>
+        <div class="flex flex-col mt-4">
+            <label for="room" class="font-bold">Phòng:</label>
+            <input
+                list="rooms"
+                name="room"
+                id="room"
+                class="input_field"
+                placeholder="--room--"
+            />
+            <datalist id="rooms">
+                {% for r in room %}
+                    <option value="{{ r.id }}"></option>
+                {% endfor %}
+            </datalist>
+
+        </div>
+        <div class="flex flex-col mt-4">
+            <label class="font-bold text-gray-700">Trạng thái:</label>
+            <p class="text-black">AVAILABLE</p>
+        </div>
+        <div class="flex flex-col mt-4">
+            <label class="font-bold text-gray-700">Kiểu thiết bị:</label>
+            <select class="input_field border border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" name="equi_t">
+                {% for equi_t in equi_type %}
+                <option value="{{ equi_t }}">{{equi_t}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex flex-col mt-4 items-start">
+            <button type="submit" 
+                class="bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 transition duration-300">
+                Xác nhận
+            </button>
+        </div>
+    </form>
+    <div class="flex flex-col mt-4  ">
+        <a href="{{ url_for('manager.manager_manage_equipment') }}">
+        <button type="submit" 
+            class="absolute bottom-43 right-105 bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 transition duration-300">
+            Hủy
+        </button>
+        </a>
+    </div>
+</div>
+{% endblock %}

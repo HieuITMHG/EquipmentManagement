@@ -1,0 +1,74 @@
+{% extends "manager/manager_layout.html" %}
+
+{% block manager_content %}
+<div class="flex flex-1 p-3">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <!-- Header -->
+        <div class="flex-1 flex px-6 justify-between items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center">
+                <h2 class="font-bold text-3xl">Phiếu thanh lý</h2>
+                <div class="ml-auto">
+                    <form action="{{ url_for('manager.liquidation_slip') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <label for="liquidation_date" class="font-bold">Ngày thanh lý:</label>
+                        <input type="date" onchange="this.form.submit()" name="liquidation_date" id="liquidation_date" 
+                            class="border-2 border-black rounded-lg p-2 focus:border-green-500 focus:ring-2
+                                   focus:ring-green-300 transition duration-200" />
+                    </form>
+                </div>
+            </div> 
+        </div>
+
+        <!-- Danh sách phiếu -->
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <div class="space-y-3 p-4 max-h-[600px]">
+                {% for slip in liquidation_slips %}
+                <div class="border rounded-lg p-4 shadow-md bg-gray-100">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="font-semibold">Mã phiếu: {{ slip.id }}</p>
+                            <p>Ngày thanh lý: {{ slip.liquidation_date.strftime('%d/%m/%Y %H:%M') }}</p>
+                            <p>Nhân viên: {{ slip.staff_id }}</p>
+                        </div>
+                        <a href="{{ url_for('manager.liquidation_slip_detail', id=slip.id) }}" 
+                           class="text-blue-600 hover:underline font-medium self-center">Xem chi tiết</a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-500">Không có phiếu nào.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Chi tiết -->
+    <div class="flex-1 flex flex-col bg-white rounded-md ml-3">
+        <div class="flex-1 flex px-6 justify-between items-center">
+            <div>
+                <h2 class="font-bold text-3xl">Chi tiết phiếu thanh lý</h2>
+            </div>
+        </div>
+
+        <div class="flex-10 flex flex-col px-6">
+            <div class="border-t-2 border-gray-500 p-4 overflow-auto max-h-[600px] bg-white rounded-lg shadow-lg relative">
+                {% if selected_slip %}
+                    <p class="font-semibold mb-2">Mã phiếu: {{ selected_slip.id }}</p>
+                    <ul class="list-disc pl-6 space-y-1">
+                        {% for item in selected_slip.equipments %}
+                        <li>{{ item.name }} (Mã: {{ item.id }})</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500">Chọn một phiếu để xem chi tiết.</p>
+                {% endif %}
+            </div>  
+        </div>
+    </div>
+
+    <!-- Nút Thêm -->
+    <a href="{{ url_for('manager.add_liquidation_slip') }}" 
+       class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 fixed top-8 right-10 font-bold flex items-center justify-center">
+        Thêm
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "manager/manager_layout.html" %}
+
+{% block manager_content %}
+<div class="flex flex-1 p-3">
+    <!-- Danh sách phiếu xử phạt -->
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <!-- Header -->
+        <div class="flex-1 flex px-6 justify-between items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center">
+                <h2 class="font-bold text-3xl">Phiếu xử phạt</h2>
+                <div class="ml-auto">
+                    <form action="{{ url_for('manager.penalty_ticket') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <label for="create_time" class="font-bold">Ngày lập:</label>
+                        <input type="date" onchange="this.form.submit()" name="create_time" id="create_time"
+                            class="border-2 border-black rounded-lg p-2 focus:border-red-500 focus:ring-2
+                                   focus:ring-red-300 transition duration-200" />
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách phiếu -->
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <div class="space-y-3 p-4 max-h-[600px]">
+                {% for ticket in penalty_tickets %}
+                <div class="border rounded-lg p-4 shadow-md bg-red-50">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="font-semibold">Mã phiếu: {{ ticket.id }}</p>
+                            <p>Ngày lập: {{ ticket.create_time.strftime('%d/%m/%Y %H:%M') }}</p>
+                            <p>Nhân viên lập: {{ ticket.staff_id }}</p>
+                            <p>Học viên: {{ ticket.student_id }}</p>
+                            <p>Trạng thái: 
+                                <span class="font-semibold text-white px-2 py-1 rounded 
+                                    {% if ticket.status == 'PENDING' %} bg-yellow-500 
+                                    {% elif ticket.status == 'ACCEPTED' %} bg-green-500 
+                                    {% elif ticket.status == 'REJECTED' %} bg-red-500 
+                                    {% elif ticket.status == 'RETURNED' %} bg-blue-500 
+                                    {% endif %}">
+                                    {{ ticket.status }}
+                                </span>
+                            </p>
+                        </div>
+                        <a href="{{ url_for('manager.penalty_ticket_detail', id=ticket.id) }}" 
+                           class="text-blue-600 hover:underline font-medium self-center">Xem chi tiết</a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-500">Không có phiếu xử phạt nào.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Chi tiết phiếu xử phạt -->
+    <div class="flex-1 flex flex-col bg-white rounded-md ml-3">
+        <div class="flex-1 flex px-6 justify-between items-center">
+            <div>
+                <h2 class="font-bold text-3xl">Chi tiết phiếu xử phạt</h2>
+            </div>
+        </div>
+
+        <div class="flex-10 flex flex-col px-6">
+            <div class="border-t-2 border-gray-500 p-4 overflow-auto max-h-[600px] bg-white rounded-lg shadow-lg relative">
+                {% if selected_ticket %}
+                    <p class="font-semibold mb-2">Mã phiếu: {{ selected_ticket.id }}</p>
+                    <p>Ngày lập: {{ selected_ticket.create_time.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p>Nhân viên lập: {{ selected_ticket.staff_id }}</p>
+                    <p>Học viên bị xử phạt: {{ selected_ticket.student_id }}</p>
+                    <p>Trạng thái hiện tại: 
+                        <span class="font-semibold text-white px-2 py-1 rounded 
+                            {% if selected_ticket.status == 'PENDING' %} bg-yellow-500 
+                            {% elif selected_ticket.status == 'ACCEPTED' %} bg-green-500 
+                            {% elif selected_ticket.status == 'REJECTED' %} bg-red-500 
+                            {% elif selected_ticket.status == 'RETURNED' %} bg-blue-500 
+                            {% endif %}">
+                            {{ selected_ticket.status }}
+                        </span>
+                    </p>
+                {% else %}
+                    <p class="text-gray-500">Chọn một phiếu để xem chi tiết.</p>
+                {% endif %}
+            </div>  
+        </div>
+    </div>
+
+    <!-- Nút Thêm -->
+    <a href="{{ url_for('manager.add_penalty_ticket') }}" 
+       class="bg-red-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-red-600 fixed top-8 right-10 font-bold flex items-center justify-center">
+        Thêm
+    </a>
+</div>
+{% endblock %}

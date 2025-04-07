@@ -1,0 +1,31 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Manager
+{% endblock %}
+
+{% block content %}
+    <div class="fixed h-screen w-screen flex bg-[rgba(204,_204,_204,_0.5)]">
+        <ul class="space-y-4 h-screen bg-white ml-5 p-4">
+            <li class="nav_item {% if request.path == '/staff/staff_manage_equipment' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/key_icon_2.svg') }}" class="w-6"/>
+                <a href="{{ url_for('manager.manager_manage_equipment') }}">Thiết bị</a>
+            </li>
+            <li class="nav_item">
+                <img src="{{ url_for('static', filename='icon/tools.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.repair_ticket') }}">Phiếu sửa chữa</a>
+            </li>
+            <li class="nav_item">
+                <img src="{{ url_for('static', filename='icon/trash-can.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.liquidation_slip') }}">Phiếu thanh lý</a>
+            </li>
+            <li class="nav_item">
+                <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.penalty_ticket') }}">Phiếu phạt</a>
+            </li>
+        </ul>
+        
+        {% block manager_content %}
+        {% endblock %}
+    </div>
+{% endblock %}

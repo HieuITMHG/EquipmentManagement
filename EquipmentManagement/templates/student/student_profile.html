@@ -1,0 +1,36 @@
+{% extends "student/student_layout.html" %}
+
+{% block student_content %}
+<div class="flex flex-1 p-5 justify-center">
+    <div class="h-full w-[350px] md:w-[500px] bg-white rounded-md shadow-lg flex flex-col items-center">
+        <div class="w-[60%] h-auto p-4 border-b-2 border-gray-300 flex flex-col justify-center items-center">
+            <img src="{{ url_for('static', filename='avatar/avt_man.png') }}" alt="avatar" class="w-full rounded-full mb-4">
+            <div class="font-bold text-lg text-gray-800">
+                {{student.last_name}} {{student.first_name}} - {{student.student_id}}
+            </div>
+        </div>
+        <div class="w-full p-4">
+            <div class="mb-3">
+                <label class="font-semibold">Lớp:</label>
+                <p class="text-gray-700">{{student.class_id}}</p>
+            </div>
+            <div class="mb-3">
+                <label class="font-semibold">CCCD:</label>
+                <p class="text-gray-700">{{student.cccd}}</p>
+            </div>
+            <div class="mb-3">
+                <label class="font-semibold">Email:</label>
+                <p class="text-gray-700">{{student.email}}</p>
+            </div>
+            <div class="mb-3">
+                <label class="font-semibold">Số điện thoại:</label>
+                <p class="text-gray-700">{{student.phone}}</p>
+            </div>
+            <div class="mb-3">
+                <label class="font-semibold">Địa chỉ:</label>
+                <p class="text-gray-700">{{student.address}}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

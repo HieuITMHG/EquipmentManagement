@@ -1,0 +1,48 @@
+{% extends "student/student_layout.html" %}
+
+{% block student_content %}
+<div class="flex flex-1 p-3">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <div class=" flex-1 flex px-6 justify-between items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center justify-between">
+                <h2 class="font-bold text-3xl">Lịch sử mượn</h2>
+                <div class="">
+                    <form action="/student/borrow_history" method="post">
+                        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                        <label for="borrowing_time" class="font-bold">Ngày mượn:</label>
+                        <input type="date" onchange="this.form.submit()" name="borrowing_time" id="borrowing_time" 
+                                class="border-2 border-black rounded-lg p-2 focus:border-green-500 focus:ring-2
+                                 focus:ring-green-300 transition duration-200" />
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <table class="min-w-full bg-white border border-gray-300">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">Tên thiết bị</th>
+                        <th class="py-3 px-6 text-left">Mã sinh viên</th>
+                        <th class="py-3 px-6 text-left">Thời gian mượn</th>
+                        <th class="py-3 px-6 text-left">Thời gian trả dự kiến</th>
+                        <th class="py-3 px-6 text-left">Thời gian trả</th>
+                        <th class="py-3 px-6 text-left">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light">
+                    {% for b in lst_borrow %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-3 px-6">{{b.equipment_name}}</td>
+                        <td class="py-3 px-6">{{b.student_id}}</td>
+                        <td class="py-3 px-6">{{b.borrowing_time}}</td>
+                        <td class="py-3 px-6">{{b.expect_returning_time}}</td>
+                        <td class="py-3 px-6">{{b.actual_returning_time}}</td>
+                        <td class="py-3 px-6">{{b.borrow_status}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

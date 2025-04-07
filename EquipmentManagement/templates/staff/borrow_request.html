@@ -1,0 +1,56 @@
+{% extends "staff/staff_layout.html" %}
+
+{% block staff_content %}
+<div class="flex flex-1 p-3">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <div class=" flex-1 flex px-6 justify-between items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center">
+                <h2 class="font-bold text-3xl">Yêu cầu mượn</h2>
+            </div>
+        </div>
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px]">
+                {% for request in lst_request %}
+                <form method="post" action="{{ url_for('staff.staff_borrow_request') }}" 
+                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                    <a class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer" type="submit"
+                        href="{{ url_for('staff.staff_borrow_request', request_id=request.id) }}">
+                        {{request.student_id}} - {{request.borrowing_time}}
+                    </a>
+                    <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                    <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
+                    <div class="flex space-x-1">
+                        <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
+                        type="submit" value="0" name="action">Duyệt</button>
+                        <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
+                        type="submit" value="1" name="action">Từ chối</button>
+                    </div>
+                </form>
+                {% endfor %}
+            </div>   
+        </div>
+    </div>
+    <div class="flex-1 flex flex-col bg-white rounded-md">
+        <div class=" flex-1 flex px-6 justify-between items-center">
+            <div>
+                <h2 class="font-bold text-3xl">Chi tiết yêu cầu mượn</h2>
+            </div>
+        </div>
+        <!-- form các thiết bị có thể mượn -->
+        <form class="flex-10 flex flex-col px-6" method="post" action="/student/borrow">
+            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
+            <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] ">
+                <div class="space-y-3 ">
+                {% for equipment in lst_borrow_equipment %}
+                    <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
+                        <label class="flex items-center cursor-pointer">
+                            {{equipment.equipment_name}} - {{equipment.room_id}}
+                        </label>
+                    </div>
+                {% endfor %}
+                </div>       
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
