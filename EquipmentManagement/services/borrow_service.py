@@ -3,12 +3,12 @@ from models.database import get_connection  # Đảm bảo bạn có hàm này �
 
 class BorrowService:
     @staticmethod
-    def create_borrow_request(student_id, equipment_ids, expect_returning_time):
+    def create_borrow_request(student_id, equipment_ids, expect_returning_time, room_id):
         conn = get_connection()
         cursor = conn.cursor()
         try:
             # Gọi stored procedure
-            cursor.callproc('CreateBorrowRequestWithItems', (student_id, equipment_ids, expect_returning_time))
+            cursor.callproc('CreateBorrowRequestWithItems', (student_id, equipment_ids, expect_returning_time, room_id))
             
             # Lấy ID của borrow_request mới tạo
             cursor.execute("SELECT LAST_INSERT_ID()")
@@ -63,6 +63,47 @@ class BorrowService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def get_existing_borrow_request(student_id):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            query = """
+            SELECT * FROM borrow_request
+            WHERE student_id = %s AND status = 'PENDING'
+            """
+            # Bọc student_id trong tuple bằng cách thêm dấu phẩy
+            cursor.execute(query, (student_id,))
+            lst_borrow = cursor.fetchall()
+            return lst_borrow
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def update_borrow_request(equipment_ids, borrow_request_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            # Convert equipment_ids list to comma-separated string if it's a list
+            if isinstance(equipment_ids, list):
+                equipment_ids = ','.join(map(str, equipment_ids))
+                
+            # Call the stored procedure
+            cursor.callproc('AddEquipmentsToBorrowRequest', [borrow_request_id, equipment_ids])
+            
+            # Commit the changes
+            conn.commit()
+            return True
+        except mysql.connector.Error as err:
+            print(f"❌ Lỗi MySQL: {err}")
+            conn.rollback()  # Rollback in case of error
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
 
     @staticmethod
     def get_equipment_by_request_id(request_id):

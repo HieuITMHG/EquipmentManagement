@@ -23,21 +23,21 @@
                 <img src="{{ url_for('static', filename='icon/borrow-icon.png') }}" class="w-6"/>
                 <a href="{{ url_for('staff.staff_borrow_request') }}">Yêu cầu mượn</a>
             </li>
-            <li class="nav_item">
+            <li class="nav_item {% if request.path == '/staff/borrow_history' %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/history.png') }}" class="w-6"/>
                 <a href="{{ url_for('staff.borrow_history') }}">Lịch sử mượn</a>
             </li>
-            <li class="nav_item">
+            <li class="nav_item {% if request.path == '/staff/repair_ticket' %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/tools.png') }}" class="w-6"/>
                 <a href="{{ url_for('staff.repair_ticket') }}">Phiếu sửa chữa</a>
             </li>
-            <li class="nav_item">
+            <li class="nav_item {% if request.path == '/staff/liquidation_slip' %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/trash-can.png') }}" class="w-6"/>
-                <a href="#">Phiếu thanh lý</a>
+                <a href="{{ url_for('staff.liquidation_slip') }}">Phiếu thanh lý</a>
             </li>
-            <li class="nav_item">
+            <li class="nav_item {% if request.path == '/staff/penalty_ticket' %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
-                <a href="#">Phiếu phạt</a>
+                <a href="{{ url_for('staff.penalty_ticket') }}">Phiếu phạt</a>
             </li>
             <li class="nav_item">
                 <img src="{{ url_for('static', filename='icon/logout.svg') }}" class="w-6"/>

@@ -91,6 +91,7 @@ CREATE TABLE borrow_request (
     student_id CHAR(10) NOT NULL,
     staff_id CHAR(10),
     status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL DEFAULT 'PENDING',
+    room_id CHAR(5) NOT NULL,
     borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expect_returning_time DATETIME NOT NULL,
     FOREIGN KEY (student_id) REFERENCES student(id),
@@ -117,7 +118,7 @@ CREATE TABLE penalty_ticket (
     staff_id CHAR(10) NOT NULL,
     student_id CHAR(10) NOT NULL,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id),
     FOREIGN KEY (student_id) REFERENCES student(id)
 );
@@ -134,14 +135,14 @@ CREATE TABLE detail_penalty_ticket (
     penalty_ticket_id INTEGER NOT NULL,
     PRIMARY KEY (violation_id, penalty_ticket_id),
     FOREIGN KEY (violation_id) REFERENCES violation(id),
-    FOREIGN KEY (penalty_ticket_id) REFERENCES penalty_ticket(id)
+    FOREIGN KEY (penalty_ticket_id) REFERENCES penalty_ticket(id) ON DELETE CASCADE
 );
 
 CREATE TABLE repair_ticket (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     start_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_date DATETIME,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
@@ -151,13 +152,14 @@ CREATE TABLE detail_repair_ticket (
     equipment_id INTEGER NOT NULL,
     price INTEGER,
     PRIMARY KEY (repair_ticket_id, equipment_id),
-    FOREIGN KEY (repair_ticket_id) REFERENCES repair_ticket(id),
+    FOREIGN KEY (repair_ticket_id) REFERENCES repair_ticket(id) ON DELETE CASCADE,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
 );
 
 CREATE TABLE liquidation_slip (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     liquidation_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED') NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
@@ -166,7 +168,7 @@ CREATE TABLE detail_liquidation_slip (
     liquidation_slip_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
     PRIMARY KEY (liquidation_slip_id, equipment_id),
-    FOREIGN KEY (liquidation_slip_id) REFERENCES liquidation_slip(id),
+    FOREIGN KEY (liquidation_slip_id) REFERENCES liquidation_slip(id) ON DELETE CASCADE,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
 );
 
@@ -212,14 +214,14 @@ INSERT INTO room (id, floor_number, section, max_people) VALUES
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
 ('Speaker', 'AVAILABLE', 'FIXED', '2B25'), 
 ('Speaker', 'AVAILABLE', 'FIXED', '2A16'), 
-('Projector', 'AVAILABLE', 'FIXED', '2B25'), 
+('Projector', 'BROKEN', 'FIXED', '2B25'), 
 ('Projector', 'AVAILABLE', 'FIXED', '2A16'), 
 ('Blackboard', 'AVAILABLE', 'FIXED', '2B25'), 
 ('Blackboard', 'AVAILABLE', 'FIXED', '2A16'), 
-('Table', 'AVAILABLE', 'FIXED', '2B25'), 
+('Table', 'UNDERREPAIR', 'FIXED', '2B25'), 
 ('Table', 'AVAILABLE', 'FIXED', '2A16'), 
 ('Chair', 'AVAILABLE', 'FIXED', '2B25'), 
-('Chair', 'AVAILABLE', 'FIXED', '2A16'), 
+('Chair', 'BROKEN', 'FIXED', '2A16'), 
 ('Screen', 'AVAILABLE', 'FIXED', '2B25'), 
 ('Screen', 'AVAILABLE', 'FIXED', '2A16'), 
 ('Fan', 'AVAILABLE', 'FIXED', '2B25'), 
@@ -232,7 +234,7 @@ INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES
 ('Microphone', 'AVAILABLE', 'MOBILE', '2B25'), 
 ('Key', 'AVAILABLE', 'MOBILE', '2B25'), 
 ('Key', 'AVAILABLE', 'MOBILE', '2B25'), 
-('Projector Remote', 'AVAILABLE', 'MOBILE', '2B25'), 
+('Projector Remote', 'BROKEN', 'MOBILE', '2B25'), 
 ('Projector Remote', 'AVAILABLE', 'MOBILE', '2B25'), 
 
 -- Room 2A16
@@ -297,7 +299,7 @@ INSERT INTO penalty_form (form_name, price) VALUES
 
 -- Insert sample data for penalty_ticket
 INSERT INTO penalty_ticket (staff_id, student_id, create_time, status) VALUES 
-('STF2001', 'N22DCCN127', '2024-03-11 12:00:00', 'PENDING');
+('STF2001', 'N22DCCN127', '2024-03-11 12:00:00', 'ACCEPTED');
 
 -- Insert sample data for violation
 INSERT INTO violation (violation_content, penalty_form_id) VALUES 
@@ -317,34 +319,26 @@ INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES
 INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) VALUES 
 (1, 3, 100);
 
-INSERT INTO repair_ticket (start_date, end_date, status, staff_id) 
-VALUES ('2024-04-01 09:30:00', '2024-04-05 15:00:00', 'RETURNED', 'STF2001');
+INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES 
+('2024-04-01 09:30:00', '2024-04-05 15:00:00', 'COMPLETED', 'STF2001'),
+('2025-05-01 09:45:00', '2025-05-02 15:00:00', 'ACCEPTED', 'STF2001');
 
 -- Insert sample data for detail_repair_ticket (assumes this ticket has id = 2)
-INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) 
-VALUES (2, 5, 150);
+INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) VALUES 
+(2, 5, 150),
+(3, 7, 898831);
 
 -- Insert sample data for disposal_form
-INSERT INTO liquidation_slip (liquidation_date, staff_id) VALUES 
-('2024-03-15', 'STF2001');
+INSERT INTO liquidation_slip (liquidation_date, staff_id, status) VALUES 
+('2024-03-15', 'STF2001', 'ACCEPTED'),
+('2024-4-5', 'STF2001', 'ACCEPTED');
+
 
 -- Insert sample data for detail_disposal_form
 INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id) VALUES 
-(1, 5);
+(1, 5),
+(2, 6);
 
-
-
-
-INSERT INTO borrow_request (id, student_id, staff_id, status, borrowing_time, expect_returning_time) VALUES
-(1, 'N22DCCN127', 'STF2001', 'ACCEPTED', '2024-04-01 6:30:00', '2024-04-07 10:40:00'),
-(2, 'N22DCCN078', 'STF2001', 'RETURNED', '2024-03-25 07:00:00', '2024-03-30 10:40:00');
-
-INSERT INTO borrow_item (borrow_request_id, equipment_id, actual_returning_time) VALUES
-(1, 5, NULL), -- Mượn Microphone cho yêu cầu 1
-(1, 6, NULL), -- Mượn Microphone khác cho yêu cầu 1
-(1, 7, NULL),
-(2, 11, '2024-03-30 10:30:00'), -- Trả Key cho yêu cầu 2
-(2, 13, '2024-03-30 10:30:00'); -- Trả Key khác cho yêu cầu 2
 
 /* VIEWS */
 CREATE VIEW StudentInfo AS  
@@ -425,37 +419,51 @@ JOIN detail_penalty_ticket dpt ON pt.id = dpt.penalty_ticket_id
 JOIN violation v ON dpt.violation_id = v.id
 JOIN penalty_form pf ON v.penalty_form_id = pf.id;
 
-CREATE VIEW RepairEquipmentDetails AS
+CREATE VIEW v_liquidation_full_details AS
 SELECT 
-    drt.repair_ticket_id,
-    drt.equipment_id,
+    ls.id AS liquidation_id,
+    ls.liquidation_date,
+    ls.status AS liquidation_status,
+    ls.staff_id,
+    dls.equipment_id,
     e.equipment_name,
     e.status AS equipment_status,
     e.equipment_type,
-    e.room_id,
-    drt.price
-FROM detail_repair_ticket drt
-JOIN equipment e ON drt.equipment_id = e.id;
+    e.room_id
+FROM 
+    liquidation_slip ls
+INNER JOIN 
+    detail_liquidation_slip dls
+ON 
+    ls.id = dls.liquidation_slip_id
+INNER JOIN 
+    equipment e
+ON 
+    dls.equipment_id = e.id;
 
-CREATE VIEW view_repair_ticket_detail AS
-SELECT
+CREATE VIEW v_repair_ticket_details AS
+SELECT 
     rt.id AS repair_ticket_id,
     rt.start_date,
     rt.end_date,
-    rt.status AS repair_status,
+    rt.status AS repair_ticket_status,
     rt.staff_id,
     drt.equipment_id,
+    drt.price AS repair_price,
     e.equipment_name,
     e.status AS equipment_status,
     e.equipment_type,
-    drt.price,
     e.room_id
-FROM
+FROM 
     repair_ticket rt
-JOIN
-    detail_repair_ticket drt ON rt.id = drt.repair_ticket_id
-JOIN
-    equipment e ON drt.equipment_id = e.id;
+INNER JOIN 
+    detail_repair_ticket drt
+ON 
+    rt.id = drt.repair_ticket_id
+INNER JOIN 
+    equipment e
+ON 
+    drt.equipment_id = e.id;
 
 
 /* PROCEDURE */
@@ -465,7 +473,8 @@ DELIMITER $$
 CREATE PROCEDURE CreateBorrowRequestWithItems(
     IN p_student_id VARCHAR(20),
     IN p_equipment_ids TEXT,  -- Danh sách các equipment_id, phân tách bằng dấu phẩy
-    IN p_expect_returning_time DATETIME
+    IN p_expect_returning_time DATETIME,
+    IN p_room_id CHAR(5)
 )
 BEGIN  
     DECLARE v_borrow_request_id INTEGER;
@@ -475,7 +484,7 @@ BEGIN
     DECLARE v_equipment_len INT;
     
     -- 1. Tạo borrow_request
-    INSERT INTO borrow_request (student_id, expect_returning_time) VALUES (p_student_id, p_expect_returning_time);
+    INSERT INTO borrow_request (student_id, expect_returning_time, room_id) VALUES (p_student_id, p_expect_returning_time, p_room_id);
     SET v_borrow_request_id = LAST_INSERT_ID();
 
     -- 2. Duyệt từng equipment_id trong p_equipment_ids
@@ -498,19 +507,57 @@ BEGIN
         -- Chèn vào borrow_item
         INSERT INTO borrow_item (borrow_request_id, equipment_id)
         VALUES (v_borrow_request_id, v_equipment_id);
+
+        -- Cập nhật trạng thái của thiết bị thành 'PENDING'
+        UPDATE equipment
+        SET status = 'BORROWED'
+        WHERE id = v_equipment_id;
     END WHILE;
-END $$  
+END $$ 
+
+CREATE PROCEDURE AddEquipmentsToBorrowRequest(
+    IN p_borrow_request_id INTEGER,
+    IN p_equipment_ids TEXT  -- Danh sách các equipment_id, phân tách bằng dấu phẩy
+)
+BEGIN
+    DECLARE v_equipment_id INTEGER;
+    DECLARE v_equipment_list TEXT;
+    DECLARE v_equipment_pos INT;
+
+    -- Khởi tạo danh sách thiết bị
+    SET v_equipment_list = p_equipment_ids;
+
+    -- Duyệt qua từng equipment_id trong danh sách
+    WHILE LENGTH(v_equipment_list) > 0 DO
+        -- Tìm vị trí dấu phẩy
+        SET v_equipment_pos = LOCATE(',', v_equipment_list);
+        
+        IF v_equipment_pos = 0 THEN
+            -- Nếu không còn dấu phẩy, lấy giá trị cuối cùng
+            SET v_equipment_id = CAST(v_equipment_list AS UNSIGNED);
+            SET v_equipment_list = '';
+        ELSE
+            -- Cắt lấy phần tử đầu tiên
+            SET v_equipment_id = CAST(LEFT(v_equipment_list, v_equipment_pos - 1) AS UNSIGNED);
+            SET v_equipment_list = SUBSTRING(v_equipment_list, v_equipment_pos + 1);
+        END IF;
+
+        -- Thêm thiết bị vào borrow_item
+        INSERT INTO borrow_item (borrow_request_id, equipment_id)
+        VALUES (p_borrow_request_id, v_equipment_id);
+
+        -- Cập nhật trạng thái của thiết bị thành 'PENDING'
+        UPDATE equipment 
+        SET status = 'PENDING'
+        WHERE id = v_equipment_id;
+    END WHILE;
+END $$
     
 CREATE PROCEDURE accept_borrow_request(
     IN request_id INT,
     IN staff_id CHAR(10)
 )
 BEGIN
-    -- Cập nhật trạng thái của thiết bị thành 'BORROWED'
-    UPDATE equipment e
-    JOIN borrow_item bi ON e.id = bi.equipment_id
-    SET e.status = 'BORROWED'
-    WHERE bi.borrow_request_id = request_id;
 
     -- Cập nhật trạng thái của yêu cầu mượn thành 'ACCEPTED'
     UPDATE borrow_request br
@@ -524,6 +571,12 @@ CREATE PROCEDURE reject_borrow_request(
     IN staff_id CHAR(10)
 )
 BEGIN
+    -- Cập nhật trạng thái của thiết bị thành 'BORROWED'
+    UPDATE equipment e
+    JOIN borrow_item bi ON e.id = bi.equipment_id
+    SET e.status = 'AVAILABLE'
+    WHERE bi.borrow_request_id = request_id;
+
     -- Cập nhật trạng thái của yêu cầu mượn thành 'REJECTED' và cập nhật staff_id
     UPDATE borrow_request br
     SET br.status = 'REJECTED', br.staff_id = staff_id
@@ -611,8 +664,6 @@ BEGIN
     SELECT * FROM repair_ticket;
 END$$
 
-
-
 CREATE PROCEDURE update_ticket_status_returned(
     IN p_ticket_id INT
 )
@@ -664,7 +715,166 @@ BEGIN
 END$$
 
 
+CREATE PROCEDURE CreateLiquidationSlip(
+    IN p_staff_id CHAR(10),
+    IN p_equipment_ids TEXT,  -- Danh sách các equipment_id, phân tách bằng dấu phẩy
+    IN p_role VARCHAR(10)     -- Tham số mới: 'staff' hoặc 'manager'
+)
+BEGIN  
+    DECLARE v_liquidation_slip_id INTEGER;
+    DECLARE v_equipment_id INTEGER;
+    DECLARE v_pos INT;
+    DECLARE v_status ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED');
+
+    -- Xác định status dựa trên p_role
+    SET v_status = CASE 
+        WHEN p_role = 'staff' THEN 'PENDING'
+        WHEN p_role = 'manager' THEN 'ACCEPTED'
+        ELSE 'PENDING'  -- Giá trị mặc định nếu p_role không hợp lệ
+    END;
+
+    -- Tạo liquidation_slip với status
+    INSERT INTO liquidation_slip (staff_id, status) 
+    VALUES (p_staff_id, v_status);
+    SET v_liquidation_slip_id = LAST_INSERT_ID();
+
+    -- Xử lý danh sách equipment_ids
+    WHILE LENGTH(p_equipment_ids) > 0 DO
+        SET v_pos = LOCATE(',', p_equipment_ids);
+        
+        IF v_pos = 0 THEN
+            SET v_equipment_id = CAST(p_equipment_ids AS UNSIGNED);
+            SET p_equipment_ids = '';
+        ELSE
+            SET v_equipment_id = CAST(LEFT(p_equipment_ids, v_pos - 1) AS UNSIGNED);
+            SET p_equipment_ids = SUBSTRING(p_equipment_ids, v_pos + 1);
+        END IF;
+        
+        -- Chèn vào detail_liquidation_slip
+        INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id)
+        VALUES (v_liquidation_slip_id, v_equipment_id);
+
+        UPDATE equipment
+        SET status = 'LIQUIDATED'
+        WHERE id = v_equipment_id;
+    END WHILE;
+END $$
+
+CREATE PROCEDURE CreatePenaltyTicket(
+    IN in_student_id CHAR(10),
+    IN in_staff_id CHAR(10),
+    IN in_violation_ids TEXT,
+    IN p_role VARCHAR(20)
+)
+BEGIN
+    DECLARE new_ticket_id INT;
+    DECLARE current_violation_id INT;
+    DECLARE ticket_status VARCHAR(20);
+
+    -- Tắt yêu cầu khóa chính trong phiên làm việc
+    SET SESSION sql_require_primary_key = 0;
+
+    -- Xác định status dựa vào role
+    IF p_role = 'manager' THEN
+        SET ticket_status = 'ACCEPTED';
+    ELSE
+        SET ticket_status = 'PENDING';
+    END IF;
+
+    -- Xoá bảng tạm nếu đã tồn tại, rồi tạo mới
+    DROP TEMPORARY TABLE IF EXISTS temp_violation_ids;
+    CREATE TEMPORARY TABLE temp_violation_ids (id INT);
+
+    -- Chèn các violation_id từ chuỗi TEXT vào bảng tạm
+    WHILE LENGTH(in_violation_ids) > 0 DO
+        SET current_violation_id = CAST(SUBSTRING_INDEX(in_violation_ids, ',', 1) AS UNSIGNED);
+        INSERT INTO temp_violation_ids (id) VALUES (current_violation_id);
+        
+        -- Cắt phần tử đầu khỏi chuỗi
+        IF LOCATE(',', in_violation_ids) > 0 THEN
+            SET in_violation_ids = SUBSTRING(in_violation_ids, LOCATE(',', in_violation_ids) + 1);
+        ELSE
+            SET in_violation_ids = '';
+        END IF;
+    END WHILE;
+
+    -- Tạo phiếu phạt mới
+    INSERT INTO penalty_ticket (student_id, staff_id, status)
+    VALUES (in_student_id, in_staff_id, ticket_status);
+
+    SET new_ticket_id = LAST_INSERT_ID();
+
+    -- Thêm chi tiết vi phạm
+    INSERT INTO detail_penalty_ticket (violation_id, penalty_ticket_id)
+    SELECT id, new_ticket_id FROM temp_violation_ids;
+
+    -- Xoá bảng tạm
+    DROP TEMPORARY TABLE IF EXISTS temp_violation_ids;
+END $$
+
+CREATE PROCEDURE CompleteRepairTicket(IN in_repair_ticket_id INT)
+BEGIN
+    -- Cập nhật trạng thái repair_ticket thành COMPLETED
+    UPDATE repair_ticket
+    SET status = 'COMPLETED'
+    WHERE id = in_repair_ticket_id;
+
+    -- Cập nhật trạng thái các thiết bị liên quan thành AVAILABLE
+    UPDATE equipment
+    SET status = 'AVAILABLE'
+    WHERE id IN (
+        SELECT equipment_id
+        FROM detail_repair_ticket
+        WHERE repair_ticket_id = in_repair_ticket_id
+    );
+END $$
+
+CREATE PROCEDURE CompleteLiquidationSlip(IN in_liquidation_slip_id INT)
+BEGIN
+    -- Cập nhật trạng thái liquidation_slip thành COMPLETED
+    UPDATE liquidation_slip
+    SET status = 'COMPLETED'
+    WHERE id = in_liquidation_slip_id;
+
+    -- Cập nhật trạng thái các thiết bị liên quan thành AVAILABLE
+    UPDATE equipment
+    SET status = 'AVAILABLE'
+    WHERE id IN (
+        SELECT equipment_id
+        FROM detail_liquidation_slip
+        WHERE liquidation_slip_id = in_liquidation_slip_id
+    );
+END $$
+
 DELIMITER ; 
+
+/* TRIGGERS */
+DELIMITER //
+
+CREATE TRIGGER before_liquidation_slip_delete
+BEFORE DELETE ON liquidation_slip
+FOR EACH ROW
+BEGIN
+    -- Cập nhật status của equipment về AVAILABLE cho các thiết bị liên quan
+    UPDATE equipment e
+    INNER JOIN detail_liquidation_slip dls ON e.id = dls.equipment_id
+    SET e.status = 'BROKEN'
+    WHERE dls.liquidation_slip_id = OLD.id;
+END //
+
+CREATE TRIGGER before_repair_ticket_delete
+BEFORE DELETE ON repair_ticket
+FOR EACH ROW
+BEGIN
+    -- Cập nhật status của equipment về BROKEN cho các thiết bị liên quan
+    UPDATE equipment e
+    INNER JOIN detail_repair_ticket drt ON e.id = drt.equipment_id
+    SET e.status = 'BROKEN'
+    WHERE drt.repair_ticket_id = OLD.id;
+END //
+
+
+DELIMITER ;
 
 
 

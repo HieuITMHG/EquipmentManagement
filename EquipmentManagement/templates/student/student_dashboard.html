@@ -71,6 +71,7 @@
         </div>
         <!-- form các thiết bị có thể mượn -->
         <form class="flex-10 flex flex-col px-6" method="post" action="/student/borrow">
+            <input class="hidden" value="{{ selected_value }}" name="room_id"/>
             <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
             <div class="flex-10 border-y-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] ">
                 <div class="space-y-3 ">

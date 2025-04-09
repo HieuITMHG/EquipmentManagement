@@ -112,3 +112,14 @@ class EquipmentService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def get_broken_equipment():
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM equipment WHERE status = 'BROKEN'")
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()

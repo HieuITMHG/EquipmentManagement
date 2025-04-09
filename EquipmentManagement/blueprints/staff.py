@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session, redirect,flash
+from flask import Blueprint, render_template, request, session, redirect,flash, url_for
 
 from helpers.helpers import login_required
 from services.account_service import AccountService
@@ -7,6 +7,11 @@ from services.equipment_service import EquipmentService
 from services.borrow_service import BorrowService
 from enums.action_type import ActionType
 from services.room_service import RoomService
+from services.liquidation_slip_service import LiquidationSlipService
+from services.repair_ticket import RepairTicketService
+from services.violation_service import ViolationService
+from services.student_service import StudentService
+from services.penalty_service import PenaltyService
 
 staff_blueprint = Blueprint('staff', __name__)
 
@@ -139,50 +144,195 @@ def bh_filter(request_id=None):
             lst_request = BorrowService.get_returned_borrow_request()
             print(lst_request)
         return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
-        
 
-
-@staff_blueprint.route('/staff/repair_ticket/<int:repair_ticket_id>', methods=['GET'])
-@staff_blueprint.route('/staff/repair_ticket', methods=['GET', 'POST'])
+@staff_blueprint.route('/staff/liquidation_slip', methods=['GET'])
 @login_required
-def repair_ticket(repair_ticket_id=None):
-    login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-    if (request.method=="GET"):
-        if (repair_ticket_id==None):
-            ticket = StaffService.get_all_repair_ticket()
-            return render_template('staff/repair_ticket.html',login_staff=login_staff,ticket=ticket)
-        ticket = StaffService.get_all_repair_ticket()
-        
-        infor_detail_ticket=StaffService.get_infor_detail_ticket(repair_ticket_id)
-        return render_template('staff/repair_ticket.html',login_staff=login_staff,ticket=ticket,infor_detail_ticket=infor_detail_ticket)
+def liquidation_slip():
+    staff_id = session.get('account_id')
+    login_staff = AccountService.get_account_by_person_id(staff_id)
+    broken_equipment = EquipmentService.get_broken_equipment()
+    pending_requests = LiquidationSlipService.get_liquidation_slip(staff_id=staff_id, status='PENDING')
+    accepted_requests = LiquidationSlipService.get_history_liquidation_slip()
+    for r in pending_requests:
+        r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
+    for r in accepted_requests:
+        r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
+
+    return render_template('staff/liquidation_slip.html', login_staff=login_staff,
+                                                        broken_equipment=broken_equipment,
+                                                        pending_requests=pending_requests,
+                                                        accepted_requests=accepted_requests)  
     
-    if(repair_ticket_id != None):
-        repair_ticket_id=int(request.form.get('repair_ticket_id'))
-    StaffService.update_ticket_status_returned(repair_ticket_id)
-    return redirect ('repair_ticket')
+@staff_blueprint.route('/staff/add_liquidation_slip', methods=['POST'])
+@login_required
+def add_liquidation_slip():
+    lst_item_id = request.form.getlist('items') 
+    staff_id = session.get('account_id')  
+    role = 'staff'  
+    liquidation_slip_id = LiquidationSlipService.create_liquidation_slip(staff_id, lst_item_id, role)
+    if liquidation_slip_id is None:  
+        flash("Có lỗi xảy ra khi tạo phiếu thanh lý", "danger")
+    else:
+        flash("Đã tạo phiếu thanh lý thành công", "success")  
     
-    
-@staff_blueprint.route('/staff/add_repair_ticket', methods=['GET', 'POST'])
+    return redirect('liquidation_slip')  
+
+@staff_blueprint.route('/staff/cancel_liquidation_request', methods=['POST'])
+@login_required
+def cancel_liquidation_request():
+    request_id = request.form.get('request_id')
+    if LiquidationSlipService.delete_liquidation_slip(request_id):
+        flash("Hủy yêu cầu thanh lý thành công")
+    else:
+        flash("Yêu cầu thanh lý không tồn tại hoặc đã được xử lý")
+    return redirect('liquidation_slip')  
+
+@staff_blueprint.route('/staff/cancel_repair_ticket', methods=['POST'])
+@login_required
+def cancel_repair_ticket():
+    request_id = request.form.get('request_id')
+    if RepairTicketService.delete_repair_ticket(request_id):
+        flash("Hủy yêu cầu sửa chửa thành công")
+    else:
+        flash("Yêu cầu sửa chửa không tồn tại hoặc đã được xử lý")
+    return redirect('repair_ticket')  
+
+@staff_blueprint.route('/staff/repair_ticket', methods=['GET'])
+@login_required
+def repair_ticket():
+    staff_id = session.get('account_id')
+    login_staff = AccountService.get_account_by_person_id(staff_id)
+    broken_equipment = EquipmentService.get_broken_equipment()
+    broken_equipment = EquipmentService.get_broken_equipment()
+    pending_requests = RepairTicketService.get_repair_ticket(staff_id=staff_id, status='PENDING')
+    accepted_requests = RepairTicketService.get_history_repair_ticket()
+    for r in pending_requests:
+        r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
+        r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
+    for r in accepted_requests:
+        r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
+        r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
+
+
+    return render_template('staff/repair_ticket.html', login_staff=login_staff,
+                                                        broken_equipment=broken_equipment,
+                                                        pending_requests=pending_requests,
+                                                        accepted_requests=accepted_requests)  
+
+@staff_blueprint.route('/staff/add_repair_ticket', methods=['POST'])
 @login_required
 def add_repair_ticket():
-    equipment=StaffService.get_equipment_to_select()
-    login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-    if request.method=='GET':
-        login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-        room=RoomService.get_all_room() 
-        return render_template ('staff/add_repair_ticket.html',login_staff=login_staff,equipment=equipment,room=room)
-    selected_equipment = request.form.get('equi_name')
+    staff_id = session.get('account_id')
+    role = 'staff'
+    form_data = request.form
+    equipment_price_list = []
 
-    print(selected_equipment)
-    equips_room = request.form.get('room')
-    price=request.form.get('price')
-    psid=AccountService.get_account_personal_id_by_person_id(session.get('account_id'))
-    person_id = psid['person_id']
-    print(psid)
-    check_right_equi_in_room=StaffService.check_equipment_in_room(selected_equipment,equips_room)
-    check_id=EquipmentService.get_equipment_id_by_name_and_room(selected_equipment,equips_room)
-    print(check_id)
-    
-    #StaffService.create_repair_ticket(person_id, selected_equipment,price , equips_room)
-    return redirect('repair_ticket')
-    
+    for key in form_data:
+        if key.endswith('[id]'):  # Chỉ xử lý các checkbox được chọn
+            equipment_id = form_data[key]
+            price_key = f"items[{equipment_id}][price]" 
+            if price_key in form_data:
+                price = form_data[price_key]
+                equipment_price_list.append((int(equipment_id), int(price)))
+
+    if not equipment_price_list:
+        flash("Không có thiết bị nào được chọn")
+
+    repair_ticket_id = RepairTicketService.create_repair_ticket(staff_id, equipment_price_list, role)
+    if repair_ticket_id:
+        flash("Tạo phiếu sửa chữa thành công")
+    else:
+        flash("Lỗi khi tạo phiếu sửa chữa")
+    return redirect('repair_ticket') 
+
+@staff_blueprint.route('/staff/finish_repair_ticket', methods=['POST'])
+@login_required
+def finish_repair_ticket():
+    request_id = request.form.get('request_id')
+    if RepairTicketService.complete_repair_ticket(request_id):
+        flash("Hoàn tất phiếu sửa chữa thành công")
+    else:
+        flash("Phiếu sửa chữa không tồn tại hoặc đã hoàn tất")
+    return redirect('repair_ticket') 
+
+@staff_blueprint.route('/staff/finish_liquidation_slip', methods=['POST'])
+@login_required
+def finish_liquidation_slip():
+    request_id = request.form.get('request_id')
+    if LiquidationSlipService.complete_liquidation_slip(request_id):
+        flash("Hoàn tất phiếu sửa chữa thành công")
+    else:
+        flash("Phiếu sửa chữa không tồn tại hoặc đã hoàn tất")
+    return redirect('repair_ticket') 
+
+@staff_blueprint.route('/staff/penalty_ticket', methods=['GET'])
+@login_required
+def penalty_ticket():
+    staff_id = session.get('account_id')
+    login_staff = AccountService.get_account_by_person_id(staff_id)
+    lst_violation = ViolationService.get_all_violation()
+    pending_penalty = PenaltyService.get_pending_penalty_ticket(staff_id)
+    history_penalties = PenaltyService.get_history_penalty_ticket()
+
+    for r in pending_penalty:
+        r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
+    for r in history_penalties:
+        r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
+
+    return render_template('staff/penalty_ticket.html', 
+                           login_staff=login_staff, 
+                           lst_violation=lst_violation, 
+                           pending_penalty=pending_penalty,
+                           history_penalties=history_penalties)  
+
+@staff_blueprint.route('/staff/cancel_penalty_ticket', methods=['POST'])
+@login_required
+def cancel_penalty_ticket():
+    request_id = request.form.get('request_id')
+    print(request_id)
+    if PenaltyService.delete_penalty_ticket_by_id(request_id):
+        flash("Hủy phiếu phạt thành công!")
+    else:
+        flash("Phiếu phạt không tồn tại hoặc đã được xử lý!")
+    return redirect('penalty_ticket') 
+
+@staff_blueprint.route('/staff/add_penalty_ticket', methods=['POST'])
+@login_required
+def add_penalty_ticket():
+    lst_violation = request.form.getlist('violation')
+    mssv = request.form.get('mssv')
+
+    if not StudentService.get_student_by_id(mssv):
+        flash("Mã số sinh viên không hợp lệ!", "danger")
+        return redirect(url_for('staff.penalty_ticket'))
+
+    if not lst_violation:
+        flash("Vui lòng chọn ít nhất một vi phạm!", "warning")
+        return redirect(url_for('staff.penalty_ticket'))
+
+    user_role = "staff"  
+
+    # Gọi service để tạo phiếu phạt
+    success = PenaltyService.create_penalty_ticket(
+        student_id=mssv,
+        staff_id=session.get('account_id'),
+        violation_ids=list(map(int, lst_violation)),
+        role=user_role
+    )
+
+    if success:
+        flash("Tạo phiếu phạt thành công!", "success")
+    else:
+        flash("Tạo phiếu phạt thất bại!", "danger")
+
+    return redirect(url_for('staff.penalty_ticket'))
+
+@staff_blueprint.route('/staff/finish_penalty_ticket', methods=['POST'])
+@login_required
+def finish_penalty_ticket():
+    request_id = request.form.get('request_id')
+    if PenaltyService.complete_penalty_ticket_by_id(request_id):
+        flash("Hoàn tất phiếu phạt thành công")
+    else:
+        flash("Phiếu phạt không tồn tại hoặc đã hoàn tất")
+    return redirect('penalty_ticket') 

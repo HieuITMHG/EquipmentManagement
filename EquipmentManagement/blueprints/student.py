@@ -13,13 +13,16 @@ student_blueprint = Blueprint('student', __name__)
 @login_required
 def student_dashboard():
     if request.method == "GET":
+        student_id = session.get('account_id')
         lst_room = RoomService.get_all_room()
-        student = StudentService.get_student_by_id(session.get('account_id'))
+        student = StudentService.get_student_by_id(student_id)
         selected_room = request.args.get("room", "")
-        lst_equipment = EquipmentService.get_borrowable_equipment_by_room(selected_room)
-        borrow_equipment = BorrowService.get_borrow_equipment(session.get('account_id'))
+        borrow_equipment = BorrowService.get_borrow_equipment(student_id)
         if len(borrow_equipment) != 0:
             lst_room = [{'id': borrow_equipment[0]['room_id']}]
+            selected_room = borrow_equipment[0]['room_id']
+        lst_equipment = EquipmentService.get_borrowable_equipment_by_room(selected_room)
+        
 
         return render_template('student/student_dashboard.html', 
                                student=student, 
@@ -34,7 +37,7 @@ def student_borrow():
     if request.method == "POST":
         lst_item = request.form.getlist('items')  
         student_id = session.get("account_id") 
-
+        room_id = request.form.get("room_id")
         if not lst_item:
             flash("Vui lòng chọn ít nhất một thiết bị!", "danger")
             return redirect('/student')
@@ -46,12 +49,19 @@ def student_borrow():
             return redirect('/student')
 
         equipment_ids = ",".join(lst_item)  
-        borrow_request_id = BorrowService.create_borrow_request(student_id, equipment_ids, expect_returning_time)
+        existing_request = BorrowService.get_existing_borrow_request(student_id)
+        if len(existing_request) < 1:
+            borrow_request_id = BorrowService.create_borrow_request(student_id, equipment_ids, expect_returning_time, room_id)
 
-        if borrow_request_id:
-            flash(f"✅ Mượn thiết bị thành công! Mã yêu cầu: {borrow_request_id}", "success")
+            if borrow_request_id:
+                flash(f"✅ Mượn thiết bị thành công! Mã yêu cầu: {borrow_request_id}", "success")
+            else:
+                flash("❌ Lỗi khi mượn thiết bị!", "danger")
         else:
-            flash("❌ Lỗi khi mượn thiết bị!", "danger")
+            if BorrowService.update_borrow_request(equipment_ids, existing_request[0]["id"]):
+                flash("Cập nhật yêu cầu mượn thiết bị thành công!", "success")
+            else:
+                flash("Lỗi khi cập nhật yêu cầu mượn thiết bị!", "danger")
 
         return redirect('/student')
     
