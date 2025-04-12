@@ -548,7 +548,7 @@ BEGIN
 
         -- Cập nhật trạng thái của thiết bị thành 'PENDING'
         UPDATE equipment 
-        SET status = 'PENDING'
+        SET status = 'BORROWED'
         WHERE id = v_equipment_id;
     END WHILE;
 END $$
@@ -653,7 +653,8 @@ BEGIN
 
     -- Cập nhật trạng thái của yêu cầu mượn thành 'RETURNED'
     UPDATE borrow_request br
-    SET br.status = 'RETURNED'
+    SET br.status = 'RETURNED',
+        br.actual_returning_time = CURRENT_TIMESTAMP
     WHERE br.id = request_id;
     
 END$$
