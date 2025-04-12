@@ -1,6 +1,7 @@
 from functools import wraps
-from flask import redirect, session
+from flask import redirect, session, flash
 from datetime import datetime, time
+from services.account_service import AccountService
 
 def login_required(f):
     @wraps(f)
@@ -22,3 +23,27 @@ def get_expect_returning_time():
         return datetime.combine(datetime.today(), time(20, 0))
     else:
         return datetime.combine(datetime.today(), time(20, 0))
+
+def role_required(*roles):
+    """
+    Decorator to check if the current user has the required role(s)
+    Usage: @role_required(RoleType.ADMIN.value, RoleType.EMPLOYEE.value)
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not session.get("account_id"):
+                return redirect("/login")
+                
+            current_account = AccountService.get_account_by_person_id(session.get("account_id"))
+            if not current_account:
+                session.clear()
+                return redirect("/login")
+                
+            if current_account["role_id"] not in roles:
+                flash("you do not have access to this side!", "error")
+                return redirect("/login")
+                
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, session, redirect,flash, url_for
 
-from helpers.helpers import login_required
+from helpers.helpers import login_required, role_required
 from services.account_service import AccountService
 from services.staff_service import StaffService
 from services.equipment_service import EquipmentService
@@ -12,11 +12,13 @@ from services.repair_ticket import RepairTicketService
 from services.violation_service import ViolationService
 from services.student_service import StudentService
 from services.penalty_service import PenaltyService
+from enums.role_type import RoleID
 
 staff_blueprint = Blueprint('staff', __name__)
 
 @staff_blueprint.route('/staff', methods=['GET'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def staff():
     if request.method == "GET":
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
@@ -24,6 +26,7 @@ def staff():
     
 @staff_blueprint.route('/staff/borrow_request/<int:request_id>', methods=['GET'])
 @staff_blueprint.route('/staff/borrow_request', methods=['GET', 'POST'])
+@role_required(RoleID.STAFF.value)
 @login_required
 def staff_borrow_request(request_id=None):
     if request.method == "GET":
@@ -45,6 +48,7 @@ def staff_borrow_request(request_id=None):
 @staff_blueprint.route('/staff/staff_manage_equipment/<int:equipment_id>/', methods=['GET'])
 @staff_blueprint.route('/staff/staff_manage_equipment', methods=['GET', 'POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def staff_manage_equipment(equipment_id=None):
     if request.method == "GET":
         room_id = request.args.get("room", "")
@@ -66,7 +70,7 @@ def staff_manage_equipment(equipment_id=None):
     new_id=request.form.get("equi_id")
     new_room=request.form.get("room")
     if RoomService.get_room_by_id(new_room) == None:
-        flash("Phòng không tồn tại", "danger")
+        flash("Phòng không tồn tại", "error")
         return redirect("staff_manage_equipment")
 
     StaffService.change_equi_info(new_id,new_name,new_room)
@@ -75,6 +79,7 @@ def staff_manage_equipment(equipment_id=None):
 
 @staff_blueprint.route('/staff/add_items', methods=['GET', 'POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def add_items():
     login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
     if request.method == "GET":
@@ -86,7 +91,7 @@ def add_items():
     equi_name = request.form.get('equi_name')  # Tên thiết bị
     room_id = request.form.get('room')  # ID phòng
     if RoomService.get_room_by_id(room_id) == None:
-        flash("Phòng không tồn tại", "danger")
+        flash("Phòng không tồn tại", "error")
         return redirect("/staff/add_items")
     equi_type = request.form.get('equi_t')  # Kiểu thiết bị (BỊ TRÙNG NAME -> CẦN SỬA)  
     if(equi_name):
@@ -95,6 +100,7 @@ def add_items():
 
 @staff_blueprint.route('/staff/delete_equipment', methods=['GET'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def delete_equipment():
     equipment_id = request.args.get('equipment_id')  # Lấy equipment_id từ URL
 
@@ -110,6 +116,7 @@ def delete_equipment():
 @staff_blueprint.route('/staff/borrow_history/<int:request_id>', methods=['GET'])
 @staff_blueprint.route('/staff/borrow_history', methods=['GET', 'POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def borrow_history(request_id=None):
     if request.method == "GET":
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
@@ -127,6 +134,7 @@ def borrow_history(request_id=None):
     
 @staff_blueprint.route('/staff/bh_filter', methods=['GET'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def bh_filter(request_id=None):
     if request.method == "GET":
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
@@ -147,6 +155,7 @@ def bh_filter(request_id=None):
 
 @staff_blueprint.route('/staff/liquidation_slip', methods=['GET'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def liquidation_slip():
     staff_id = session.get('account_id')
     login_staff = AccountService.get_account_by_person_id(staff_id)
@@ -165,13 +174,14 @@ def liquidation_slip():
     
 @staff_blueprint.route('/staff/add_liquidation_slip', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def add_liquidation_slip():
     lst_item_id = request.form.getlist('items') 
     staff_id = session.get('account_id')  
     role = 'staff'  
     liquidation_slip_id = LiquidationSlipService.create_liquidation_slip(staff_id, lst_item_id, role)
     if liquidation_slip_id is None:  
-        flash("Có lỗi xảy ra khi tạo phiếu thanh lý", "danger")
+        flash("Có lỗi xảy ra khi tạo phiếu thanh lý", "error")
     else:
         flash("Đã tạo phiếu thanh lý thành công", "success")  
     
@@ -179,6 +189,7 @@ def add_liquidation_slip():
 
 @staff_blueprint.route('/staff/cancel_liquidation_request', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def cancel_liquidation_request():
     request_id = request.form.get('request_id')
     if LiquidationSlipService.delete_liquidation_slip(request_id):
@@ -189,6 +200,7 @@ def cancel_liquidation_request():
 
 @staff_blueprint.route('/staff/cancel_repair_ticket', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def cancel_repair_ticket():
     request_id = request.form.get('request_id')
     if RepairTicketService.delete_repair_ticket(request_id):
@@ -199,6 +211,7 @@ def cancel_repair_ticket():
 
 @staff_blueprint.route('/staff/repair_ticket', methods=['GET'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def repair_ticket():
     staff_id = session.get('account_id')
     login_staff = AccountService.get_account_by_person_id(staff_id)
@@ -221,6 +234,7 @@ def repair_ticket():
 
 @staff_blueprint.route('/staff/add_repair_ticket', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def add_repair_ticket():
     staff_id = session.get('account_id')
     role = 'staff'
@@ -247,6 +261,7 @@ def add_repair_ticket():
 
 @staff_blueprint.route('/staff/finish_repair_ticket', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def finish_repair_ticket():
     request_id = request.form.get('request_id')
     if RepairTicketService.complete_repair_ticket(request_id):
@@ -257,6 +272,7 @@ def finish_repair_ticket():
 
 @staff_blueprint.route('/staff/finish_liquidation_slip', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def finish_liquidation_slip():
     request_id = request.form.get('request_id')
     if LiquidationSlipService.complete_liquidation_slip(request_id):
@@ -267,6 +283,7 @@ def finish_liquidation_slip():
 
 @staff_blueprint.route('/staff/penalty_ticket', methods=['GET'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def penalty_ticket():
     staff_id = session.get('account_id')
     login_staff = AccountService.get_account_by_person_id(staff_id)
@@ -287,6 +304,7 @@ def penalty_ticket():
 
 @staff_blueprint.route('/staff/cancel_penalty_ticket', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def cancel_penalty_ticket():
     request_id = request.form.get('request_id')
     print(request_id)
@@ -298,12 +316,13 @@ def cancel_penalty_ticket():
 
 @staff_blueprint.route('/staff/add_penalty_ticket', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def add_penalty_ticket():
     lst_violation = request.form.getlist('violation')
     mssv = request.form.get('mssv')
 
     if not StudentService.get_student_by_id(mssv):
-        flash("Mã số sinh viên không hợp lệ!", "danger")
+        flash("Mã số sinh viên không hợp lệ!", "error")
         return redirect(url_for('staff.penalty_ticket'))
 
     if not lst_violation:
@@ -323,12 +342,13 @@ def add_penalty_ticket():
     if success:
         flash("Tạo phiếu phạt thành công!", "success")
     else:
-        flash("Tạo phiếu phạt thất bại!", "danger")
+        flash("Tạo phiếu phạt thất bại!", "error")
 
     return redirect(url_for('staff.penalty_ticket'))
 
 @staff_blueprint.route('/staff/finish_penalty_ticket', methods=['POST'])
 @login_required
+@role_required(RoleID.STAFF.value)
 def finish_penalty_ticket():
     request_id = request.form.get('request_id')
     if PenaltyService.complete_penalty_ticket_by_id(request_id):
