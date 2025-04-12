@@ -94,13 +94,13 @@ CREATE TABLE borrow_request (
     room_id CHAR(5) NOT NULL,
     borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expect_returning_time DATETIME NOT NULL,
+    actual_returning_time DATETIME,
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
 
 CREATE TABLE borrow_item (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    actual_returning_time DATETIME,
     borrow_request_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
     FOREIGN KEY (borrow_request_id) REFERENCES borrow_request(id),
@@ -388,8 +388,8 @@ SELECT
     br.status AS borrow_status,
     br.borrowing_time,
     br.expect_returning_time,
+    br.actual_returning_time,
     bi.id AS borrow_item_id,
-    bi.actual_returning_time,
     e.id AS equipment_id,
     e.equipment_name,
     e.status AS equipment_status,
@@ -875,6 +875,3 @@ END //
 
 
 DELIMITER ;
-
-
-
