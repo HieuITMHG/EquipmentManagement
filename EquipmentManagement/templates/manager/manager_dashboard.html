@@ -1,0 +1,15 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Manager Home
+{% endblock %}
+
+{% block content %}
+    <div>
+        <ul>
+            {% for equipment in lst_equipment %}
+                <li>{{equipment.equipment_name}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

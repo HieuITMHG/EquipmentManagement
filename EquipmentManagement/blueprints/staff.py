@@ -143,14 +143,9 @@ def bh_filter(request_id=None):
         if (status==''):
             lst_request = BorrowService.get_accepted_or_returned_borrow_request()
         if (status=='ACCEPTED'):
-            print("1")
             lst_request = BorrowService.get_accepted_borrow_request()
-            print(lst_request)
         if (status=='RETURNED'):
-            print("returned")
-            print("1")
             lst_request = BorrowService.get_returned_borrow_request()
-            print(lst_request)
         return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
 
 @staff_blueprint.route('/staff/liquidation_slip', methods=['GET'])
@@ -177,6 +172,9 @@ def liquidation_slip():
 @role_required(RoleID.STAFF.value)
 def add_liquidation_slip():
     lst_item_id = request.form.getlist('items') 
+    if not lst_item_id:
+        flash("Chưa chọn thiết bị cần thanh lý", "error")
+        return redirect('liquidation_slip') 
     staff_id = session.get('account_id')  
     role = 'staff'  
     liquidation_slip_id = LiquidationSlipService.create_liquidation_slip(staff_id, lst_item_id, role)
@@ -240,7 +238,7 @@ def add_repair_ticket():
     role = 'staff'
     form_data = request.form
     equipment_price_list = []
-
+    
     for key in form_data:
         if key.endswith('[id]'):  # Chỉ xử lý các checkbox được chọn
             equipment_id = form_data[key]

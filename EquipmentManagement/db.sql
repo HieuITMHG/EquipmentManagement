@@ -94,13 +94,13 @@ CREATE TABLE borrow_request (
     room_id CHAR(5) NOT NULL,
     borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expect_returning_time DATETIME NOT NULL,
+    actual_returning_time DATETIME,
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 );
 
 CREATE TABLE borrow_item (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    actual_returning_time DATETIME,
     borrow_request_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
     FOREIGN KEY (borrow_request_id) REFERENCES borrow_request(id),
@@ -292,6 +292,15 @@ INSERT INTO staff (id, is_working) VALUES
 ('STF2001', TRUE), 
 ('STF2002', TRUE);
 
+INSERT INTO account (password, role_id, is_active) VALUES
+('QL001', 1, TRUE); 
+INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
+('QL001', '123456789012', 'Sang', 'Tran', TRUE, 'sangtran127@example.com', '4333244521', 'Hanoi, Vietnam', 'hieu127.jpg', 5);
+INSERT INTO staff (id, is_working) VALUES 
+('QL001', TRUE), 
+
+-- Insert sample data for manager
+
 -- Insert sample data for penalty_form
 INSERT INTO penalty_form (form_name, price) VALUES 
 ('Late Return', 50.00), 
@@ -388,8 +397,8 @@ SELECT
     br.status AS borrow_status,
     br.borrowing_time,
     br.expect_returning_time,
+    br.actual_returning_time,
     bi.id AS borrow_item_id,
-    bi.actual_returning_time,
     e.id AS equipment_id,
     e.equipment_name,
     e.status AS equipment_status,
@@ -548,11 +557,35 @@ BEGIN
 
         -- Cập nhật trạng thái của thiết bị thành 'PENDING'
         UPDATE equipment 
-        SET status = 'PENDING'
+        SET status = 'BORROWED'
         WHERE id = v_equipment_id;
     END WHILE;
 END $$
-    
+
+CREATE PROCEDURE cancel_borrow_equipment(
+    IN p_equipment_id INT,
+    IN p_borrow_request_id INT
+)
+BEGIN
+    -- Xóa bản ghi tương ứng trong bảng borrow_item
+    DELETE FROM borrow_item
+    WHERE equipment_id = p_equipment_id AND borrow_request_id = p_borrow_request_id;
+
+    -- Cập nhật trạng thái thiết bị thành AVAILABLE
+    UPDATE equipment
+    SET status = 'AVAILABLE'
+    WHERE id = p_equipment_id;
+
+    -- Kiểm tra xem borrow_request còn borrow_item nào không
+    IF NOT EXISTS (
+        SELECT 1 FROM borrow_item WHERE borrow_request_id = p_borrow_request_id
+    ) THEN
+        -- Nếu không còn thì xóa luôn borrow_request
+        DELETE FROM borrow_request
+        WHERE id = p_borrow_request_id;
+    END IF;
+END $$
+
 CREATE PROCEDURE accept_borrow_request(
     IN request_id INT,
     IN staff_id CHAR(10)
@@ -653,7 +686,8 @@ BEGIN
 
     -- Cập nhật trạng thái của yêu cầu mượn thành 'RETURNED'
     UPDATE borrow_request br
-    SET br.status = 'RETURNED'
+    SET br.status = 'RETURNED',
+        br.actual_returning_time = CURRENT_TIMESTAMP
     WHERE br.id = request_id;
     
 END$$
@@ -681,38 +715,57 @@ END$$
 
 CREATE PROCEDURE create_repair_ticket (
     IN in_staff_id CHAR(10),
-    IN in_equipment_id VARCHAR(50),
-    IN in_price INT,
-    IN in_room_id CHAR(10)
+    IN in_equipment_price_str TEXT,
+    IN in_role VARCHAR(50)
 )
 BEGIN
     DECLARE new_ticket_id INT;
+    DECLARE equipment_price_pair TEXT;
+    DECLARE equipment_id INT;
+    DECLARE price_value INT;
+    DECLARE pos INT DEFAULT 1;
+    DECLARE status_val VARCHAR(20);
 
-    -- 1. Kiểm tra thiết bị có đúng thuộc room không (tùy mục đích, có thể bỏ nếu không cần)
-    IF EXISTS (
-        SELECT 1 FROM equipment
-        WHERE id = in_equipment_id AND room_id = in_room_id
-    ) THEN
-        -- 2. Tạo một repair_ticket mới
-        INSERT INTO repair_ticket (staff_id, status)
-        VALUES (in_staff_id, 'PENDING');
+    -- Xác định trạng thái dựa vào vai trò
+    IF in_role = 'staff' THEN
+        SET status_val = 'PENDING';
+    ELSEIF in_role = 'manager' THEN
+        SET status_val = 'ACCEPTED';
+    ELSE
+        -- Mặc định nếu role không hợp lệ
+        SET status_val = 'PENDING';
+    END IF;
 
-        -- 3. Lấy ID của ticket mới tạo
-        SET new_ticket_id = LAST_INSERT_ID();
+    -- Tạo ticket
+    INSERT INTO repair_ticket (staff_id, status)
+    VALUES (in_staff_id, status_val);
 
-        -- 4. Thêm vào detail_repair_ticket
+    SET new_ticket_id = LAST_INSERT_ID();
+
+    -- Lặp qua từng cặp equipment:price
+    WHILE LENGTH(in_equipment_price_str) > 0 DO
+        SET pos = LOCATE(',', in_equipment_price_str);
+
+        IF pos = 0 THEN
+            SET equipment_price_pair = in_equipment_price_str;
+            SET in_equipment_price_str = '';
+        ELSE
+            SET equipment_price_pair = SUBSTRING(in_equipment_price_str, 1, pos - 1);
+            SET in_equipment_price_str = SUBSTRING(in_equipment_price_str, pos + 1);
+        END IF;
+
+        SET equipment_id = CAST(SUBSTRING_INDEX(equipment_price_pair, ':', 1) AS UNSIGNED);
+        SET price_value = CAST(SUBSTRING_INDEX(equipment_price_pair, ':', -1) AS UNSIGNED);
+
         INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price)
-        VALUES (new_ticket_id, in_equipment_id, in_price);
+        VALUES (new_ticket_id, equipment_id, price_value);
 
-        -- 5. Cập nhật trạng thái thiết bị thành 'UNDERREPAIR'
         UPDATE equipment
         SET status = 'UNDERREPAIR'
-        WHERE id = in_equipment_id;
-    ELSE
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Thiết bị không thuộc phòng đã chọn hoặc không tồn tại.';
-    END IF;
+        WHERE id = equipment_id;
+    END WHILE;
 END$$
+
 
 
 CREATE PROCEDURE CreateLiquidationSlip(
@@ -875,6 +928,3 @@ END //
 
 
 DELIMITER ;
-
-
-

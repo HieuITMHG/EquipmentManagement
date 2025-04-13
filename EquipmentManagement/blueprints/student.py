@@ -98,6 +98,18 @@ def borrow_history():
 def violation():
     student_id = session.get('account_id')  
     student = StudentService.get_student_by_id(student_id)
-    lst_violation = PenaltyService.get_violation_by__id(student_id)
+    lst_violation = PenaltyService.get_violation_by_id(student_id)
     return render_template('student/violation.html', lst_violation=lst_violation, student=student)
     
+
+@student_blueprint.route('/student/cancel_borrow_equipment', methods=['POST'])
+@role_required(RoleID.STUDENT.value)
+@login_required
+def cancel_borrow_equipment():
+    borrow_request_id = request.form.get('borrow_request_id')
+    equipment_id = request.form.get('equipment_id')
+    if BorrowService.cancel_borrow_equipment(equipment_id, borrow_request_id):
+        flash("Bạn đa hủy yêu cầu mượn thành công!", "success")
+    else:
+        flash("Đã xảy ra lỗi trong quá trình hủy yêu cầu mượn!", "error")
+    return redirect('/student')
