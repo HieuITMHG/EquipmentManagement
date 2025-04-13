@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session, redirect,flash, url_for
+from flask import Blueprint, render_template, request, session, redirect, flash, url_for
 
 from helpers.helpers import login_required, role_required
 from services.account_service import AccountService
@@ -18,7 +18,7 @@ staff_blueprint = Blueprint('staff', __name__)
 
 @staff_blueprint.route('/staff', methods=['GET'])
 @login_required
-@role_required(RoleID.STAFF.value)
+# @role_required(RoleID.STAFF.value)
 def staff():
     if request.method == "GET":
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))

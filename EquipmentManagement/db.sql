@@ -271,6 +271,10 @@ INSERT INTO account (password, role_id, is_active) VALUES
 ('staff123', 3, TRUE),  -- Tài khoản cho 'STF2001'
 ('staff456', 3, TRUE);  -- Tài khoản cho 'STF2002'
 
+-- Chèn tài khoản cho quản lí
+INSERT INTO account (password, role_id, is_active) VALUES 
+('manager123', 1, TRUE),  -- Tài khoản cho 'MNG2000'
+
 -- Chèn thông tin cá nhân cho sinh viên
 INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
 ('N22DCCN127', '123456789012', 'Hieu', 'Nguyen', TRUE, 'hieu127@example.com', '0987654321', 'Hanoi, Vietnam', 'hieu127.jpg', 1),
@@ -281,6 +285,9 @@ INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, addre
 ('STF2001', '567890123456', 'Duy', 'Le', TRUE, 'duy2001@example.com', '0965432109', 'Da Nang, Vietnam', 'duy2001.jpg', 3),
 ('STF2002', '678901234567', 'Anh', 'Pham', FALSE, 'anh2002@example.com', '0954321098', 'Can Tho, Vietnam', 'anh2002.jpg', 4);
 
+-- Chèn thông tin cá nhân cho quản lí
+INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
+('MNG2000', '678901234567', 'Dat', 'Vo', TRUE, 'dat2000@example.com', '0965432100', 'HCM City, Vietnam', 'duy2001.jpg', 5),
 
 -- Insert sample data for student
 INSERT INTO student (id, class_id, is_studing) VALUES 
@@ -290,7 +297,8 @@ INSERT INTO student (id, class_id, is_studing) VALUES
 -- Insert sample data for staff
 INSERT INTO staff (id, is_working) VALUES 
 ('STF2001', TRUE), 
-('STF2002', TRUE);
+('STF2002', TRUE),
+('MNG2000', TRUE); --Quản lí
 
 -- Insert sample data for penalty_form
 INSERT INTO penalty_form (form_name, price) VALUES 

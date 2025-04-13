@@ -1,0 +1,82 @@
+{% extends "manager/manager_layout.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Quản lý tài khoản nhân viên</h2>
+
+    <div>
+        <form action="{{ url_for('manager.manage_account') }}" method="get" class="d-inline-block ms-3">
+            <input type="text" name="keyword" placeholder="Tìm kiếm..." class="form-control d-inline-block w-auto">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        </form>
+    </div>
+
+    <table class="table table-bordered mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>ID tài khoản</th>
+                <th>Password</th>
+                <th>Phân quyền</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for account in accounts %}
+            <tr>
+                <td>{{ account.person_id }}</td>
+                <td>
+                    <span id="password-mask-{{ loop.index }}">****</span>
+                    <span id="password-real-{{ loop.index }}" style="display: none;">{{ account.password }}</span>
+                    <button type="button" class="btn btn-link p-0" onclick="togglePassword({{ loop.index }})">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </td>   
+                <td>
+                    {% if account.role_id == 1 %}
+                        Quản lý
+                    {% elif account.role_id == 2 %}
+                        Sinh viên
+                    {% elif account.role_id == 3 %}
+                        Nhân viên
+                    {% else %}
+                        Không rõ
+                    {% endif %}
+                </td>
+                <td>
+                    {% if account.is_active %}
+                        <span class="text-success">Đang hoạt động</span>
+                    {% else %}
+                        <span class="text-danger">Đã khóa</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('manager.edit_account', account_id=account.person_id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                    <a href="{{ url_for('manager.delete_account', account_id=account.person_id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xoá tài khoản này không?');">Xoá</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ url_for('manager.add_account') }}" class="btn btn-success">Thêm tài khoản</a>
+</div>
+
+<!-- Ẩn password-->
+<script>
+    function togglePassword(index) {
+        const mask = document.getElementById(`password-mask-${index}`);
+        const real = document.getElementById(`password-real-${index}`);
+
+        if (mask.style.display === "none") {
+            mask.style.display = "inline";
+            real.style.display = "none";
+        } else {
+            mask.style.display = "none";
+            real.style.display = "inline";
+        }
+    }
+</script>
+
+{% endblock %}
