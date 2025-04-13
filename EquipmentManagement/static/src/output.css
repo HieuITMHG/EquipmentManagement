@@ -613,9 +613,6 @@
   .z-10 {
     z-index: 10;
   }
-  .z-20 {
-    z-index: 20;
-  }
   .z-50 {
     z-index: 50;
   }
@@ -643,17 +640,11 @@
   .m-4 {
     margin: calc(var(--spacing) * 4);
   }
-  .-mx-1 {
-    margin-inline: calc(var(--spacing) * -1);
-  }
   .-mx-1\.5 {
     margin-inline: calc(var(--spacing) * -1.5);
   }
   .mx-auto {
     margin-inline: auto;
-  }
-  .-my-1 {
-    margin-block: calc(var(--spacing) * -1);
   }
   .-my-1\.5 {
     margin-block: calc(var(--spacing) * -1.5);
@@ -724,9 +715,6 @@
   .inline-flex {
     display: inline-flex;
   }
-  .list-item {
-    display: list-item;
-  }
   .table {
     display: table;
   }
@@ -775,20 +763,11 @@
   .h-12 {
     height: calc(var(--spacing) * 12);
   }
-  .h-14 {
-    height: calc(var(--spacing) * 14);
-  }
   .h-16 {
     height: calc(var(--spacing) * 16);
   }
-  .h-\[400px\] {
-    height: 400px;
-  }
   .h-\[500px\] {
     height: 500px;
-  }
-  .h-\[750px\] {
-    height: 750px;
   }
   .h-auto {
     height: auto;
@@ -808,32 +787,14 @@
   .max-h-\[600px\] {
     max-height: 600px;
   }
-  .max-h-\[700px\] {
-    max-height: 700px;
-  }
   .max-h-\[750px\] {
     max-height: 750px;
-  }
-  .min-h-\[550px\] {
-    min-height: 550px;
-  }
-  .min-h-\[600px\] {
-    min-height: 600px;
   }
   .min-h-\[630px\] {
     min-height: 630px;
   }
-  .min-h-\[700px\] {
-    min-height: 700px;
-  }
-  .min-h-\[750px\] {
-    min-height: 750px;
-  }
   .min-h-screen {
     min-height: 100vh;
-  }
-  .w-1 {
-    width: calc(var(--spacing) * 1);
   }
   .w-1\/3 {
     width: calc(1/3 * 100%);
@@ -853,17 +814,11 @@
   .w-8 {
     width: calc(var(--spacing) * 8);
   }
-  .w-11 {
-    width: calc(var(--spacing) * 11);
-  }
   .w-11\/12 {
     width: calc(11/12 * 100%);
   }
   .w-12 {
     width: calc(var(--spacing) * 12);
-  }
-  .w-16 {
-    width: calc(var(--spacing) * 16);
   }
   .w-20 {
     width: calc(var(--spacing) * 20);
@@ -889,17 +844,11 @@
   .w-\[60\%\] {
     width: 60%;
   }
-  .w-\[99\%\] {
-    width: 99%;
-  }
   .w-\[350px\] {
     width: 350px;
   }
   .w-\[500px\] {
     width: 500px;
-  }
-  .w-\[600px\] {
-    width: 600px;
   }
   .w-full {
     width: 100%;
@@ -975,9 +924,6 @@
   }
   .justify-end {
     justify-content: flex-end;
-  }
-  .gap-0 {
-    gap: calc(var(--spacing) * 0);
   }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
@@ -1074,17 +1020,9 @@
     border-top-left-radius: var(--radius-md);
     border-top-right-radius: var(--radius-md);
   }
-  .rounded-b-md {
-    border-bottom-right-radius: var(--radius-md);
-    border-bottom-left-radius: var(--radius-md);
-  }
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
-  }
-  .border-0 {
-    border-style: var(--tw-border-style);
-    border-width: 0px;
   }
   .border-2 {
     border-style: var(--tw-border-style);
@@ -1113,9 +1051,6 @@
   .border-black {
     border-color: var(--color-black);
   }
-  .border-blue-700 {
-    border-color: var(--color-blue-700);
-  }
   .border-gray-200 {
     border-color: var(--color-gray-200);
   }
@@ -1137,9 +1072,6 @@
   .border-white {
     border-color: var(--color-white);
   }
-  .bg-\[rgba\(204\,204\,204\,0\.5\)\] {
-    background-color: rgba(204,204,204,0.5);
-  }
   .bg-\[rgba\(204\,_204\,_204\,_0\.5\)\] {
     background-color: rgba(204, 204, 204, 0.5);
   }
@@ -1148,9 +1080,6 @@
   }
   .bg-blue-300 {
     background-color: var(--color-blue-300);
-  }
-  .bg-blue-400 {
-    background-color: var(--color-blue-400);
   }
   .bg-blue-500 {
     background-color: var(--color-blue-500);
@@ -1170,9 +1099,6 @@
   .bg-gray-300 {
     background-color: var(--color-gray-300);
   }
-  .bg-gray-600 {
-    background-color: var(--color-gray-600);
-  }
   .bg-gray-600\/50 {
     background-color: color-mix(in oklab, var(--color-gray-600) 50%, transparent);
   }
@@ -1185,17 +1111,11 @@
   .bg-red-50 {
     background-color: var(--color-red-50);
   }
-  .bg-red-200 {
-    background-color: var(--color-red-200);
-  }
   .bg-red-500 {
     background-color: var(--color-red-500);
   }
   .bg-red-600 {
     background-color: var(--color-red-600);
-  }
-  .bg-transparent {
-    background-color: transparent;
   }
   .bg-white {
     background-color: var(--color-white);
@@ -1509,13 +1429,6 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-blue-200);
-      }
-    }
-  }
-  .hover\:bg-blue-300 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-blue-300);
       }
     }
   }
