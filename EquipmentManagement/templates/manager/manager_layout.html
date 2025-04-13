@@ -7,7 +7,7 @@
 {% block content %}
     <div class="fixed h-screen w-screen flex bg-[rgba(204,_204,_204,_0.5)]">
         <ul class="space-y-4 h-screen bg-white ml-5 p-4">
-            <li class="nav_item {% if request.path == '/staff' %} hightlight{% endif %}">
+            <li class="nav_item {% if request.path == '/' %} hightlight{% endif %}">
                 <a href="{{ url_for('manager.manager') }}" class="flex items-center">
                     <img src="{{ url_for('static', filename='avatar/avt_man.png') }}" 
                         alt="avatar" 

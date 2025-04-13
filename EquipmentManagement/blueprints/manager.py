@@ -15,6 +15,14 @@ from enums.role_type import RoleID
 
 manager_blueprint = Blueprint('manager', __name__)
 
+@manager_blueprint.route('/', methods=['GET'])
+@login_required
+@role_required(RoleID.MANAGER.value)
+def manager():
+    login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
+    return render_template('manager/manager_profile.html', login_manager=login_manager)
+
+
 @manager_blueprint.route('/manager/manager_manage_equipment/<int:equipment_id>/', methods=['GET'])
 @manager_blueprint.route('/manager/manager_manage_equipment', methods=['GET', 'POST'])
 @login_required
