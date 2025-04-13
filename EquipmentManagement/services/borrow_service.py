@@ -236,3 +236,21 @@ class BorrowService:
         finally:
             cursor.close()
             conn.close()
+
+
+    @staticmethod
+    def cancel_borrow_equipment(equipment_id, borrow_request_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            # Gọi procedure return_equipment (đã tạo trong MySQL)
+            cursor.callproc('cancel_borrow_equipment', [equipment_id, borrow_request_id])
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()

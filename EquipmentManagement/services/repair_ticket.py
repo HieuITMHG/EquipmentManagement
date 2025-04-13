@@ -12,7 +12,7 @@ class RepairTicketService:
             equipment_price_str = ','.join([f"{equip_id}:{price}" for equip_id, price in equipment_price_list])
             
             # Gọi stored procedure với 3 tham số
-            cursor.callproc('CreateRepairTicket', (staff_id, equipment_price_str, role))
+            cursor.callproc('create_repair_ticket', (staff_id, equipment_price_str, role))
             
             # Lấy ID của repair_ticket vừa tạo
             cursor.execute("SELECT LAST_INSERT_ID()")

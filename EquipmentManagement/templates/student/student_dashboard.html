@@ -34,11 +34,22 @@
         <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px]">
                 {% for equipment in borrow_equipment %}
-                <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200 justify-between">
-                    <div class="flex items-center cursor-pointer">
-                        {{equipment.equipment_name}} - {{equipment.room_id}}
+                <div class="h-12 w-full text-white shadow-2xs flex items-center p-2 justify-between">
+                    <div class="bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2">
+                        <div class="flex items-center cursor-pointer">
+                            {{equipment.equipment_name}} - {{equipment.room_id}} - {{equipment.borrow_status}}
+                        </div>
                     </div>
-                    <div>{{equipment.borrow_status}}</div>
+
+                    {% if equipment.borrow_status == 'PENDING' %}
+                    <form class="p-1 w-20"
+                            method="post" action="{{ url_for('student.cancel_borrow_equipment') }}">
+                            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                            <input type="hidden" name="borrow_request_id" value="{{equipment.borrow_request_id}}"/>
+                            <input type="hidden" name="equipment_id" value="{{equipment.equipment_id}}"/>
+                        <button type="submit" class="bg-blue-300 hover:bg-blue-200 p-1 w-full rounded-md cursor-pointer">Hủy</button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -51,7 +62,7 @@
             </div>
             <form action="/student" method="get" class="flex items-center gap-4">
                 <label for="room" class="font-bold">Phòng:</label>
-                
+
                 <input
                     list="rooms"
                     name="room"

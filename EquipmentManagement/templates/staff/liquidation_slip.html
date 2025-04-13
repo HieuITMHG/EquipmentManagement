@@ -44,7 +44,7 @@
             <div class="flex-10 space-y-3 p-4 max-h-[600px]" id="pending">
                 {% for request in pending_requests %}
                 <form method="post" action="{{ url_for('staff.cancel_liquidation_request') }}" 
-                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
                         onclick="show_detail(this.value)"
                         value="detail-{{request.id}}"
@@ -96,7 +96,7 @@
 
             <div class="flex-10 space-y-3 p-4 max-h-[600px] hidden" id="history">
                 {% for request in accepted_requests %}
-                <div  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                <div class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <form method="post" action="{{ url_for('staff.finish_liquidation_slip') }}" 
                     class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
                        <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
@@ -110,7 +110,7 @@
                        {% if request.status == 'ACCEPTED' %}
                        <div class="flex space-x-1">
                            <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
-                           type="submit" name="action">Hoàn thành</button>
+                           type="submit" name="action">Finish</button>
                        </div>
                        {% endif %}
                    </form>
