@@ -104,3 +104,15 @@ class PenaltyService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def accept_penalty_ticket(ticket_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE penaltyy_ticket SET status = 'ACCEPTED' WHERE id = %s", (ticket_id,))
+            conn.commit()
+            return cursor.rowcount > 0  
+        finally:
+            cursor.close()
+            conn.close()

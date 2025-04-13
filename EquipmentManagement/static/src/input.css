@@ -6,10 +6,18 @@
     }
 
     .nav_item {
-        @apply w-72 bg-blue-400 p-2 rounded-md hover:bg-blue-200 cursor-pointer text-gray-600 flex gap-2
+        @apply w-60 bg-blue-400 p-2 rounded-md hover:bg-blue-200 cursor-pointer text-gray-600 flex gap-2
     } 
 
     .hightlight {
         @apply bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg rounded-md
+    }
+
+    .account_row {
+        @apply h-12 border-2 border-gray-300 px-8
+    }
+
+    .acc_label {
+        @apply text-gray-700
     }
 }

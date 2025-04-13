@@ -2,6 +2,10 @@ function onClose(){
     document.getElementById("alert").style.display = "none";
 }
 
+function goBack() {
+    window.history.back();
+}  
+
 function toggle_pending() {
     const pending_btn = document.getElementById('btn-pending')
     const history_btn = document.getElementById('btn-history')

@@ -1,0 +1,111 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Add account
+{% endblock %}
+
+{% block content %}
+<div class="relative h-screen overflow-y-auto flex justify-center items-center bg-blue-50">
+    <button
+      onclick="goBack()"
+      class="absolute top-12 left-12 bg-blue-600 z-10 h-12 w-12 rounded-full flex items-center justify-center hover:bg-blue-700 transition duration-300">
+      <img src="{{ url_for('static', filename='icon/back_icon.svg') }}" class="w-6"/>
+    </button>
+  
+    <div class="w-11/12 max-w-5xl bg-gradient-to-br from-blue-300 to-blue-600 rounded-xl shadow-lg p-10">
+        <div class="flex items-center w-full justify-center mb-6 font-bold text-white">
+            <h1 class="text-3xl">ADD NEW ACCOUNT</h1>
+        </div>
+        <form class="flex flex-col lg:flex-row gap-2" action="{{ url_for('manager.add_account') }}" method="post">
+            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">CCCD</label>
+                        <input name="cccd" type="text" class="input_field"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Tên:</label>
+                        <input name="first_name" type="text" class="input_field"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Họ:</label>
+                        <input name="last_name" type="text" class="input_field"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Gender:</label>
+                        <select name="gender" class="input_field">
+                            <option value="1">Nam</option>
+                            <option value="2">Nữ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">Email:</label>
+                        <input name="email" type="email" class="input_field"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Số điện thoại:</label>
+                        <input name="phone" type="text" class="input_field"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Địa chỉ:</label>
+                        <input name="address" type="text" class="input_field"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Vai trò:</label>
+                        <select class="input_field" id="role_input" name="role_id">
+                            <option value="1">Quản lý</option>
+                            <option value="3">Nhân viên</option>
+                            <option value="2">Sinh viên</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5 relative">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">Mã sinh viên \ nhân viên:</label>
+                        <input name="account_code" type="text" class="input_field"/>
+                    </div>
+                    <div class="flex-col hidden" id="class_input">
+                        <label for="room" class="acc_label">Lớp:</label>
+                        <input
+                            list="classes"
+                            name="class"
+                            class="input_field"
+                            placeholder="--Lớp--"
+                        />
+                        <datalist id="classes">
+                            {% for class in lst_class %}
+                                <option value="{{ class.id }}">{{class.class_name}} - {{class.academic_year}}</option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                </div>
+                <div>
+                    <button
+                      type="submit"
+                      class="bg-blue-600 hover:bg-blue-800 active:scale-[.9] transform transition-all ease-in-out duration-300
+                      absolute bottom-3 right-3 text-white rounded-md px-4 py-2 self-end cursor-pointer"
+                    >
+                      Thêm 
+                </div>
+            </div>
+        </form>
+  </div>
+</div>
+<script>
+    document.getElementById('role_input').addEventListener('change', function() {
+        const classInput = document.getElementById('class_input');
+        if (this.value === '2') {
+            classInput.style.display = 'flex'; // Hiển thị class_input
+        } else {
+            classInput.style.display = 'none'; // Ẩn class_input
+        }
+    });
+</script>
+{% endblock %}

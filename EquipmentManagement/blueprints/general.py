@@ -24,7 +24,7 @@ def login():
             session["account_id"] = str(login_user_id)
             flash(messages_success['login_success'],'success')
             if login_account['role_id'] == RoleID.MANAGER.value:
-                return redirect('/manager')
+                return redirect('/')
             elif login_account['role_id'] == RoleID.STAFF.value:
                 return redirect('/staff')
             else:

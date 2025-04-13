@@ -1,0 +1,114 @@
+{% extends "manager/manager_layout.html" %}
+
+{% block manager_content %}
+<script>
+    function showDeleteModal(personId) {
+        document.getElementById('delete-person-id').value = personId;
+        document.getElementById('modal-delete-account').style.display = 'flex';
+    }
+    
+    function hideDeleteModal() {
+        document.getElementById('modal-delete-account').style.display = 'none';
+        document.getElementById('delete-person-id').value = '';
+    }
+</script>
+
+<div class="flex flex-1 flex-col p-6 bg-gray-100 min-h-screen">
+    <!-- Modal xác nhận xóa -->
+    <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center transition-opacity duration-300" id="modal-delete-account" style="display: none;">
+        <div class="bg-white w-full max-w-md rounded-lg shadow-xl p-6">
+            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Xác nhận xóa</h1>
+            <p class="text-gray-600 mb-6">Bạn có chắc chắn muốn xóa tài khoản này? Hành động này không thể hoàn tác.</p>
+            <form action="{{ url_for('manager.delete_account') }}" method="post">
+                <input type="hidden" name="person_id" id="delete-person-id" value="" />
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="hideDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">Hủy</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200">Xóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Thanh công cụ -->
+    <div class="flex justify-between items-center mb-6">
+        <a href="{{ url_for('manager.add_account') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Thêm tài khoản
+        </a>
+        <div class="flex items-center gap-3">
+            <input type="text" class="border border-gray-300 rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tìm kiếm tài khoản...">
+            <select class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Tất cả</option>
+                <option value="manager">Quản lý</option>
+                <option value="staff">Nhân viên</option>
+                <option value="student">Học sinh</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Bảng tài khoản -->
+    <div class="w-full bg-white rounded-lg shadow-md overflow-x-auto">
+        <table class="w-full border-collapse">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Mã tài khoản</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">CCCD</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Tên</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Họ</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Giới tính</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Email</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Điện thoại</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Địa chỉ</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Vai trò</th>
+                    <th class="p-3 text-left text-sm font-semibold whitespace-nowrap">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700">
+                {% for acc in lst_account %}
+                <tr class="hover:bg-gray-50 transition duration-150">
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.person_id }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.cccd }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.first_name }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.last_name }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">
+                        {% if acc.gender %}Nam{% else %}Nữ{% endif %}
+                    </td>
+                    <td class="p-3 text-sm truncate max-w-xs" title="{{ acc.email }}">{{ acc.email }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.phone }}</td>
+                    <td class="p-3 text-sm truncate max-w-xs" title="{{ acc.address }}">{{ acc.address }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">
+                        {% if acc.role_id == 1 %}Quản lý
+                        {% elif acc.role_id == 2 %}Sinh viên
+                        {% else %}Nhân viên{% endif %}
+                    </td>
+                    <td class="flex items-center justify-center">
+                        <a href="{{ url_for('manager.view_account', user_id=acc.person_id) }}" class=" text-blue-600 hover:text-blue-800 transition cursor-pointer" title="Xem">
+                            <img src="{{ url_for('static', filename='icon/view_icon.svg') }}" alt="View"  />
+                        </a>
+                        <a href="{{ url_for('manager.edit_account', user_id=acc.person_id) }}" class=" text-green-600 hover:text-green-800 transition cursor-pointer" title="Sửa">
+                            <img src="{{ url_for('static', filename='icon/edit_icon.svg') }}" alt="Edit"  />
+                        </a>
+                        <button onclick="showDeleteModal('{{ acc.person_id }}')" class=" text-red-600 hover:text-red-800 transition cursor-pointer" title="Xóa">
+                            <img src="{{ url_for('static', filename='icon/delete_icon.svg') }}" alt="Delete" />
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="flex justify-between items-center mt-6">
+        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50" {{ 'disabled' if page_num == 1 else '' }}>
+            Previous
+        </button>
+        <span class="text-gray-600">Trang {{ page_num }}</span>
+        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50" {{ 'disabled' if lst_account|length < 10 else '' }}>
+            Next
+        </button>
+    </div>
+</div>
+
+{% endblock %}

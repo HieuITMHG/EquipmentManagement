@@ -109,10 +109,25 @@ class RepairTicketService:
         try:
             cursor.callproc('CompleteRepairTicket', [repair_ticket_id])
             conn.commit()
-            return True  # ✅ Procedure chạy thành công
+            return True  
         except Exception as e:
             print(f"Error completing repair ticket: {e}")
-            return False  # ❌ Có lỗi xảy ra
+            return False  
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def accept_repair_ticket(ticket_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE repair_ticket SET status = 'ACCEPTED' WHERE id = %s", (ticket_id,))
+            conn.commit()
+            return cursor.rowcount > 0  
+        finally:
+            cursor.close()
+            conn.close()
+
+
+

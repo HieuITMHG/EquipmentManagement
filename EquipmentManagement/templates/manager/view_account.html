@@ -1,0 +1,130 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Add account
+{% endblock %}
+
+{% block content %}
+<div class="relative h-screen overflow-y-auto flex justify-center items-center bg-blue-50">
+    <button
+      onclick="goBack()"
+      class="absolute top-12 left-12 bg-blue-600 z-10 h-12 w-12 rounded-full flex items-center justify-center hover:bg-blue-700 transition duration-300">
+      <img src="{{ url_for('static', filename='icon/back_icon.svg') }}" class="w-6"/>
+    </button>
+  
+    <div class="w-11/12 max-w-5xl bg-gradient-to-br from-blue-300 to-blue-600 rounded-xl shadow-lg p-10">
+        <div class="flex items-center w-full justify-center mb-6 font-bold text-white">
+            <h1 class="text-3xl">ACCOUNT INFORMATION</h1>
+        </div>
+        <div class="flex flex-col lg:flex-row gap-2">
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">CCCD</label>
+                        <div class="input_field">
+                            {{user.cccd}}
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Tên:</label>
+                        <div class="input_field">
+                            {{user.first_name}}
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Họ:</label>
+                        <div class="input_field">
+                            {{user.last_name}}
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Gender:</label>
+                        <div class="input_field">
+                            {% if user.gender == 1 %}
+                                Nam
+                            {% else %}
+                                Nữ
+                            {% endif %}    
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">Email:</label>
+                        <div class="input_field">
+                            {{user.email}}
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Số điện thoại:</label>
+                        <div class="input_field">
+                            {{user.phone}}
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Địa chỉ:</label>
+                        <div class="input_field">
+                            {{user.address}}
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Vai trò:</label>
+                        <div class="input_field">
+                            {% if user.role_id == 1 %}
+                                Quản lý
+                            {% elif user.role_id == 2 %}
+                                Sinh viên
+                            {% else %}
+                                Nhân viên
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5 relative">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">Mã sinh viên \ nhân viên:</label>
+                        <div class="input_field">
+                            {{user.person_id}}
+                        </div>
+                    </div>
+                    {% if user.role_id == 2 %}
+                    <div class="flex flex-col">
+                        <label class="acc_label">Lớp:</label>
+                        <div class="input_field">
+                            {{user.class_id}}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="acc_label">Trạng thái:</label>
+                        <div class="input_field">
+                            {% if user.is_studing == 1 %}
+                                Đang học
+                            {% else %}
+                                Không còn học
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex flex-col">
+                        <label class="acc_label">Trạng thái:</label>
+                        <div class="input_field">
+                            {% if user.is_working == 1 %}
+                                Đang làm
+                            {% else %}
+                                Không còn làm
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+  </div>
+</div>
+
+{% endblock %}

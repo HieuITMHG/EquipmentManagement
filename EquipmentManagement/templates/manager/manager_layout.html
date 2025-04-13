@@ -31,6 +31,10 @@
                 <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.penalty_ticket') }}">Phiếu phạt</a>
             </li>
+            <li class="nav_item {% if request.path == '/manager/account' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/account_icon.svg') }}" class="w-6"/>
+                <a href="{{ url_for('manager.account', page_num=1) }}">Tài khoản</a>
+            </li>
             <li class="nav_item">
                 <img src="{{ url_for('static', filename='icon/logout.svg') }}" class="w-6"/>
                 <a href="/logout">Đăng xuất</a>

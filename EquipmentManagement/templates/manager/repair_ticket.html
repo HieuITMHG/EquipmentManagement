@@ -43,19 +43,19 @@
         <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px]" id="pending">
                 {% for request in pending_requests %}
-                <form method="post" action="{{ url_for('manager.cancel_repair_ticket') }}" 
+                <form method="post" action="{{ url_for('manager.accept_repair_ticket') }}" 
                  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
                     <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
                         onclick="show_detail(this.value)"
                         value="detail-{{request.id}}"
                         type="button">
-                        {{request.manager_id}} - {{request.start_date}}
+                        {{request.staff_id}} - {{request.start_date}}
                     </button>
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
                     <div class="flex space-x-1">
                         <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
-                        type="submit" name="action">Hủy</button>
+                        type="submit" name="action">Duyệt</button>
                     </div>
                 </form>
                 <div 
@@ -115,7 +115,7 @@
                         onclick="show_detail(this.value)"
                         value="detail-{{request.id}}"
                         type="button">
-                        {{request.manager_id}} - {{request.start_date}}
+                        {{request.staff_id}} - {{request.start_date}}
                     </button>
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value = "{{ request.id }}" /> 

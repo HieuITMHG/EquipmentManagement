@@ -1,118 +1,158 @@
 {% extends "manager/manager_layout.html" %}
 
 {% block manager_content %}
-<div class="flex flex-1 p-3">
-    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
-        <div class=" flex-1 flex px-6 justify-between items-center">
-            <div class="h-full w-full border-b-2 border-gray-500 flex items-center justify-between">
-                <h2 class="font-bold text-3xl">Thiết bị hiện thời</h2>
-                <form action="/manager/manager_manage_equipment" method="get" class="flex items-center gap-4">      
-                    <input
-                        list="rooms"
-                        name="room"
-                        id="room"
-                        class="w-36 border-2 border-black rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value="{{ selected_value or '' }}"
-                        onchange="this.form.submit()"
-                        placeholder="--room--"
-                    />
-                    
-                    <datalist id="rooms">
-                        {% for room in lst_room %}
-                            <option value="{{ room.id }}"></option>
-                        {% endfor %}
-                    </datalist>
-                </form>
-            </div>
-        </div>
-        <div class="flex-10 flex flex-col px-6 overflow-auto">
-            <div class="flex-10 space-y-3 p-4 max-h-[600px]">
-                <div class="flex-10 flex flex-col px-6 overflow-auto">
-                    <div class="flex-10 space-y-3 p-4 max-h-[600px]">
-                        {% if lst_equipment %}
-                            {% for equipment in lst_equipment %}
-                            <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
-                                <a class="h-full w-full flex items-center justify-center bg-blue-300 p-2 rounded-md hover:bg-blue-200 cursor-pointer" type="submit"
-                                href="{{ url_for('manager.manager_manage_equipment', equipment_id=equipment.id) }}">
-                                {{equipment.equipment_name}}-{{equipment.room_id}}
-                            </a>
-                            </div>
+<div class="flex flex-1 flex-col p-1">
+    <div class="flex flex-1 flex-col p-3">
+        <div class="flex justify-between items-center w-full h-16 bg-white px-6 py-2 rounded shadow">
+            <!-- Search Section (Left Side) -->
+            <form id="searchForm" action="/manager/manager_manage_equipment" method="get" class="flex items-center gap-6 w-full">
+                <!-- Room Select -->
+                <div class="flex items-center gap-2">
+                    <label for="room" class="text-sm font-semibold">Phòng:</label>
+                    <div class="flex items-center">
+                        <input
+                            list="rooms"
+                            name="room_id"
+                            id="room"
+                            class="w-36 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value="{% if room_id %}{{room_id}}{%else%}{%endif%}"
+                            placeholder="--room--"
+                            onchange="this.form.submit()"
+                        />
+                        <datalist id="rooms">
+                            {% for room in lst_room %}
+                                <option value="{{ room.id }}"></option>
                             {% endfor %}
-                        {% else %}
-                            <p class="text-red-500 font-bold">Không có thiết bị nào.</p>
-                        {% endif %}
-                    </div>   
+                        </datalist>
+                    </div>
                 </div>
-            </div>
-            </div>   
+    
+                <!-- Type Select -->
+                <div class="flex items-center gap-2">
+                    <label for="type" class="text-sm font-semibold">Loại:</label>
+                    <select name="equipment_type" id="type" class="border border-gray-300 rounded px-2 py-1" onchange="this.form.submit()">
+                        <option value="">Tất cả</option>
+                        {% for t in lst_equipment_type %}
+                            {% if t.value == equipment_type %}
+                            <option value="{{t.value}}" selected>{{t.name}}</option>
+                            {%else%}
+                            <option value="{{t.value}}">{{t.name}}</option>
+                            {%endif%}
+                        {%endfor%}
+                    </select>
+                </div>
+    
+                <!-- Status Select -->
+                <div class="flex items-center gap-2">
+                    <label for="status" class="text-sm font-semibold">Trạng thái:</label>
+                    <select name="status" id="status" class="border border-gray-300 rounded px-2 py-1" onchange="this.form.submit()">
+                        <option value="">Tất cả</option>
+                        {% for s in lst_status %}
+                            {% if s.value == status %}
+                            <option value="{{s.value}}" selected>{{s.name}}</option>
+                            {%else%}
+                            <option value="{{s.value}}">{{s.name}}</option>
+                            {%endif%}
+                        {%endfor%}
+                    </select>
+                </div>
+            </form>
+    
+            <!-- Add Button (Right Side) -->
+            <a href="{{ url_for('manager.add_items') }}" class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 font-bold transition duration-200">
+                Thêm
+            </a>
         </div>
-        <div class="flex-1 flex flex-col bg-white rounded-md">
-            <div class=" flex-1 flex px-6 justify-between items-center">
-                <div>
-                    <h2 class="font-bold text-3xl">Phiếu chỉnh sửa thiết bị</h2>
-                </div>
-            </div>
-            
-            <div class="flex-10 flex flex-col px-6">
-                <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] bg-white rounded-lg shadow-lg relative">
-                    <form class="space-y-4 " method="post" action="{{url_for('manager.manager_manage_equipment')}}" >
-                        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
-                        <input type="hidden" value="{{equi.id}}" name="equi_id"/>
-                        {%if equi.id%}
-                        <div class="flex flex-col">
-                            <label class="font-bold text-gray-700">Tên thiết bị:</label>
-                            <input class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" value="{{equi.equipment_name}}" name="equi_name" />
-                        </div>
-                        <div class="flex flex-col">
-                            <label for="room" class="font-bold">Phòng:</label>
-                
-                            <input
-                                list="rooms"
-                                name="room"
-                                id="room"
-                                class="input_field"
-                                value="{{ equi.room_id }}"
-                                placeholder="--room--"
-                            />
-                            <datalist id="rooms">
-                                {% for r in room %}
-                                    <option value="{{ r.id }}"></option>
-                                {% endfor %}
-                            </datalist>
-
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="font-bold text-gray-700">Trạng thái:</label>
-                            <p class="text-gray-600">{{equi.status}}</p>
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="font-bold text-gray-700">Loại thiết bị:</label>
-                            <p class="text-gray-600">{{equi.equipment_type}}</p>
-                        </div>
-                        <div>
-                            <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 absolute bottom-[40px] right-[40px]">
-                                Sửa</button>
-                        </div>
-                        <div>
-                           
-                        {%endif%}
-                    </form>
-                    {%if equi.id%}
-                    <form method="GET" action="{{ url_for('manager.delete_equipment') }}">
-                        <input type="hidden" name="equipment_id" value="{{ equi.id }}">
-                        <button type="submit"
-                            class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 absolute bottom-[40px] left-[40px]">
-                            Xóa
-                        </button>
-                    </form>
-                        {%endif%}
-                </div>  
-               
-            </div>
-             
     </div>
-    <a href="{{ url_for('manager.add_items') }}" class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 fixed top-8 right-10 font-bold flex items-center justify-center">
-                    Thêm
-                </a>
-   
+    
+    <div class="flex w-full p-3">
+        <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+            <div class="flex-10 flex flex-col px-6">
+                <div class="flex-10 space-y-3 p-4 max-h-[750px] min-h-[630px]">
+                    <div class="flex-10 flex flex-col px-6 overflow-auto">
+                        <div class="flex-10 space-y-3 p-4 max-h-[600px]">
+                            {% if lst_equipment %}
+                                {% for equipment in lst_equipment %}
+                                <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
+                                    <a class="h-full w-full flex items-center justify-center bg-blue-300 p-2 rounded-md cursor-pointer" type="submit"
+                                    href="{{ url_for('manager.manager_manage_equipment', equipment_id=equipment.id) }}">
+                                    {{equipment.equipment_name}}-{{equipment.room_id}}
+                                </a>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-red-500 font-bold">Không có thiết bị nào.</p>
+                            {% endif %}
+                        </div>   
+                    </div>
+                </div>
+                </div>   
+            </div>
+            <div class="flex-1 flex flex-col bg-white rounded-md">
+                <div class=" flex-1 flex px-6 justify-between items-center">
+                    <div>
+                        <h2 class="font-bold text-3xl">Chỉnh sửa thiết bị</h2>
+                    </div>
+                </div>
+                
+                <div class="flex-10 flex flex-col px-6">
+                    <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] bg-white rounded-lg shadow-lg relative">
+                        <form class="space-y-4 " method="post" action="{{url_for('manager.manager_manage_equipment')}}" >
+                            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
+                            <input type="hidden" value="{{equi.id}}" name="equi_id"/>
+                            {%if equi.id%}
+                            <div class="flex flex-col">
+                                <label class="font-bold text-gray-700">Tên thiết bị:</label>
+                                <input class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" value="{{equi.equipment_name}}" name="equi_name" />
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="room" class="font-bold">Phòng:</label>
+                    
+                                <input
+                                    list="rooms"
+                                    name="room"
+                                    id="room"
+                                    class="input_field"
+                                    value="{{ equi.room_id }}"
+                                    placeholder="--room--"
+                                />
+                                <datalist id="rooms">
+                                    {% for r in room %}
+                                        <option value="{{ r.id }}"></option>
+                                    {% endfor %}
+                                </datalist>
+    
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="font-bold text-gray-700">Trạng thái:</label>
+                                <p class="text-gray-600">{{equi.status}}</p>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="font-bold text-gray-700">Loại thiết bị:</label>
+                                <p class="text-gray-600">{{equi.equipment_type}}</p>
+                            </div>
+                            <div>
+                                <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 absolute bottom-[40px] right-[40px]">
+                                    Sửa</button>
+                            </div>
+                            <div>
+                               
+                            {%endif%}
+                        </form>
+                        {%if equi.id%}
+                        <form method="GET" action="{{ url_for('manager.delete_equipment') }}">
+                            <input type="hidden" name="equipment_id" value="{{ equi.id }}">
+                            <button type="submit"
+                                class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 absolute bottom-[40px] left-[40px]">
+                                Xóa
+                            </button>
+                        </form>
+                            {%endif%}
+                    </div>  
+                   
+                </div>
+                 
+    </div>
+    
+    </div>
 {% endblock %}

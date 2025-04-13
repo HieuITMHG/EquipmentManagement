@@ -1,0 +1,143 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Add account
+{% endblock %}
+
+{% block content %}
+<div class="relative h-screen overflow-y-auto flex justify-center items-center bg-blue-50">
+    <button
+      onclick="goBack()"
+      class="absolute top-12 left-12 bg-blue-600 z-10 h-12 w-12 rounded-full flex items-center justify-center hover:bg-blue-700 transition duration-300">
+      <img src="{{ url_for('static', filename='icon/back_icon.svg') }}" class="w-6"/>
+    </button>
+  
+    <div class="w-11/12 max-w-5xl bg-gradient-to-br from-blue-300 to-blue-600 rounded-xl shadow-lg p-10">
+        <div class="flex items-center w-full justify-center mb-6 font-bold text-white">
+            <h1 class="text-3xl">ADD NEW ACCOUNT</h1>
+        </div>
+        <form class="flex flex-col lg:flex-row gap-2" action="{{ url_for('manager.edit_account', user_id=user.person_id) }}" method="post">
+            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">CCCD</label>
+                        <input name="cccd" type="text" class="input_field" value="{{user.cccd}}"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Tên:</label>
+                        <input name="first_name" type="text" class="input_field" value="{{user.first_name}}"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Họ:</label>
+                        <input name="last_name" type="text" class="input_field" value="{{user.last_name}}"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Gender:</label>
+                        <select name="gender" class="input_field">
+                            {% if user.gender == 1 %}
+                            <option selected value="1">Nam</option>
+                            <option value="2">Nữ</option>
+                            {% else %}
+                            <option value="1">Nam</option>
+                            <option selected value="2">Nữ</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">Email:</label>
+                        <input name="email" type="email" class="input_field" value="{{user.email}}"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Số điện thoại:</label>
+                        <input name="phone" type="text" class="input_field" value="{{user.phone}}"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Địa chỉ:</label>
+                        <input name="address" type="text" class="input_field" value="{{user.address}}"/>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="acc_label">Vai trò:</label>
+                        {% if user.role_id == 2 %}
+                        <div class="input_field">Sinh viên</div>
+                        {% else %}
+                        <select class="input_field" id="role_input" name="role_id">
+                            {% if user.role_id == 1 %}
+                            <option value="1" selected>Quản lý</option>
+                            <option value="3">Nhân viên</option>
+                            {% else %}
+                            <option value="1">Quản lý</option>
+                            <option value="3" selected>Nhân viên</option>
+                            {% endif %}
+                        </select>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-md flex px-3 py-5 relative">
+                <div class="flex flex-col flex-1 gap-3">
+                    <div class="flex flex-col">
+                        <label class="acc_label">Mã sinh viên \ nhân viên:</label>
+                        <div class="input_field">{{user.person_id}}</div>
+                    </div>
+                    {% if user.role_id == 2 %}
+                    <div class="flex flex-col">
+                        <label class="acc_label">Trạng thái:</label>
+                        <select class="input_field" id="role_input" name="role_id">
+                            {% if user.is_studing == 1 %}
+                            <option value="1" selected>Đang học</option>
+                            <option value="0">Không còn học</option>
+                            {% else %}
+                            <option value="1">Đang học</option>
+                            <option value="0" selected>Không còn học</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="flex flex-col" id="class_input">
+                        <label for="room" class="acc_label">Lớp:</label>
+                        <input
+                            list="classes"
+                            name="class"
+                            class="input_field"
+                            value="{{user.class_id}}"
+                            placeholder="--Lớp--"
+                        />
+                        <datalist id="classes">
+                            {% for class in lst_class %}
+                                <option value="{{ class.id }}">{{class.class_name}} - {{class.academic_year}}</option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    {% else %}
+                    <div class="flex flex-col">
+                        <label class="acc_label">Trạng thái:</label>
+                        <select class="input_field" id="role_input" name="role_id">
+                            {% if user.is_working == 1 %}
+                            <option value="1" selected>Đang làm</option>
+                            <option value="0">Không còn làm</option>
+                            {% else %}
+                            <option value="1">Đang làm</option>
+                            <option value="0" selected>Không còn làm</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+                <div>
+                    <button
+                      type="submit"
+                      class="bg-blue-600 hover:bg-blue-800 active:scale-[.9] transform transition-all ease-in-out duration-300
+                      absolute bottom-3 right-3 text-white rounded-md px-4 py-2 self-end cursor-pointer"
+                    >
+                      Lưu
+                </div>
+            </div>
+        </form>
+  </div>
+</div>
+{% endblock %}

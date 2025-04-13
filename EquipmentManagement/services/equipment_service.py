@@ -123,3 +123,30 @@ class EquipmentService:
         finally:
             cursor.close()
             conn.close()
+
+    def search_equipment( room_id=None, status=None, equipment_type=None):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = "SELECT * FROM equipment WHERE 1=1"
+        params = []
+
+        if room_id:
+            query += " AND room_id LIKE %s"
+            params.append(f"%{room_id}%")
+
+        if status:
+            query += " AND status = %s"
+            params.append(status)
+
+        if equipment_type:
+            query += " AND equipment_type = %s"
+            params.append(equipment_type)
+
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return results

@@ -1,5 +1,5 @@
 DROP DATABASE IF EXISTS defaultdb;
-CREATE DATABASE defaultdb;
+CREATE DATABASE defaultdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;;
 USE defaultdb;
 
 /* CREATE TABLE SCRIPT */
@@ -38,7 +38,6 @@ CREATE TABLE person (
     email VARCHAR(100) NOT NULL,
     phone CHAR(10) NOT NULL,
     address VARCHAR(255) NOT NULL,
-    img_url VARCHAR(255) NOT NULL,
     account_id INTEGER NOT NULL,
     FOREIGN KEY (account_id) REFERENCES account(id)
 );
@@ -272,14 +271,14 @@ INSERT INTO account (password, role_id, is_active) VALUES
 ('staff456', 3, TRUE);  -- Tài khoản cho 'STF2002'
 
 -- Chèn thông tin cá nhân cho sinh viên
-INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
-('N22DCCN127', '123456789012', 'Hieu', 'Nguyen', TRUE, 'hieu127@example.com', '0987654321', 'Hanoi, Vietnam', 'hieu127.jpg', 1),
-('N22DCCN078', '987654321012', 'Linh', 'Tran', FALSE, 'linh078@example.com', '0976543210', 'HCM City, Vietnam', 'linh078.jpg', 2);
+INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, account_id) VALUES 
+('N22DCCN127', '123456789012', 'Hieu', 'Nguyen', TRUE, 'hieu127@example.com', '0987654321', 'Hanoi, Vietnam', 1),
+('N22DCCN078', '987654321012', 'Linh', 'Tran', FALSE, 'linh078@example.com', '0976543210', 'HCM City, Vietnam', 2);
 
 -- Chèn thông tin cá nhân cho nhân viên
-INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
-('STF2001', '567890123456', 'Duy', 'Le', TRUE, 'duy2001@example.com', '0965432109', 'Da Nang, Vietnam', 'duy2001.jpg', 3),
-('STF2002', '678901234567', 'Anh', 'Pham', FALSE, 'anh2002@example.com', '0954321098', 'Can Tho, Vietnam', 'anh2002.jpg', 4);
+INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, account_id) VALUES 
+('STF2001', '567890123456', 'Duy', 'Le', TRUE, 'duy2001@example.com', '0965432109', 'Da Nang, Vietnam', 3),
+('STF2002', '678901234567', 'Anh', 'Pham', FALSE, 'anh2002@example.com', '0954321098', 'Can Tho, Vietnam', 4);
 
 
 -- Insert sample data for student
@@ -294,10 +293,10 @@ INSERT INTO staff (id, is_working) VALUES
 
 INSERT INTO account (password, role_id, is_active) VALUES
 ('QL001', 1, TRUE); 
-INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, img_url, account_id) VALUES 
-('QL001', '123456789012', 'Sang', 'Tran', TRUE, 'sangtran127@example.com', '4333244521', 'Hanoi, Vietnam', 'hieu127.jpg', 5);
+INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, account_id) VALUES 
+('QL001', '123456789012', 'Sang', 'Tran', TRUE, 'sangtran127@example.com', '4333244521', 'Hanoi, Vietnam', 5);
 INSERT INTO staff (id, is_working) VALUES 
-('QL001', TRUE), 
+('QL001', TRUE);
 
 -- Insert sample data for manager
 
@@ -342,7 +341,6 @@ INSERT INTO liquidation_slip (liquidation_date, staff_id, status) VALUES
 ('2024-03-15', 'STF2001', 'ACCEPTED'),
 ('2024-4-5', 'STF2001', 'ACCEPTED');
 
-
 -- Insert sample data for detail_disposal_form
 INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id) VALUES 
 (1, 5),
@@ -364,7 +362,6 @@ SELECT
     p.email,  
     p.phone,  
     p.address,  
-    p.img_url,  
     a.password,  
     a.role_id,  
     a.is_active  
@@ -382,7 +379,6 @@ SELECT
     p.email,  
     p.phone,  
     p.address,  
-    p.img_url,
     a.password,  
     a.role_id,  
     a.is_active
@@ -898,6 +894,173 @@ BEGIN
         WHERE liquidation_slip_id = in_liquidation_slip_id
     );
 END $$
+
+CREATE PROCEDURE CreateNewAccount(
+    IN p_cccd CHAR(12),
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50),
+    IN p_gender BOOLEAN,
+    IN p_email VARCHAR(100),
+    IN p_phone CHAR(10),
+    IN p_address VARCHAR(255),
+    IN p_role_id INTEGER,
+    IN p_class_id CHAR(20),
+    IN p_account_code VARCHAR(50),
+    IN p_password VARCHAR(500)
+)
+BEGIN
+    DECLARE new_account_id INTEGER;
+    DECLARE exit handler for SQLEXCEPTION 
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Lỗi khi tạo tài khoản mới';
+    END;
+
+    -- Bắt đầu giao dịch
+    START TRANSACTION;
+
+    -- Chèn vào bảng account
+    INSERT INTO account (password, role_id, is_active)
+    VALUES (p_password, p_role_id, TRUE);
+    
+    -- Lấy account_id vừa tạo
+    SET new_account_id = LAST_INSERT_ID();
+
+    -- Chèn vào bảng person
+    INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, account_id)
+    VALUES (p_account_code, p_cccd, p_first_name, p_last_name, p_gender, p_email, p_phone, p_address, new_account_id);
+
+    -- Kiểm tra role_id để chèn vào bảng student hoặc staff
+    IF p_role_id = 2 THEN
+        -- Sinh viên: chèn vào bảng student
+        IF p_class_id IS NULL THEN
+            ROLLBACK;
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Class_id không được để trống cho sinh viên';
+        END IF;
+        
+        INSERT INTO student (id, class_id, is_studing)
+        VALUES (p_account_code, p_class_id, TRUE);
+    ELSEIF p_role_id = 1 OR p_role_id = 3 THEN
+        -- Manager hoặc Staff: chèn vào bảng staff
+        INSERT INTO staff (id, is_working)
+        VALUES (p_account_code, TRUE);
+    END IF;
+
+    -- Hoàn tất giao dịch
+    COMMIT;
+END $$
+
+CREATE PROCEDURE UpdateAccount(
+    IN p_person_id VARCHAR(20),
+    IN p_cccd CHAR(12),
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50),
+    IN p_gender BOOLEAN,
+    IN p_email VARCHAR(100),
+    IN p_phone CHAR(10),
+    IN p_address VARCHAR(255),
+    IN p_role_id INTEGER,
+    IN p_class_id CHAR(20),
+    IN p_is_studing BOOLEAN,
+    IN p_is_working BOOLEAN
+)
+BEGIN
+    DECLARE account_id INTEGER;
+    DECLARE exit handler for SQLEXCEPTION 
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Lỗi khi cập nhật tài khoản';
+    END;
+
+    -- Bắt đầu giao dịch
+    START TRANSACTION;
+
+    -- Lấy account_id
+    SELECT account_id INTO account_id
+    FROM person
+    WHERE id = p_person_id;
+
+    -- Cập nhật bảng person
+    UPDATE person
+    SET 
+        cccd = p_cccd,
+        first_name = p_first_name,
+        last_name = p_last_name,
+        gender = p_gender,
+        email = p_email,
+        phone = p_phone,
+        address = p_address
+    WHERE id = p_person_id;
+
+    -- Cập nhật role_id trong bảng account
+    UPDATE account
+    SET role_id = p_role_id
+    WHERE id = account_id;
+
+    -- Xử lý theo role_id
+    IF p_role_id = 2 THEN
+        -- Sinh viên: cập nhật hoặc chèn vào bảng student
+        IF EXISTS (SELECT 1 FROM student WHERE id = p_person_id) THEN
+            UPDATE student
+            SET class_id = p_class_id, is_studing = p_is_studing
+            WHERE id = p_person_id;
+        ELSE
+            INSERT INTO student (id, class_id, is_studing)
+            VALUES (p_person_id, p_class_id, p_is_studing);
+        END IF;
+    ELSEIF p_role_id = 1 OR p_role_id = 3 THEN
+        -- Manager hoặc Staff: cập nhật hoặc chèn vào bảng staff
+        IF EXISTS (SELECT 1 FROM staff WHERE id = p_person_id) THEN
+            UPDATE staff
+            SET is_working = p_is_working
+            WHERE id = p_person_id;
+        ELSE
+            INSERT INTO staff (id, is_working)
+            VALUES (p_person_id, p_is_working);
+        END IF;
+    END IF;
+
+    -- Hoàn tất giao dịch
+    COMMIT;
+END $$
+
+CREATE PROCEDURE DeleteAccount(
+    IN p_person_id VARCHAR(20)
+)
+BEGIN
+    DECLARE account_id INTEGER;
+    DECLARE exit handler for SQLEXCEPTION 
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Orror when try to delete account';
+    END;
+
+    -- Bắt đầu giao dịch
+    START TRANSACTION;
+
+    -- Lấy account_id
+    SELECT account_id INTO account_id
+    FROM person
+    WHERE id = p_person_id;
+
+    -- Xóa khỏi student hoặc staff
+    DELETE FROM student WHERE id = p_person_id;
+    DELETE FROM staff WHERE id = p_person_id;
+
+    -- Xóa khỏi person
+    DELETE FROM person WHERE id = p_person_id;
+
+    -- Xóa khỏi account
+    DELETE FROM account WHERE id = account_id;
+
+    -- Hoàn tất giao dịch
+    COMMIT;
+END $$
+
 
 DELIMITER ; 
 
