@@ -1,0 +1,51 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Staff
+{% endblock %}
+
+{% block content %}
+    <div class="fixed h-screen w-screen flex bg-[rgba(204,_204,_204,_0.5)]">
+        <ul class="space-y-4 h-screen bg-white ml-5 p-4">
+            <li class="nav_item {% if request.path == '/staff' %} hightlight{% endif %}">
+                <a href="{{ url_for('staff.staff') }}" class="flex items-center">
+                    <img src="{{ url_for('static', filename='avatar/avt_man.png') }}" 
+                        alt="avatar" 
+                        class="h-12 w-12 rounded-full mr-2">
+                    <h2>{{login_staff.last_name}} {{login_staff.first_name}} - {{login_staff.person_id}}</h2>
+                </a>
+            </li>
+            <li class="nav_item {% if request.path == '/staff/staff_manage_equipment' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/key_icon_2.svg') }}" class="w-6"/>
+                <a href="{{ url_for('staff.staff_manage_equipment') }}">Thiết bị</a>
+            </li>
+            <li class="nav_item {% if request.path == '/staff/borrow_request' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/borrow-icon.png') }}" class="w-6"/>
+                <a href="{{ url_for('staff.staff_borrow_request') }}">Yêu cầu mượn</a>
+            </li>
+            <li class="nav_item {% if request.path == '/staff/borrow_history' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/history.png') }}" class="w-6"/>
+                <a href="{{ url_for('staff.borrow_history') }}">Lịch sử mượn</a>
+            </li>
+            <li class="nav_item {% if request.path == '/staff/repair_ticket' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/tools.png') }}" class="w-6"/>
+                <a href="{{ url_for('staff.repair_ticket') }}">Phiếu sửa chữa</a>
+            </li>
+            <li class="nav_item {% if request.path == '/staff/liquidation_slip' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/trash-can.png') }}" class="w-6"/>
+                <a href="{{ url_for('staff.liquidation_slip') }}">Phiếu thanh lý</a>
+            </li>
+            <li class="nav_item {% if request.path == '/staff/penalty_ticket' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
+                <a href="{{ url_for('staff.penalty_ticket') }}">Phiếu phạt</a>
+            </li>
+            <li class="nav_item">
+                <img src="{{ url_for('static', filename='icon/logout.svg') }}" class="w-6"/>
+                <a href="/logout">Đăng xuất</a>
+            </li>
+        </ul>
+        
+        {% block staff_content %}
+        {% endblock %}
+    </div>
+{% endblock %}

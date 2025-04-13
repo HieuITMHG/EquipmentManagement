@@ -1,0 +1,43 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Manager
+{% endblock %}
+
+{% block content %}
+    <div class="fixed h-screen w-screen flex bg-[rgba(204,_204,_204,_0.5)]">
+        <ul class="space-y-4 h-screen bg-white ml-5 p-4">
+            <li class="nav_item {% if request.path == '/staff' %} hightlight{% endif %}">
+                <a href="{{ url_for('manager.manager') }}" class="flex items-center">
+                    <img src="{{ url_for('static', filename='avatar/avt_man.png') }}" 
+                        alt="avatar" 
+                        class="h-12 w-12 rounded-full mr-2">
+                    <h2>{{login_manager.last_name}} {{login_manager.first_name}} - {{login_manager.person_id}}</h2>
+                </a>
+            </li>
+            <li class="nav_item {% if request.path == '/manager/manager_manage_equipment' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/key_icon_2.svg') }}" class="w-6"/>
+                <a href="{{ url_for('manager.manager_manage_equipment') }}">Thiết bị</a>
+            </li>
+            <li class="nav_item {% if request.path == '/manager/repair_ticket' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/tools.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.repair_ticket') }}">Phiếu sửa chữa</a>
+            </li>
+            <li class="nav_item {% if request.path == '/manager/liquidation_slip' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/trash-can.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.liquidation_slip') }}">Phiếu thanh lý</a>
+            </li>
+            <li class="nav_item {% if request.path == '/manager/penalty_ticket' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.penalty_ticket') }}">Phiếu phạt</a>
+            </li>
+            <li class="nav_item">
+                <img src="{{ url_for('static', filename='icon/logout.svg') }}" class="w-6"/>
+                <a href="/logout">Đăng xuất</a>
+            </li>
+        </ul>
+        
+        {% block manager_content %}
+        {% endblock %}
+    </div>
+{% endblock %}

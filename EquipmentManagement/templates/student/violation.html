@@ -1,0 +1,35 @@
+{% extends "student/student_layout.html" %}
+
+{% block student_content %}
+<div class="flex flex-1 p-3">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <div class=" flex-1 flex px-6 justify-between items-center">
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center justify-between">
+                <h2 class="font-bold text-3xl">Lỗi vi phạm</h2>
+            </div>
+        </div>
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <table class="min-w-full bg-white border border-gray-300">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">Nội dung vi phạm</th>
+                        <th class="py-3 px-6 text-left">Hình thức phạt</th>
+                        <th class="py-3 px-6 text-left">Ngày vi phạm</th>
+                        <th class="py-3 px-6 text-left">Tiền phạt</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light">
+                    {% for v in lst_violation %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-3 px-6">{{v.violation_content}}</td>
+                        <td class="py-3 px-6">{{v.form_name}}</td>
+                        <td class="py-3 px-6">{{v.create_time}}</td>
+                        <td class="py-3 px-6">{{v.price}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

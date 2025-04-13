@@ -1,0 +1,254 @@
+{% extends "manager/manager_layout.html" %}
+
+{% block manager_content %}
+<style>
+    .checkbox-custom {
+    background-color: transparent;
+    transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .checkbox:checked + label .checkbox-custom {
+        background-color: white;
+        border-color: blue;
+    }
+
+    .checkbox:checked + label .checkbox-custom .checkmark {
+        display: flex;
+    }
+
+    .checkbox-custom:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .checkbox {
+        display: none;
+    }
+</style>
+<div class="flex flex-1 p-3">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
+        <!-- sub bar -->
+        <ul class="h-10 flex w-full font-bold bg-[rgba(204,_204,_204,_0.5)]">
+            <li class="flex-1 flex justify-center items-center cursor-pointer bg-white rounded-t-md" 
+                onclick="toggle_pending()"
+                id="btn-pending">
+                Đang chờ
+            </li>
+            <li class="flex-1 flex justify-center items-center cursor-pointer rounded-t-md" 
+                onclick="toggle_history()"
+                id="btn-history">
+                Lịch sử
+            </li>
+        </ul>
+
+        <div class="flex-10 flex flex-col px-6 overflow-auto">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px]" id="pending">
+                {% for request in pending_requests %}
+                <form method="post" action="{{ url_for('manager.cancel_repair_ticket') }}" 
+                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                    <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
+                        onclick="show_detail(this.value)"
+                        value="detail-{{request.id}}"
+                        type="button">
+                        {{request.manager_id}} - {{request.start_date}}
+                    </button>
+                    <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                    <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
+                    <div class="flex space-x-1">
+                        <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
+                        type="submit" name="action">Hủy</button>
+                    </div>
+                </form>
+                <div 
+                class="fixed h-screen w-screen top-0 left-0 bg-[rgba(204,_204,_204,_0.5)] justify-center items-center hidden"
+                    id="detail-{{request.id}}">
+                    <div class="h-[500px] w-[500px] bg-white shadow-2xs rounded-2xl flex flex-col relative">
+                        <button class="absolute right-4 top-4 text-red-500 cursor-pointer hover:bg-gray-400"
+                                value="detail-{{request.id}}" 
+                                onclick="close_detail(this.value)">
+                            <img src="{{url_for('static', filename='icon/close_icon.svg')}}">
+                        </button>
+                        <div class="w-full p-4">
+                            <h2 class="font-bold text-xl mb-3">Chi tiết phiếu sửa chửa</h2>
+                            <div class="mb-3">
+                                <label class="font-semibold">Mã người tạo:</label>
+                                <p class="text-gray-700">{{request.staff_id}}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="font-semibold">Ngày tạo:</label>
+                                <p class="text-gray-700">{{ request.start_date.strftime('%d/%m/%Y') }}</p>
+                            </div>
+                            {% if request.end_date %}
+                            <div class="mb-3">
+                                <label class="font-semibold">Ngày kết thúc:</label>
+                                <p class="text-gray-700">{{request.end_date.strftime('%d/%m/%Y')}}</p>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label class="font-semibold">Trạng thái phiếu</label>
+                                <p class="text-gray-700">{{request.status}}</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="font-semibold">Tổng chi phí</label>
+                                <p class="text-gray-700">{{request.total_cost}} VND</p>
+                            </div>
+
+                        </div>
+                        <div class="max-h-[250px] max-w-[484px] overflow-y-auto p-4 border-2 border-gray-500 m-4">
+                            <div class="">
+                                {% for e in request.equipments %}
+                                    <div>{{e.equipment_name}} - {{e.room_id}}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}    
+            </div>   
+
+            <div class="flex-10 space-y-3 p-4 max-h-[600px] hidden" id="history">
+                {% for request in accepted_requests %}
+                <form method="post" action="{{ url_for('manager.finish_repair_ticket') }}" 
+                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                    <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
+                        onclick="show_detail(this.value)"
+                        value="detail-{{request.id}}"
+                        type="button">
+                        {{request.manager_id}} - {{request.start_date}}
+                    </button>
+                    <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                    <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
+                    {% if request.status == 'ACCEPTED' %}
+                    <div class="flex space-x-1">
+                        <button class="bg-blue-300 p-1 w-24 hover:bg-blue-200 cursor-pointer text-[15px]"
+                        type="submit" name="action">Hoàn thành</button>
+                    </div>
+                    {% endif %}
+                </form>
+                <div 
+                class="fixed h-screen w-screen top-0 left-0 bg-[rgba(204,_204,_204,_0.5)] justify-center items-center hidden"
+                    id="detail-{{request.id}}">
+                    <div class="h-[500px] w-[500px] bg-white shadow-2xs rounded-2xl flex flex-col relative">
+                        <button class="absolute right-4 top-4 text-red-500 cursor-pointer hover:bg-gray-400"
+                                value="detail-{{request.id}}" 
+                                onclick="close_detail(this.value)">
+                            <img src="{{url_for('static', filename='icon/close_icon.svg')}}">
+                        </button>
+                        <div class="w-full p-4">
+                            <h2 class="font-bold text-xl mb-3">Chi tiết phiếu sửa chửa</h2>
+                            <div class="mb-3">
+                                <label class="font-semibold">Mã người tạo:</label>
+                                <p class="text-gray-700">{{request.staff_id}}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="font-semibold">Ngày tạo:</label>
+                                <p class="text-gray-700">{{ request.start_date.strftime('%d/%m/%Y') }}</p>
+                            </div>
+                            {% if request.end_date %}
+                            <div class="mb-3">
+                                <label class="font-semibold">Ngày kết thúc:</label>
+                                <p class="text-gray-700">{{request.end_date.strftime('%d/%m/%Y')}}</p>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label class="font-semibold">Trạng thái phiếu</label>
+                                <p class="text-gray-700">{{request.status}}</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="font-semibold">Tổng chi phí</label>
+                                <p class="text-gray-700">{{request.total_cost}} VND</p>
+                            </div>
+
+                        </div>
+                        <div class="max-h-[250px] max-w-[484px] overflow-y-auto p-4 border-2 border-gray-500 m-4">
+                            <div class="">
+                                {% for e in request.equipments %}
+                                    <div>{{e.equipment_name}} - {{e.room_id}}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}    
+            </div>   
+        </div>
+
+    </div>
+    <div class="flex-1 flex flex-col bg-white rounded-md">
+        <div class=" flex-1 flex px-6 justify-between items-center">
+            <div>
+                <h2 class="font-bold text-3xl">Thiết bị hỏng</h2>
+            </div>
+        </div>
+
+         <!-- form các thiết bị có thể mượn -->
+         <form class="flex-10 flex flex-col px-6" method="post" action="/manager/add_repair_ticket">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /> 
+            <div class="flex-10 border-y-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px]">
+                <div class="space-y-3">
+                    {% for equipment in broken_equipment %}
+                    <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
+                        <!-- Checkbox -->
+                        <input type="checkbox" 
+                               id="equipment-{{equipment.id}}" 
+                               value="{{equipment.id}}" 
+                               class="hidden checkbox" 
+                               name="items[{{equipment.id}}][id]"/>
+                        <label for="equipment-{{equipment.id}}" class="flex items-center cursor-pointer flex-1">
+                            <span class="checkbox-custom w-5 h-5 mr-2 flex items-center justify-center border-2 border-white rounded-md">
+                                <span class="checkmark hidden text-white">✔</span>
+                            </span>
+                            {{equipment.equipment_name}} - {{equipment.room_id}}
+                        </label>
+                        <!-- Input number -->
+                        <label class="mr-2">Giá:</label>
+                        <input type="number" 
+                               name="items[{{equipment.id}}][price]" 
+                               min="1" 
+                               value="10000"
+                               class="w-20 h-8 ml-2 text-black rounded-md px-2 border border-gray-300 focus:border-blue-500 focus:outline-none">
+                    </div>
+                    {% endfor %}
+                </div>       
+            </div>
+            <div class="flex-1 flex justify-end items-center">
+                <button type="submit" 
+                        class="h-10 w-36 bg-gradient-to-l from-blue-500 to-blue-200 hover:rounded-2xl duration-300 cursor-pointer">
+                    Lập phiếu sửa
+                </button>
+            </div>
+        </form>
+        
+        
+    </div>
+</div>
+
+<!-- JavaScript để enable/disable input number -->
+<script>
+    document.querySelectorAll('.checkbox').forEach(checkbox => {
+        const numberInput = checkbox.parentElement.querySelector('input[type="number"]');
+        
+        // Enable/disable input dựa trên trạng thái checkbox
+        checkbox.addEventListener('change', function() {
+            numberInput.disabled = !this.checked;
+        });
+    });
+</script>
+
+<!-- CSS cho checkbox -->
+<style>
+    .checkbox-custom .checkmark {
+        display: none;
+    }
+    .checkbox:checked + label .checkbox-custom .checkmark {
+        display: block;
+    }
+    .checkbox:checked + label .checkbox-custom {
+        background-color: #ffffff;
+        color: #000000;
+    }
+</style>
+{% endblock %}
