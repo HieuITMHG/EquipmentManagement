@@ -24,7 +24,43 @@ class AccountService:
         finally:
             cursor.close()
             conn.close()
-    
+
+    @staticmethod
+    def get_account_by_email(email):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM AccountInfo WHERE email = %s", (email,))
+            account = cursor.fetchone()
+            return account if account else None  
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_account_by_cccd(cccd):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM AccountInfo WHERE cccd = %s", (cccd,))
+            account = cursor.fetchone()
+            return account if account else None  
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_account_by_phone(phone):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM AccountInfo WHERE phone = %s", (phone,))
+            account = cursor.fetchone()
+            return account if account else None  
+        finally:
+            cursor.close()
+            conn.close()
+
     @staticmethod
     def get_account_personal_id_by_person_id(user_id):
         conn = get_connection()

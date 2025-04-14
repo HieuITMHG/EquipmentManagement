@@ -31,12 +31,12 @@ CREATE TABLE account (
 
 CREATE TABLE person (
     id VARCHAR(20) PRIMARY KEY,
-    cccd CHAR(12) NOT NULL,
+    cccd CHAR(12) NOT NULL UNIQUE,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     gender BOOLEAN NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    phone CHAR(10) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone CHAR(10) NOT NULL UNIQUE,
     address VARCHAR(255) NOT NULL,
     account_id INTEGER NOT NULL,
     FOREIGN KEY (account_id) REFERENCES account(id)

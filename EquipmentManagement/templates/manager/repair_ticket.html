@@ -118,7 +118,7 @@
                 </div>
                 {% for request in accepted_requests %}
                 <form method="post" action="{{ url_for('manager.finish_repair_ticket') }}" 
-                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
                         onclick="show_detail(this.value)"
                         value="detail-{{request.id}}"

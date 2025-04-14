@@ -90,7 +90,7 @@ def add_items():
     if RoomService.get_room_by_id(room_id) == None:
         flash("Phòng không tồn tại", "error")
         return redirect("/manager/add_items")
-    equi_type = request.form.get('equi_t')  # Kiểu thiết bị (BỊ TRÙNG NAME -> CẦN SỬA)  
+    equi_type = request.form.get('equi_t') 
     if(equi_name):
         EquipmentService.add_equipment(equi_name, "AVAILABLE", equi_type, room_id)
     return redirect("manager_manage_equipment")
@@ -249,7 +249,7 @@ def finish_liquidation_slip():
         flash("Hoàn tất phiếu sửa chữa thành công")
     else:
         flash("Phiếu sửa chữa không tồn tại hoặc đã hoàn tất")
-    return redirect('repair_ticket') 
+    return redirect('liquidation_slip') 
 
 @manager_blueprint.route('/manager/penalty_ticket', methods=['GET'])
 @login_required
@@ -362,7 +362,23 @@ def add_account():
         class_id = request.form.get('class')
         account_code = request.form.get('account_code')
         password = request.form.get('password', account_code)  
+
         # Kiểm tra đầu vào
+        if AccountService.get_account_by_person_id(account_code):
+            flash("Mã tài khoản đã được sử dụng", 'error')
+            return redirect(url_for('manager.add_account'))
+        if AccountService.get_account_by_email(email):
+            flash('Email đã được sử dụng', 'error')
+            return redirect(url_for('manager.add_account'))
+
+        if AccountService.get_account_by_phone(phone):
+            flash('Số điện thoại đã được sử dụng', 'error')
+            return redirect(url_for('manager.add_account'))
+        
+        if AccountService.get_account_by_cccd(cccd):
+            flash('CCCD đã được sử dụng', 'error')
+            return redirect(url_for('manager.add_account'))
+
         if not all([cccd, first_name, last_name, email, phone, address, role_id, account_code]):
             flash("Vui lòng điền đầy đủ các thông tin bắt buộc.", "error")
             return redirect(url_for('manager.add_account'))
@@ -440,6 +456,18 @@ def edit_account(user_id=None):
         class_id = request.form.get('class')
         is_studing = request.form.get('is_studing') == '1' if role_id == 2 else None
         is_working = request.form.get('is_working') == '1' if role_id in (1, 3) else None
+
+        if AccountService.get_account_by_email(email):
+            flash('Email đã được sử dụng', 'error')
+            return redirect(url_for('manager.edit_account'))
+
+        if AccountService.get_account_by_phone(phone):
+            flash('Số điện thoại đã được sử dụng', 'error')
+            return redirect(url_for('manager.edit_account'))
+        
+        if AccountService.get_account_by_cccd(cccd):
+            flash('CCCD đã được sử dụng', 'error')
+            return redirect(url_for('manager.edit_account'))
 
         # Kiểm tra đầu vào
         if not all([cccd, first_name, last_name, email, phone, address, role_id]):

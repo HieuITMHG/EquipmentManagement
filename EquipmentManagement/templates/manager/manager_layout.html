@@ -15,27 +15,27 @@
                     <h2>{{login_manager.last_name}} {{login_manager.first_name}} - {{login_manager.person_id}}</h2>
                 </a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/manager_manage_equipment' %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/manager_manage_equipment' in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/key_icon_2.svg') }}" class="w-6"/>
                 <a href="{{ url_for('manager.manager_manage_equipment') }}">Thiết bị</a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/borrow_request' %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/borrow_request' in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/borrow-icon.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.manager_borrow_request') }}">Yêu cầu mượn</a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/borrow_history' or 'bh_filter' in request.path %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/borrow_history' in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/history.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.borrow_history') }}">Lịch sử mượn</a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/repair_ticket' %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/repair_ticket'in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/tools.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.repair_ticket') }}">Phiếu sửa chữa</a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/liquidation_slip' %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/liquidation_slip' in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/trash-can.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.liquidation_slip') }}">Phiếu thanh lý</a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/penalty_ticket' %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/penalty_ticket' in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.penalty_ticket') }}">Phiếu phạt</a>
             </li>
