@@ -11,6 +11,8 @@ from services.violation_service import ViolationService
 from services.student_service import StudentService
 from services.penalty_service import PenaltyService
 from services.class_service import ClassService
+from services.borrow_service import BorrowService
+from enums.action_type import ActionType
 from enums.role_type import RoleID
 
 
@@ -45,9 +47,6 @@ def manager_manage_equipment(equipment_id=None):
         room_id = request.args.get("room_id", None)
         equipment_type = request.args.get("equipment_type", None)
         status = request.args.get("status", None)
-        print(room_id)
-        print(equipment_type)
-        print(status)
         lst_equipment = EquipmentService.search_equipment(room_id=room_id,status=status,equipment_type=equipment_type)
         room=RoomService.get_all_room()
         equipment = None
@@ -115,10 +114,11 @@ def delete_equipment():
 @login_required
 @role_required(RoleID.MANAGER.value)
 def liquidation_slip():
+    create_date = request.args.get("create_date")
     login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
     broken_equipment = EquipmentService.get_broken_equipment()
     pending_requests = LiquidationSlipService.get_liquidation_slip(status='PENDING')
-    accepted_requests = LiquidationSlipService.get_history_liquidation_slip()
+    accepted_requests = LiquidationSlipService.get_history_liquidation_slip(create_date)
     for r in pending_requests:
         r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
     for r in accepted_requests:
@@ -127,7 +127,8 @@ def liquidation_slip():
     return render_template('manager/liquidation_slip.html', broken_equipment=broken_equipment,
                                                             pending_requests=pending_requests,
                                                             accepted_requests=accepted_requests,
-                                                            login_manager=login_manager)  
+                                                            login_manager=login_manager,
+                                                            create_date=create_date)  
     
 @manager_blueprint.route('/manager/add_liquidation_slip', methods=['POST'])
 @login_required
@@ -184,7 +185,8 @@ def repair_ticket():
     broken_equipment = EquipmentService.get_broken_equipment()
     broken_equipment = EquipmentService.get_broken_equipment()
     pending_requests = RepairTicketService.get_repair_ticket(status='PENDING')
-    accepted_requests = RepairTicketService.get_history_repair_ticket()
+    create_date = request.args.get("create_date")
+    accepted_requests = RepairTicketService.get_history_repair_ticket(create_date)
     for r in pending_requests:
         r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
         r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
@@ -196,7 +198,8 @@ def repair_ticket():
     return render_template('manager/repair_ticket.html', broken_equipment=broken_equipment,
                                                        pending_requests=pending_requests,
                                                        accepted_requests=accepted_requests,
-                                                       login_manager=login_manager)  
+                                                       login_manager=login_manager,
+                                                       create_date=create_date)  
 
 
 
@@ -256,8 +259,9 @@ def penalty_ticket():
     login_manager = AccountService.get_account_by_person_id(manager_id)
     lst_violation = ViolationService.get_all_violation()
     pending_penalty = PenaltyService.get_pending_penalty_ticket(manager_id)
-    history_penalties = PenaltyService.get_history_penalty_ticket()
-
+    
+    create_date = request.args.get("create_date")
+    history_penalties = PenaltyService.get_history_penalty_ticket(start_time=create_date)
     for r in pending_penalty:
         r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
     for r in history_penalties:
@@ -267,7 +271,8 @@ def penalty_ticket():
                            lst_violation=lst_violation, 
                            pending_penalty=pending_penalty,
                            history_penalties=history_penalties,
-                           login_manager=login_manager)  
+                           login_manager=login_manager,
+                           create_date=create_date)  
 
 @manager_blueprint.route('/manager/add_penalty_ticket', methods=['POST'])
 @login_required
@@ -317,10 +322,24 @@ def finish_penalty_ticket():
 @role_required(RoleID.MANAGER.value)
 def account(page_num=None):
     if request.method == "GET":
+        lst_role = [
+            {'name': 'Quản lý', 'value': '1'},
+            {'name': 'Sinh Viên', 'value': '2'},
+            {'name': 'Nhân viên', 'value': '3'}
+        ]
         manager_id = session.get("account_id")
         login_manager = AccountService.get_account_by_person_id(manager_id)
-        lst_account = AccountService.get_account_info_by_page(page_num)
-        return render_template('manager/account.html', login_manager=login_manager, lst_account=lst_account)
+        role_id = request.args.get('role_id', "")
+        first_name = request.args.get('first_name', "")
+        lst_account, total_page = AccountService.search_account_info(role_id=role_id, first_name=first_name, page_num=page_num)
+        return render_template('manager/account.html', 
+                               login_manager=login_manager, 
+                               lst_account=lst_account, 
+                               page_num=page_num,
+                               first_name=first_name,
+                               role_id=role_id,
+                               lst_role=lst_role,
+                               total_page=total_page)
     
 @manager_blueprint.route('/manager/add_account', methods=['POST', 'GET'])
 @login_required
@@ -417,7 +436,7 @@ def edit_account(user_id=None):
         email = request.form.get('email')
         phone = request.form.get('phone')
         address = request.form.get('address')
-        role_id = int(request.form.get('role_id'))  # 1: Manager, 2: Student, 3: Staff
+        role_id = int(request.form.get('role_id'))  
         class_id = request.form.get('class')
         is_studing = request.form.get('is_studing') == '1' if role_id == 2 else None
         is_working = request.form.get('is_working') == '1' if role_id in (1, 3) else None
@@ -489,4 +508,58 @@ def delete_account():
         flash(f"Lỗi không xác định: {str(e)}.", "error")
         return redirect(url_for('manager.account', page_num=1))
        
+@manager_blueprint.route('/manager/borrow_request/<int:request_id>', methods=['GET'])
+@manager_blueprint.route('/manager/borrow_request', methods=['GET', 'POST'])
+@role_required(RoleID.MANAGER.value)
+@login_required
+def manager_borrow_request(request_id=None):
+    if request.method == "GET":
+        login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
+        lst_request = BorrowService.get_pending_borrow_request()
+        if request_id == None:
+            return render_template('manager/borrow_request.html', login_manager = login_manager, lst_request=lst_request)
+        lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
+        return render_template('manager/borrow_request.html', login_manager=login_manager,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment)
+    borrow_request_id = int(request.form.get('request_id'))
+    action = int(request.form.get('action'))
+    if action == ActionType.ACCEPT.value:
+        BorrowService.accept_borrow_request(borrow_request_id, session.get('account_id'))
+    else:
+        BorrowService.reject_borrow_request(borrow_request_id, session.get('account_id'))
+    return redirect("borrow_request")
 
+@manager_blueprint.route('/manager/borrow_history/<int:request_id>', methods=['GET'])
+@manager_blueprint.route('/manager/borrow_history', methods=['GET', 'POST'])
+@login_required
+@role_required(RoleID.MANAGER.value)
+def borrow_history(request_id=None):
+    lst_status =[
+        {'name': 'Chờ duyệt', 'value': 'PENDING'},
+        {'name': 'Chưa trả', 'value': 'ACCEPTED'},
+        {'name': 'Đã trả', 'value': 'RETURNED'}
+    ]
+    if request.method == "GET":
+        create_date = request.args.get("create_date")
+        print(create_date)
+        status = request.args.get("status")
+        login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
+        lst_request = BorrowService.search_borrow_request_by_date_and_status(create_date, status)
+        if(request_id!=None):
+            lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
+            return render_template('manager/borrow_history.html', 
+                                   login_manager=login_manager,
+                                   lst_request=lst_request, 
+                                   lst_borrow_equipment=lst_borrow_equipment, 
+                                   lst_status=lst_status,
+                                   create_date=create_date,
+                                   status=status)
+        return render_template('manager/borrow_history.html', 
+                               login_manager = login_manager,
+                               lst_request=lst_request, 
+                               lst_status=lst_status,
+                               create_date=create_date,
+                               status=status)
+    
+    borrow_request_id = int(request.form.get('request_id'))
+    BorrowService.return_equi(borrow_request_id)
+    return redirect("borrow_history")

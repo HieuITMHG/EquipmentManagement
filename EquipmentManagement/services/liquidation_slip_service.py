@@ -42,11 +42,19 @@ class LiquidationSlipService:
             conn.close()
     
     @staticmethod
-    def get_history_liquidation_slip():
+    def get_history_liquidation_slip(start_date=None):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM liquidation_slip WHERE status IN ('ACCEPTED', 'COMPLETED', 'REJECTED') ORDER BY liquidation_date DESC")
+            query = "SELECT * FROM liquidation_slip WHERE status IN ('ACCEPTED', 'COMPLETED', 'REJECTED')"
+            params = []
+            
+            if start_date:
+                query += " AND DATE(liquidation_date) = %s"
+                params.append(start_date)
+                
+            query += " ORDER BY liquidation_date DESC"
+            cursor.execute(query, params)
             return cursor.fetchall()
         finally:
             cursor.close()

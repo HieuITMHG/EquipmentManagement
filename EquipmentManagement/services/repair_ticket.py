@@ -44,11 +44,23 @@ class RepairTicketService:
             conn.close()
 
     @staticmethod
-    def get_history_repair_ticket():
+    def get_history_repair_ticket(start_date=None):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM repair_ticket WHERE status = 'COMPLETED' OR status = 'REJECTED' OR status = 'ACCEPTED' ORDER BY start_date DESC")
+            query = """
+                SELECT * FROM repair_ticket 
+                WHERE status IN ('COMPLETED', 'REJECTED', 'ACCEPTED')
+            """
+            params = []
+
+            if start_date:
+                query += " AND DATE(start_date) = %s"
+                params.append(start_date)
+
+            query += " ORDER BY start_date DESC"
+            
+            cursor.execute(query, params)
             return cursor.fetchall()
         finally:
             cursor.close()

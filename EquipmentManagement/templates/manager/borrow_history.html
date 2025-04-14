@@ -1,6 +1,6 @@
-{% extends "staff/staff_layout.html" %}
+{% extends "manager/manager_layout.html" %}
 
-{% block staff_content %}
+{% block manager_content %}
 
 <div class="flex flex-1 p-3">
     <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
@@ -9,7 +9,7 @@
             <div class="h-full w-full flex items-center">
                 <h2 class="font-bold text-3xl">Lịch sử mượn</h2>
             </div>
-            <form action="/staff/borrow_history" method="get" class="flex items-center gap-2">
+            <form action="/manager/borrow_history" method="get" class="flex items-center gap-2">
                 <div>
                     <label class="font-bold" for="status">Trạng thái:</label>
                     <select class="w-28 border-2 border-black" onchange="this.form.submit()" name="status" id="status">
@@ -38,10 +38,10 @@
         <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px]">
                 {% for request in lst_request %}
-                <form method="post" action="{{ url_for('staff.borrow_history') }}" 
+                <form method="post" action="{{ url_for('manager.borrow_history') }}" 
                  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <a class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer" type="submit"
-                        href="{{ url_for('staff.borrow_history', request_id=request.borrow_request_id) }}">
+                        href="{{ url_for('manager.borrow_history', request_id=request.borrow_request_id) }}">
                         {{request.student_id}} - {{request.borrowing_time.strftime('%d/%m/%Y')}} - {{request.borrow_status}}
                     </a>
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
@@ -85,7 +85,7 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const dateInput = document.querySelector('form[action="/staff/borrow_history"] input[name="create_date"]');
+        const dateInput = document.querySelector('form[action="/manager/borrow_history"] input[name="create_date"]');
         if (dateInput) {
             dateInput.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {

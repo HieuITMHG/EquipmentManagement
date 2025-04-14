@@ -19,6 +19,14 @@
                 <img src="{{ url_for('static', filename='icon/key_icon_2.svg') }}" class="w-6"/>
                 <a href="{{ url_for('manager.manager_manage_equipment') }}">Thiết bị</a>
             </li>
+            <li class="nav_item {% if request.path == '/manager/borrow_request' %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/borrow-icon.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.manager_borrow_request') }}">Yêu cầu mượn</a>
+            </li>
+            <li class="nav_item {% if request.path == '/manager/borrow_history' or 'bh_filter' in request.path %} hightlight{% endif %}">
+                <img src="{{ url_for('static', filename='icon/history.png') }}" class="w-6"/>
+                <a href="{{ url_for('manager.borrow_history') }}">Lịch sử mượn</a>
+            </li>
             <li class="nav_item {% if request.path == '/manager/repair_ticket' %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/tools.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.repair_ticket') }}">Phiếu sửa chữa</a>
@@ -31,7 +39,7 @@
                 <img src="{{ url_for('static', filename='icon/legal.png') }}" class="w-6"/>
                 <a href="{{ url_for('manager.penalty_ticket') }}">Phiếu phạt</a>
             </li>
-            <li class="nav_item {% if request.path == '/manager/account' %} hightlight{% endif %}">
+            <li class="nav_item {% if '/manager/account' in request.path %} hightlight{% endif %}">
                 <img src="{{ url_for('static', filename='icon/account_icon.svg') }}" class="w-6"/>
                 <a href="{{ url_for('manager.account', page_num=1) }}">Tài khoản</a>
             </li>

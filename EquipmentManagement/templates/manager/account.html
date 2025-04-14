@@ -36,14 +36,24 @@
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Thêm tài khoản
         </a>
-        <div class="flex items-center gap-3">
-            <input type="text" class="border border-gray-300 rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tìm kiếm tài khoản...">
-            <select class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Tất cả</option>
-                <option value="manager">Quản lý</option>
-                <option value="staff">Nhân viên</option>
-                <option value="student">Học sinh</option>
-            </select>
+        <div class="flex items-center">
+            <form action="{{ url_for('manager.account', page_num=page_num) }}" method="get" class="flex items-center gap-3">
+                <input type="text" 
+                        class="border border-gray-300 rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2
+                         focus:ring-blue-500" placeholder="Tìm kiếm tài khoản..."
+                         name="first_name" value="{% if first_name %}{{first_name}}{% endif %}">
+                <select class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2
+                             focus:ring-blue-500" name="role_id" onchange="this.form.submit()">
+                    <option value="">Tất cả</option>
+                    {% for r in lst_role %}
+                        {% if r.value == role_id  %}
+                        <option value="{{ r.value }}" selected>{{ r.name }}></option>
+                        {% else %}
+                        <option value="{{ r.value }}">{{ r.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </form>
         </div>
     </div>
 
@@ -101,14 +111,40 @@
 
     <!-- Phân trang -->
     <div class="flex justify-between items-center mt-6">
-        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50" {{ 'disabled' if page_num == 1 else '' }}>
-            Previous
-        </button>
-        <span class="text-gray-600">Trang {{ page_num }}</span>
-        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50" {{ 'disabled' if lst_account|length < 10 else '' }}>
-            Next
-        </button>
+        {% if page_num > 1  %}
+        <form action="{{ url_for('manager.account', page_num=page_num-1) }}" method="get">
+            <input type="hidden" name="first_name" value="{{ first_name }}"/>
+            <input type="hidden" name="role_id" value="{{ role_id }}"/>
+            <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50">
+                Previous
+            </button>
+        </form>
+        {% endif %}
+        <span class="text-gray-600">Trang {{ page_num }} / {{ total_page }}</span>
+        {% if page_num < total_page %}
+        <form action="{{ url_for('manager.account', page_num=page_num + 1) }}" method="get">
+            <input type="hidden" name="first_name" value="{{ first_name }}"/>
+            <input type="hidden" name="role_id" value="{{ role_id }}"/>
+            <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50">
+                Next
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('form[action*="' + "{{ url_for('manager.account', page_num=1) }}" + '"] input[type="text"]');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.form.submit();
+            }
+        });
+    }
+});
+</script>
 
 {% endblock %}

@@ -253,3 +253,39 @@ class BorrowService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def search_borrow_request_by_date_and_status(borrowing_date=None, status=None):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Query cơ bản lấy tất cả cột
+            query = """
+                SELECT *
+                FROM BorrowDetails
+                WHERE 1=1
+            """
+            params = []
+            
+            # Thêm điều kiện borrowing_date nếu có
+            if borrowing_date:
+                query += " AND DATE(borrowing_time) = %s"
+                params.append(borrowing_date)
+                
+            # Thêm điều kiện status nếu có
+            if status:
+                query += " AND borrow_status = %s"
+                params.append(status)
+                
+            # Thực thi query
+            cursor.execute(query, params)
+            borrow_requests = cursor.fetchall()
+            return borrow_requests
+            
+        except Exception as e:
+            print(f"Error searching borrow requests: {str(e)}")
+            return []
+            
+        finally:
+            cursor.close()
+            conn.close()

@@ -24,8 +24,6 @@ class StaffService:
             cursor.close()
             conn.close()
 
-    
-
     @staticmethod
     def change_equi_info(new_id,new_name,new_room):
         """Lấy danh sách tất cả thiết bị kèm room_id"""

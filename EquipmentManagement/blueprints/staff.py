@@ -51,21 +51,38 @@ def staff_borrow_request(request_id=None):
 @role_required(RoleID.STAFF.value)
 def staff_manage_equipment(equipment_id=None):
     if request.method == "GET":
-        room_id = request.args.get("room", "")
+        lst_status = [
+            {'name': 'Khả dụng', 'value': 'AVAILABLE'},
+            {'name': 'Đang sửa', 'value': 'UNDERREPAIR'},
+            {'name': 'Đang được mượn', 'value': 'BORROWED'},
+            {'name': 'Bị hỏng', 'value': 'BROKEN'},
+            {'name': 'Đã thanh lý', 'value': 'LIQUIDATED'}
+        ]
+        lst_equipment_type = [
+            {'name': 'Di động', 'value': 'MOBILE'},
+            {'name': 'Cố định', 'value': 'FIXED'},
+            {'name': 'Học viện', 'value': 'SHARED'}
+        ]
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-        lst_equipment = StaffService.get_all_equipment()
+        room_id = request.args.get("room_id", None)
+        equipment_type = request.args.get("equipment_type", None)
+        status = request.args.get("status", None)
+        lst_equipment = EquipmentService.search_equipment(room_id=room_id,status=status,equipment_type=equipment_type)
         room=RoomService.get_all_room()
         equipment = None
         if equipment_id != None:
             equipment = EquipmentService.get_equipment_by_id(equipment_id)
-        if room_id != "":
-            lst_equipment = EquipmentService.get_equipment_by_room(room_id)
 
-        return render_template('staff/staff_manage_equipment.html', login_staff = login_staff,
+        return render_template('staff/staff_manage_equipment.html',
                                 lst_equipment=lst_equipment,
                                 equi=equipment,
-                                room=room)
-        
+                                room=room,
+                                login_staff=login_staff,
+                                room_id=room_id,
+                                status=status,
+                                equipment_type=equipment_type,
+                                lst_status=lst_status,
+                                lst_equipment_type=lst_equipment_type)
     new_name=request.form.get("equi_name")
     new_id=request.form.get("equi_id")
     new_room=request.form.get("room")
@@ -118,45 +135,47 @@ def delete_equipment():
 @login_required
 @role_required(RoleID.STAFF.value)
 def borrow_history(request_id=None):
+    lst_status =[
+        {'name': 'Chờ duyệt', 'value': 'PENDING'},
+        {'name': 'Chưa trả', 'value': 'ACCEPTED'},
+        {'name': 'Đã trả', 'value': 'RETURNED'}
+    ]
     if request.method == "GET":
+        create_date = request.args.get("create_date")
+        print(create_date)
+        status = request.args.get("status")
         login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-        lst_request = BorrowService.get_accepted_or_returned_borrow_request()
-        #print(lst_request,"***")
+        lst_request = BorrowService.search_borrow_request_by_date_and_status(create_date, status)
         if(request_id!=None):
             lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
-            return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment)
-        return render_template('staff/borrow_history.html', login_staff = login_staff,lst_request=lst_request)
+            return render_template('staff/borrow_history.html', 
+                                   login_staff=login_staff,
+                                   lst_request=lst_request, 
+                                   lst_borrow_equipment=lst_borrow_equipment, 
+                                   lst_status=lst_status,
+                                   create_date=create_date,
+                                   status=status)
+        return render_template('staff/borrow_history.html', 
+                               login_staff = login_staff,
+                               lst_request=lst_request, 
+                               lst_status=lst_status,
+                               create_date=create_date,
+                               status=status)
     
     borrow_request_id = int(request.form.get('request_id'))
     BorrowService.return_equi(borrow_request_id)
-    print(borrow_request_id)
     return redirect("borrow_history")
-    
-@staff_blueprint.route('/staff/bh_filter', methods=['GET'])
-@login_required
-@role_required(RoleID.STAFF.value)
-def bh_filter(request_id=None):
-    if request.method == "GET":
-        login_staff = AccountService.get_account_by_person_id(session.get('account_id'))
-        lst_borrow_equipment = BorrowService.get_equipment_by_request_id(request_id)
-        status = request.args.get("status", "")
-        if (status==''):
-            lst_request = BorrowService.get_accepted_or_returned_borrow_request()
-        if (status=='ACCEPTED'):
-            lst_request = BorrowService.get_accepted_borrow_request()
-        if (status=='RETURNED'):
-            lst_request = BorrowService.get_returned_borrow_request()
-        return render_template('staff/borrow_history.html', login_staff=login_staff,lst_request=lst_request, lst_borrow_equipment=lst_borrow_equipment,status=status) 
 
 @staff_blueprint.route('/staff/liquidation_slip', methods=['GET'])
 @login_required
 @role_required(RoleID.STAFF.value)
 def liquidation_slip():
     staff_id = session.get('account_id')
+    create_date = request.args.get("create_date") 
     login_staff = AccountService.get_account_by_person_id(staff_id)
     broken_equipment = EquipmentService.get_broken_equipment()
     pending_requests = LiquidationSlipService.get_liquidation_slip(staff_id=staff_id, status='PENDING')
-    accepted_requests = LiquidationSlipService.get_history_liquidation_slip()
+    accepted_requests = LiquidationSlipService.get_history_liquidation_slip(create_date)
     for r in pending_requests:
         r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
     for r in accepted_requests:
@@ -165,7 +184,8 @@ def liquidation_slip():
     return render_template('staff/liquidation_slip.html', login_staff=login_staff,
                                                         broken_equipment=broken_equipment,
                                                         pending_requests=pending_requests,
-                                                        accepted_requests=accepted_requests)  
+                                                        accepted_requests=accepted_requests,
+                                                        create_date=create_date)  
     
 @staff_blueprint.route('/staff/add_liquidation_slip', methods=['POST'])
 @login_required
@@ -216,7 +236,8 @@ def repair_ticket():
     broken_equipment = EquipmentService.get_broken_equipment()
     broken_equipment = EquipmentService.get_broken_equipment()
     pending_requests = RepairTicketService.get_repair_ticket(staff_id=staff_id, status='PENDING')
-    accepted_requests = RepairTicketService.get_history_repair_ticket()
+    create_date = request.args.get("create_date")
+    accepted_requests = RepairTicketService.get_history_repair_ticket(create_date)
     for r in pending_requests:
         r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
         r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
@@ -228,7 +249,8 @@ def repair_ticket():
     return render_template('staff/repair_ticket.html', login_staff=login_staff,
                                                         broken_equipment=broken_equipment,
                                                         pending_requests=pending_requests,
-                                                        accepted_requests=accepted_requests)  
+                                                        accepted_requests=accepted_requests,
+                                                        create_date=create_date)  
 
 @staff_blueprint.route('/staff/add_repair_ticket', methods=['POST'])
 @login_required
@@ -287,7 +309,8 @@ def penalty_ticket():
     login_staff = AccountService.get_account_by_person_id(staff_id)
     lst_violation = ViolationService.get_all_violation()
     pending_penalty = PenaltyService.get_pending_penalty_ticket(staff_id)
-    history_penalties = PenaltyService.get_history_penalty_ticket()
+    create_date = request.args.get("create_date")
+    history_penalties = PenaltyService.get_history_penalty_ticket(create_date)
 
     for r in pending_penalty:
         r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
@@ -298,7 +321,8 @@ def penalty_ticket():
                            login_staff=login_staff, 
                            lst_violation=lst_violation, 
                            pending_penalty=pending_penalty,
-                           history_penalties=history_penalties)  
+                           history_penalties=history_penalties,
+                           create_date=create_date)  
 
 @staff_blueprint.route('/staff/cancel_penalty_ticket', methods=['POST'])
 @login_required

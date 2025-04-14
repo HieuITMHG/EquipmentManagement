@@ -1,6 +1,6 @@
 DROP DATABASE IF EXISTS defaultdb;
 CREATE DATABASE defaultdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;;
-USE defaultdb;
+use defaultdb;
 
 /* CREATE TABLE SCRIPT */
 CREATE TABLE role (
@@ -863,9 +863,11 @@ END $$
 
 CREATE PROCEDURE CompleteRepairTicket(IN in_repair_ticket_id INT)
 BEGIN
-    -- Cập nhật trạng thái repair_ticket thành COMPLETED
+    -- Cập nhật trạng thái và thời gian kết thúc của repair_ticket thành COMPLETED và thời điểm hiện tại
     UPDATE repair_ticket
-    SET status = 'COMPLETED'
+    SET 
+        status = 'COMPLETED',
+        end_date = CURRENT_TIMESTAMP
     WHERE id = in_repair_ticket_id;
 
     -- Cập nhật trạng thái các thiết bị liên quan thành AVAILABLE

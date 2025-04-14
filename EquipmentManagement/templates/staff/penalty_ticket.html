@@ -28,12 +28,12 @@
     <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
         <!-- sub bar -->
         <ul class="h-10 flex w-full font-bold bg-[rgba(204,_204,_204,_0.5)]">
-            <li class="flex-1 flex justify-center items-center cursor-pointer bg-white rounded-t-md" 
+            <li class="flex-1 flex justify-center items-center cursor-pointer {% if not create_date %} bg-white {% endif %} rounded-t-md" 
                 onclick="toggle_pending()"
                 id="btn-pending">
                 Đang chờ
             </li>
-            <li class="flex-1 flex justify-center items-center cursor-pointer rounded-t-md" 
+            <li class="flex-1 flex justify-center items-center cursor-pointer rounded-t-md {% if create_date %} bg-white {% endif %}" 
                 onclick="toggle_history()"
                 id="btn-history">
                 Lịch sử
@@ -41,7 +41,7 @@
         </ul>
 
         <div class="flex-10 flex flex-col px-6 overflow-auto">
-            <div class="flex-10 space-y-3 p-4 max-h-[600px]" id="pending">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px] {% if create_date %} hidden {% endif %}" id="pending">
                 {% for request in pending_penalty %}
                 <form method="post" action="{{ url_for('staff.cancel_penalty_ticket') }}" 
                  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
@@ -94,7 +94,14 @@
                 {% endfor %}    
             </div>   
 
-            <div class="flex-10 space-y-3 p-4 max-h-[600px] hidden" id="history">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px] {% if not create_date %} hidden {% endif %}" id="history">
+                <div class="flex justify-end border-b-2 border-gray-500 pb-2">
+                    <form action="/staff/penalty_ticket" method="get">
+                        <label for="borrowing_time" class="font-bold">Ngày:</label>
+                        <input type="date" name="create_date" id="borrowing_time" 
+                                class="border-2 border-black" />
+                    </form>
+                </div>
                 {% for request in history_penalties %}
                 <div  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
                     <form method="post" action="{{ url_for('staff.finish_penalty_ticket') }}" 
@@ -186,4 +193,17 @@
         </form>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.querySelector('form[action="/staff/penalty_ticket"] input[name="create_date"]');
+        if (dateInput) {
+            dateInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent default Enter behavior
+                    this.form.submit(); // Submit the form
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

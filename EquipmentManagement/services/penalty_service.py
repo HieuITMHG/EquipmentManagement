@@ -37,18 +37,24 @@ class PenaltyService:
             conn.close()
 
     @staticmethod
-    def get_history_penalty_ticket():
+    def get_history_penalty_ticket(start_time=None):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM penalty_ticket WHERE status IN ('ACCEPTED', 'REJECTED', 'COMPLETED') ORDER BY create_time DESC")
+            query = "SELECT * FROM penalty_ticket WHERE status IN ('ACCEPTED', 'REJECTED', 'COMPLETED')"
+            params = []
+            
+            if start_time:
+                query += " AND DATE(create_time) = %s"
+                params.append(start_time)
+                
+            query += " ORDER BY create_time DESC"
+            cursor.execute(query, params)
             lst_violation = cursor.fetchall()
             return lst_violation
         finally:
             cursor.close()
             conn.close()
-
-
     @staticmethod
     def create_penalty_ticket(student_id, staff_id, violation_ids, role):
         conn = get_connection()

@@ -28,12 +28,12 @@
     <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
         <!-- sub bar -->
         <ul class="h-10 flex w-full font-bold bg-[rgba(204,_204,_204,_0.5)]">
-            <li class="flex-1 flex justify-center items-center cursor-pointer bg-white rounded-t-md" 
+            <li class="flex-1 flex justify-center items-center cursor-pointer rounded-t-md {% if not create_date %}bg-white{% endif %}" 
                 onclick="toggle_pending()"
                 id="btn-pending">
                 Đang chờ
             </li>
-            <li class="flex-1 flex justify-center items-center cursor-pointer rounded-t-md" 
+            <li class="flex-1 flex justify-center items-center cursor-pointer rounded-t-md {% if create_date %} bg-white {% endif %}" 
                 onclick="toggle_history()"
                 id="btn-history">
                 Lịch sử
@@ -41,10 +41,10 @@
         </ul>
 
         <div class="flex-10 flex flex-col px-6 overflow-auto">
-            <div class="flex-10 space-y-3 p-4 max-h-[600px]" id="pending">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px] {% if create_date %} hidden {% endif %}" id="pending">
                 {% for request in pending_requests %}
                 <form method="post" action="{{ url_for('manager.accept_repair_ticket') }}" 
-                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
+                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
                         onclick="show_detail(this.value)"
                         value="detail-{{request.id}}"
@@ -107,7 +107,15 @@
                 {% endfor %}    
             </div>   
 
-            <div class="flex-10 space-y-3 p-4 max-h-[600px] hidden" id="history">
+            <div class="flex-10 space-y-3 p-4 max-h-[600px] {% if not create_date %} hidden {% endif %} " id="history">
+                <div class="flex justify-end border-b-2 border-gray-500 pb-2">
+                    <form action="/manager/repair_ticket" method="get" class="">
+                        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
+                        <label for="borrowing_time" class="font-bold">Ngày:</label>
+                        <input type="date" name="create_date" id="borrowing_time" 
+                                class="border-2 border-black" />
+                    </form>
+                </div>
                 {% for request in accepted_requests %}
                 <form method="post" action="{{ url_for('manager.finish_repair_ticket') }}" 
                  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
@@ -116,13 +124,13 @@
                         value="detail-{{request.id}}"
                         type="button">
                         {{request.staff_id}} - {{request.start_date}}
-                    </button>
+                    </button> 
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
                     {% if request.status == 'ACCEPTED' %}
                     <div class="flex space-x-1">
                         <button class="bg-blue-300 p-1 w-24 hover:bg-blue-200 cursor-pointer text-[15px]"
-                        type="submit" name="action">Hoàn thành</button>
+                        type="submit" name="action">Finish</button>
                     </div>
                     {% endif %}
                 </form>
@@ -235,6 +243,17 @@
         checkbox.addEventListener('change', function() {
             numberInput.disabled = !this.checked;
         });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.querySelector('form[action="/manager/repair_ticket"] input[name="create_date"]');
+        if (dateInput) {
+            dateInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent default Enter behavior
+                    this.form.submit(); // Submit the form
+                }
+            });
+        }
     });
 </script>
 

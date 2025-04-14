@@ -105,4 +105,46 @@ class AccountService:
         finally:
             cursor.close()
             conn.close()
+    @staticmethod
+    def search_account_info(role_id=None, first_name=None, page_num=1):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Base query for counting total records
+            count_query = "SELECT COUNT(*) AS total FROM AccountInfo WHERE 1=1"
+            query = "SELECT * FROM AccountInfo WHERE 1=1"
+            params = []
+            count_params = []
+
+            # Apply filters for both queries
+            if role_id:
+                count_query += " AND role_id = %s"
+                query += " AND role_id = %s"
+                count_params.append(role_id)
+                params.append(role_id)
+
+            if first_name:
+                count_query += " AND first_name LIKE %s"
+                query += " AND first_name LIKE %s"
+                count_params.append(f"%{first_name}%")
+                params.append(f"%{first_name}%")
+
+            # Execute count query
+            cursor.execute(count_query, count_params)
+            total_records = cursor.fetchone()['total']
+            total_pages = (total_records + 10) // 10  
+
+            # Add pagination to main query
+            offset = (page_num - 1) * 10
+            query += " LIMIT 10 OFFSET %s"
+            params.append(offset)
+
+            # Execute main query
+            cursor.execute(query, params)
+            accounts = cursor.fetchall()
+
+            return accounts if accounts else [], total_pages
+        finally:
+            cursor.close()
+            conn.close()
     
