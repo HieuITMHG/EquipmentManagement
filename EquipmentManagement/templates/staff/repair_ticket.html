@@ -98,7 +98,7 @@
                         <div class="max-h-[250px] max-w-[484px] overflow-y-auto p-4 border-2 border-gray-500 m-4">
                             <div class="">
                                 {% for e in request.equipments %}
-                                    <div>{{e.equipment_name}} - {{e.room_id}}</div>
+                                    <div>{{e.equipment_id}} - {{e.equipment_name}} - {% if e.room_id %}{{e.room_id}}{% else %}Học viện{% endif %}</div>
                                 {% endfor %}
                             </div>
                         </div>
@@ -174,7 +174,7 @@
                         <div class="max-h-[250px] max-w-[484px] overflow-y-auto p-4 border-2 border-gray-500 m-4">
                             <div class="">
                                 {% for e in request.equipments %}
-                                    <div>{{e.equipment_name}} - {{e.room_id}}</div>
+                                    <div>{{e.equipment_id}} - {{e.equipment_name}} - {% if e.room_id %}{{e.room_id}}{% else %}Học viện{% endif %}</div>
                                 {% endfor %}
                             </div>
                         </div>
@@ -209,7 +209,7 @@
                             <span class="checkbox-custom w-5 h-5 mr-2 flex items-center justify-center border-2 border-white rounded-md">
                                 <span class="checkmark hidden text-white">✔</span>
                             </span>
-                            {{equipment.equipment_name}} - {{equipment.room_id}}
+                            {{equipment.id}} - {{equipment.equipment_name}} - {% if equipment.room_id %}{{equipment.room_id}}{% else %}Học viện{% endif %}
                         </label>
                         <!-- Input number -->
                         <label class="mr-2">Giá:</label>

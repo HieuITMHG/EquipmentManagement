@@ -32,20 +32,17 @@
             </form>
     </div>
         </div>
-    
-    
-       
         <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px]">
                 {% for request in lst_request %}
                 <form method="post" action="{{ url_for('manager.borrow_history') }}" 
                  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <a class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer" type="submit"
-                        href="{{ url_for('manager.borrow_history', request_id=request.borrow_request_id) }}">
-                        {{request.student_id}} - {{request.borrowing_time.strftime('%d/%m/%Y')}} - {{request.borrow_status}}
+                        href="{{ url_for('manager.borrow_history', request_id=request.id) }}">
+                        {{request.student_id}} - {{request.borrowing_time.strftime('%d/%m/%Y')}} - {{request.status}}
                     </a>
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
-                    <input type="hidden" name="request_id" value = "{{ request.borrow_request_id }}" /> 
+                    <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
                     {%if request.borrow_status == "ACCEPTED" %}
                     
                     <div class="flex space-x-1">
@@ -74,7 +71,7 @@
                 {% for equipment in lst_borrow_equipment %}
                     <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
                         <label class="flex items-center cursor-pointer">
-                            {{equipment.equipment_name}} - {{equipment.room_id}}
+                            {{equipment.equipment_id}} - {{equipment.equipment_name}} - {% if equipment.room_id %}{{equipment.room_id}}{% else %}Học viện{% endif %}
                         </label>
                     </div>
                 {% endfor %}

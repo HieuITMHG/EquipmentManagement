@@ -41,7 +41,7 @@ class EquipmentService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM equipment WHERE room_id = %s AND status='AVAILABLE' AND equipment_type='MOBILE'", (room_id,))
+            cursor.execute("SELECT * FROM equipment WHERE room_id = %s AND status='AVAILABLE' AND equipment_type='MOBILE' OR equipment_type='SHARED'", (room_id,))
             return cursor.fetchall()
         finally:
             cursor.close()
@@ -119,6 +119,17 @@ class EquipmentService:
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM equipment WHERE status = 'BROKEN'")
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_shared_equipment():
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM equipment WHERE equipment_type = 'SHARED' AND status = 'AVAILABLE'")
             return cursor.fetchall()
         finally:
             cursor.close()

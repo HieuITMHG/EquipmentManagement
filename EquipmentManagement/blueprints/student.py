@@ -22,11 +22,11 @@ def student_dashboard():
         selected_room = request.args.get("room", "")
         borrow_equipment = BorrowService.get_borrow_equipment(student_id)
         if len(borrow_equipment) != 0:
-            lst_room = [{'id': borrow_equipment[0]['room_id']}]
-            selected_room = borrow_equipment[0]['room_id']
+            lst_room = [{'id': borrow_equipment[0]['borrow_room_id']}]
+            selected_room = borrow_equipment[0]['borrow_room_id']
         lst_equipment = EquipmentService.get_borrowable_equipment_by_room(selected_room)
-        
-
+        if selected_room is None or selected_room == "":
+                lst_equipment = []
         return render_template('student/student_dashboard.html', 
                                student=student, 
                                lst_room=lst_room, 

@@ -43,7 +43,7 @@
                 {% for equipment in lst_borrow_equipment %}
                     <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
                         <label class="flex items-center cursor-pointer">
-                            {{equipment.equipment_name}} - {{equipment.room_id}}
+                            {{equipment.equipment_id}} - {{equipment.equipment_name}} - {% if equipment.room_id %}{{equipment.room_id}}{% else %}Học viện{% endif %}
                         </label>
                     </div>
                 {% endfor %}

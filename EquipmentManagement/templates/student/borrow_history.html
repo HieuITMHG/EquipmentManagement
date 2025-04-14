@@ -21,7 +21,9 @@
             <table class="min-w-full bg-white border border-gray-300">
                 <thead>
                     <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">ID</th>
                         <th class="py-3 px-6 text-left">Tên thiết bị</th>
+                        <th class="py-3 px-6 text-left">Phòng mượn</th>
                         <th class="py-3 px-6 text-left">Mã sinh viên</th>
                         <th class="py-3 px-6 text-left">Thời gian mượn</th>
                         <th class="py-3 px-6 text-left">Thời gian trả dự kiến</th>
@@ -32,7 +34,9 @@
                 <tbody class="text-gray-600 text-sm font-light">
                     {% for b in lst_borrow %}
                     <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-3 px-6">{{b.equipment_id}}</td>
                         <td class="py-3 px-6">{{b.equipment_name}}</td>
+                        <td class="py-3 px-6">{{b.borrow_room_id}}</td>
                         <td class="py-3 px-6">{{b.student_id}}</td>
                         <td class="py-3 px-6">{{b.borrowing_time}}</td>
                         <td class="py-3 px-6">{{b.expect_returning_time}}</td>

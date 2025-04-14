@@ -76,7 +76,7 @@
                                 <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
                                     <a class="h-full w-full flex items-center justify-center bg-blue-300 p-2 rounded-md cursor-pointer" type="submit"
                                     href="{{ url_for('staff.staff_manage_equipment', equipment_id=equipment.id) }}">
-                                    {{equipment.equipment_name}}-{{equipment.room_id}}
+                                    {{equipment.id}} - {{equipment.equipment_name}}-{{equipment.room_id}}
                                 </a>
                                 </div>
                                 {% endfor %}
@@ -101,6 +101,10 @@
                             <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
                             <input type="hidden" value="{{equi.id}}" name="equi_id"/>
                             {%if equi.id%}
+                            <div class="flex flex-col">
+                                <label class="font-bold text-gray-700">ID:</label>
+                                <p class="text-gray-600">{{equi.id}}</p>
+                            </div>
                             <div class="flex flex-col">
                                 <label class="font-bold text-gray-700">Tên thiết bị:</label>
                                 <input class="input_field border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" value="{{equi.equipment_name}}" name="equi_name" />

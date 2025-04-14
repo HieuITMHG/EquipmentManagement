@@ -3,149 +3,157 @@ CREATE DATABASE defaultdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;;
 use defaultdb;
 
 /* CREATE TABLE SCRIPT */
+-- Thiết lập mã hóa tiếng Việt
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
+-- Tạo bảng role
 CREATE TABLE role (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    role_name VARCHAR(100) NOT NULL
-);
+    role_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE privilege (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    privilege_name VARCHAR(100) NOT NULL
-);
-
-CREATE TABLE role_privilege (
-    privilege_id INTEGER NOT NULL,
-    role_id INTEGER NOT NULL,
-    PRIMARY KEY (privilege_id, role_id),
-    FOREIGN KEY (privilege_id) REFERENCES privilege(id),
-    FOREIGN KEY (role_id) REFERENCES role(id)
-);
-
+-- Tạo bảng account
 CREATE TABLE account (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    password VARCHAR(500) NOT NULL,
+    password VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     role_id INTEGER NOT NULL,
     is_active BOOLEAN NOT NULL,
     FOREIGN KEY (role_id) REFERENCES role(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng person
 CREATE TABLE person (
     id VARCHAR(20) PRIMARY KEY,
     cccd CHAR(12) NOT NULL UNIQUE,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
+    first_name VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    last_name VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     gender BOOLEAN NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
     phone CHAR(10) NOT NULL UNIQUE,
-    address VARCHAR(255) NOT NULL,
+    address VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     account_id INTEGER NOT NULL,
     FOREIGN KEY (account_id) REFERENCES account(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng department
 CREATE TABLE department (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    department_name VARCHAR(100) NOT NULL
-);
+    department_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng class
 CREATE TABLE class (
     id CHAR(20) PRIMARY KEY,
-    class_name VARCHAR(100) NOT NULL UNIQUE,
+    class_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
     academic_year CHAR(9) NOT NULL,
     department_id INTEGER NOT NULL,
     FOREIGN KEY (department_id) REFERENCES department(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng room
 CREATE TABLE room (
     id CHAR(5) PRIMARY KEY,
     floor_number INTEGER NOT NULL,
     section CHAR(1) NOT NULL,
     max_people INTEGER NOT NULL
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng student
 CREATE TABLE student (
     id VARCHAR(20) PRIMARY KEY,
     class_id CHAR(20) NOT NULL,
     is_studing BOOLEAN NOT NULL,
     FOREIGN KEY (class_id) REFERENCES class(id),
     FOREIGN KEY (id) REFERENCES person(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng staff
 CREATE TABLE staff (
     id VARCHAR(20) PRIMARY KEY,
     is_working BOOLEAN NOT NULL,
     FOREIGN KEY (id) REFERENCES person(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng equipment
 CREATE TABLE equipment (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    equipment_name VARCHAR(50) NOT NULL,
-    status ENUM('AVAILABLE', 'UNDERREPAIR', 'BORROWED', 'BROKEN', 'LIQUIDATED') NOT NULL,
-    equipment_type ENUM('MOBILE', 'FIXED', 'SHARED') NOT NULL,
+    equipment_name VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    status ENUM('AVAILABLE', 'UNDERREPAIR', 'BORROWED', 'BROKEN', 'LIQUIDATED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    equipment_type ENUM('MOBILE', 'FIXED', 'SHARED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     room_id CHAR(5),
     FOREIGN KEY (room_id) REFERENCES room(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng borrow_request
 CREATE TABLE borrow_request (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     student_id CHAR(10) NOT NULL,
     staff_id CHAR(10),
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') NOT NULL DEFAULT 'PENDING',
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
     room_id CHAR(5) NOT NULL,
     borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expect_returning_time DATETIME NOT NULL,
     actual_returning_time DATETIME,
     FOREIGN KEY (student_id) REFERENCES student(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng borrow_item
 CREATE TABLE borrow_item (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     borrow_request_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
     FOREIGN KEY (borrow_request_id) REFERENCES borrow_request(id),
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng penalty_form
 CREATE TABLE penalty_form (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    form_name VARCHAR(100) NOT NULL,
+    form_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     price DOUBLE
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng penalty_ticket
 CREATE TABLE penalty_ticket (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     staff_id CHAR(10) NOT NULL,
     student_id CHAR(10) NOT NULL,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id),
     FOREIGN KEY (student_id) REFERENCES student(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng violation
 CREATE TABLE violation (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    violation_content VARCHAR(100) NOT NULL,
+    violation_content VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     penalty_form_id INTEGER NOT NULL,
     FOREIGN KEY (penalty_form_id) REFERENCES penalty_form(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng detail_penalty_ticket
 CREATE TABLE detail_penalty_ticket (
     violation_id INTEGER NOT NULL,
     penalty_ticket_id INTEGER NOT NULL,
     PRIMARY KEY (violation_id, penalty_ticket_id),
     FOREIGN KEY (violation_id) REFERENCES violation(id),
     FOREIGN KEY (penalty_ticket_id) REFERENCES penalty_ticket(id) ON DELETE CASCADE
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng repair_ticket
 CREATE TABLE repair_ticket (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     start_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_date DATETIME,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng detail_repair_ticket
 CREATE TABLE detail_repair_ticket (
     repair_ticket_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
@@ -153,52 +161,44 @@ CREATE TABLE detail_repair_ticket (
     PRIMARY KEY (repair_ticket_id, equipment_id),
     FOREIGN KEY (repair_ticket_id) REFERENCES repair_ticket(id) ON DELETE CASCADE,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng liquidation_slip
 CREATE TABLE liquidation_slip (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     liquidation_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED') NOT NULL,
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Tạo bảng detail_liquidation_slip
 CREATE TABLE detail_liquidation_slip (
     liquidation_slip_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
     PRIMARY KEY (liquidation_slip_id, equipment_id),
     FOREIGN KEY (liquidation_slip_id) REFERENCES liquidation_slip(id) ON DELETE CASCADE,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
-);
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 
 /* INSERT SAMPLE DATA */
 -- Insert sample data for role
 INSERT INTO role (role_name) VALUES 
-('Manager'), 
-('Student'), 
-('Staff');
-
--- Insert sample data for privilege
-INSERT INTO privilege (privilege_name) VALUES 
-('Borrow Equipment'), 
-('Manage Users'), 
-('Manage Equipment');
-
--- Insert sample data for role_privilege
-INSERT INTO role_privilege (privilege_id, role_id) VALUES 
-(1, 2), -- Students can borrow equipment
-(2, 1), -- Admins can manage users
-(3, 3); -- Staff can manage equipment
+('Quản lý'), 
+('Sinh viên'), 
+('Nhân viên');
 
 -- Insert sample data for department
 INSERT INTO department (department_name) VALUES 
-('Computer Science'), 
-('Electronics'), 
-('Mechanical Engineering');
+('Công nghệ thông tin'), 
+('Điện tử viễn thông'), 
+('Tài chính marketing');
 
 -- Insert sample data for class
 INSERT INTO class (id, class_name, academic_year, department_id) VALUES 
 ('D22CQCN02-N', 'Công nghệ thông tin 2', '2022-2027', 1), 
+('D22CQQT01-N', 'Quản trị kinh doanh', '2022-2027', 1), 
 ('D22CQCN01-N', 'Công nghệ thông tin 1', '2022-2027', 2);
 
 -- Insert sample data for room
@@ -206,58 +206,189 @@ INSERT INTO room (id, floor_number, section, max_people) VALUES
 ('2B25', 2, 'B', 80), 
 ('2A16', 1, 'A', 100),
 ('2E21', 2, 'E', 50), 
+('2B11', 1, 'B', 50),
+('2B22', 2, 'B', 50),
 ('2E22', 2, 'E', 80);
 
--- Insert sample data for fixed equipment (each room has one speaker and one projector)
--- Insert fixed equipment
+-- Thiết bị cố định cho phòng 2E22
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Speaker', 'AVAILABLE', 'FIXED', '2B25'), 
-('Speaker', 'AVAILABLE', 'FIXED', '2A16'), 
-('Projector', 'BROKEN', 'FIXED', '2B25'), 
-('Projector', 'AVAILABLE', 'FIXED', '2A16'), 
-('Blackboard', 'AVAILABLE', 'FIXED', '2B25'), 
-('Blackboard', 'AVAILABLE', 'FIXED', '2A16'), 
-('Table', 'UNDERREPAIR', 'FIXED', '2B25'), 
-('Table', 'AVAILABLE', 'FIXED', '2A16'), 
-('Chair', 'AVAILABLE', 'FIXED', '2B25'), 
-('Chair', 'BROKEN', 'FIXED', '2A16'), 
-('Screen', 'AVAILABLE', 'FIXED', '2B25'), 
-('Screen', 'AVAILABLE', 'FIXED', '2A16'), 
-('Fan', 'AVAILABLE', 'FIXED', '2B25'), 
-('Fan', 'AVAILABLE', 'FIXED', '2A16');
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E22'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2E22'),
+('Bàn', 'AVAILABLE', 'FIXED', '2E22'),
+('Ghế', 'AVAILABLE', 'FIXED', '2E22'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2E22'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2E22');
 
--- Insert mobile equipment
+-- Thiết bị cố định cho phòng 2B22
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
--- Room 2B25
-('Microphone', 'AVAILABLE', 'MOBILE', '2B25'), 
-('Microphone', 'AVAILABLE', 'MOBILE', '2B25'), 
-('Key', 'AVAILABLE', 'MOBILE', '2B25'), 
-('Key', 'AVAILABLE', 'MOBILE', '2B25'), 
-('Projector Remote', 'BROKEN', 'MOBILE', '2B25'), 
-('Projector Remote', 'AVAILABLE', 'MOBILE', '2B25'), 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B22'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B22'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B22'),
+('Ghế', 'BROKEN', 'FIXED', '2B22'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B22'),
+('Máy chiếu', 'UNDERREPAIR', 'FIXED', '2B22');
 
--- Room 2A16
-('Microphone', 'AVAILABLE', 'MOBILE', '2A16'), 
-('Microphone', 'AVAILABLE', 'MOBILE', '2A16'), 
-('Key', 'AVAILABLE', 'MOBILE', '2A16'), 
-('Key', 'AVAILABLE', 'MOBILE', '2A16'), 
-('Projector Remote', 'AVAILABLE', 'MOBILE', '2A16'), 
-('Projector Remote', 'AVAILABLE', 'MOBILE', '2A16');
-
--- Insert shared equipment
+-- Thiết bị cố định cho phòng 2B11
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Microphone', 'AVAILABLE', 'SHARED', NULL), 
-('Key', 'AVAILABLE', 'SHARED', NULL);
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B11'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B11'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B11'),
+('Ghế', 'AVAILABLE', 'FIXED', '2B11'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B11'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2B11');
 
--- Insert special equipment in 2E21, 2E22
+-- Thiết bị cố định cho tất cả các phòng
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
--- Room 2E21
-('IoT Toolkit', 'AVAILABLE', 'FIXED', '2E21'), 
-('Electronics Practice Kit', 'AVAILABLE', 'FIXED', '2E21'), 
+-- Phòng 2B25
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B25'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B25'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B25'),
+('Ghế', 'AVAILABLE', 'FIXED', '2B25'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B25'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2B25'),
 
--- Room 2E22
-('IoT Toolkit', 'AVAILABLE', 'FIXED', '2E22'), 
-('Electronics Practice Kit', 'AVAILABLE', 'FIXED', '2E22');
+-- Phòng 2A16
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2A16'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2A16'),
+('Bàn', 'AVAILABLE', 'FIXED', '2A16'),
+('Ghế', 'AVAILABLE', 'FIXED', '2A16'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2A16'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2A16'),
+
+-- Phòng 2E21
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E21'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2E21'),
+('Bàn', 'AVAILABLE', 'FIXED', '2E21'),
+('Ghế', 'AVAILABLE', 'FIXED', '2E21'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2E21'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2E21'),
+
+-- Phòng 2E22
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E22'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2E22'),
+('Bàn', 'AVAILABLE', 'FIXED', '2E22'),
+('Ghế', 'AVAILABLE', 'FIXED', '2E22'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2E22'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2E22'),
+
+-- Phòng 2B22
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B22'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B22'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B22'),
+('Ghế', 'AVAILABLE', 'FIXED', '2B22'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B22'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2B22'),
+
+-- Phòng 2B11
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B11'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B11'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B11'),
+('Ghế', 'AVAILABLE', 'FIXED', '2B11'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B11'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2B11');
+
+
+-- Thiết bị di động phòng 2E22
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22'),
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E22'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E22');
+
+-- Thiết bị di động phòng 2B22
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
+('Điều khiển máy chiếu', 'BROKEN', 'MOBILE', '2B22'),
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
+('Điều khiển máy chiếu', 'BROKEN', 'MOBILE', '2B22'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B22');
+
+-- Thiết bị di động phòng 2B11
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
+
+-- Thiết bị di động cho mỗi phòng
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+-- 2B25
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B25'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B25'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B25'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B25'),
+
+-- 2A16
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2A16'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2A16'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2A16'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2A16'),
+
+-- 2E21
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E21'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E21'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E21'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E21'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E21'),
+
+-- 2E22
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E22'),
+
+-- 2B22
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B22'),
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22'),
+
+-- 2B11
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
+
+
+-- Thiết bị dùng chung
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+('Micro không dây', 'AVAILABLE', 'SHARED', NULL),
+('Điều khiển máy chiếu', 'AVAILABLE', 'SHARED', NULL),
+('Bút laser', 'AVAILABLE', 'SHARED', NULL),
+('Micro không dây', 'AVAILABLE', 'SHARED', NULL),
+('Điều khiển máy chiếu', 'AVAILABLE', 'SHARED', NULL),
+('Bút laser', 'AVAILABLE', 'SHARED', NULL),
+('Micro không dây', 'AVAILABLE', 'SHARED', NULL),
+('Điều khiển máy chiếu', 'AVAILABLE', 'SHARED', NULL),
+('Bút laser', 'AVAILABLE', 'SHARED', NULL);
+
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+-- Phòng 2B25
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B25'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B25'),
+
+-- Phòng 2A16
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2A16'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2A16'),
+
+-- Phòng 2E21
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E21'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E21'),
+
+-- Phòng 2E22
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E22'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E22'),
+
+-- Phòng 2B22
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B22'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B22'),
+
+-- Phòng 2B11
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B11'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B11');
 
 
 -- Chèn tài khoản cho sinh viên
@@ -280,7 +411,6 @@ INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, addre
 ('STF2001', '567890123456', 'Duy', 'Le', TRUE, 'duy2001@example.com', '0965432109', 'Da Nang, Vietnam', 3),
 ('STF2002', '678901234567', 'Anh', 'Pham', FALSE, 'anh2002@example.com', '0954321098', 'Can Tho, Vietnam', 4);
 
-
 -- Insert sample data for student
 INSERT INTO student (id, class_id, is_studing) VALUES 
 ('N22DCCN127', 'D22CQCN02-N', TRUE), 
@@ -294,7 +424,7 @@ INSERT INTO staff (id, is_working) VALUES
 INSERT INTO account (password, role_id, is_active) VALUES
 ('QL001', 1, TRUE); 
 INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, account_id) VALUES 
-('QL001', '123456789012', 'Sang', 'Tran', TRUE, 'sangtran127@example.com', '4333244521', 'Hanoi, Vietnam', 5);
+('QL001', '635945826578', 'Sang', 'Tran', TRUE, 'sangtran127@example.com', '4333244521', 'Hanoi, Vietnam', 5);
 INSERT INTO staff (id, is_working) VALUES 
 ('QL001', TRUE);
 
@@ -394,6 +524,7 @@ SELECT
     br.borrowing_time,
     br.expect_returning_time,
     br.actual_returning_time,
+    br.room_id AS borrow_room_id,
     bi.id AS borrow_item_id,
     e.id AS equipment_id,
     e.equipment_name,

@@ -262,7 +262,7 @@ class BorrowService:
             # Query cơ bản lấy tất cả cột
             query = """
                 SELECT *
-                FROM BorrowDetails
+                FROM borrow_request
                 WHERE 1=1
             """
             params = []
