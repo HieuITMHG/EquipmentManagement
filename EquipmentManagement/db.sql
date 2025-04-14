@@ -305,7 +305,6 @@ INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES
 ('Điều khiển máy chiếu', 'BROKEN', 'MOBILE', '2B22'),
 ('Bút laser', 'AVAILABLE', 'MOBILE', '2B22');
 
--- Thiết bị di động phòng 2B11
 INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
 ('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11'),
 ('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
@@ -348,7 +347,7 @@ INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES
 -- 2B11
 ('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11'),
 ('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11'),
 ('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
 ('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
 
@@ -428,26 +427,14 @@ INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, addre
 INSERT INTO staff (id, is_working) VALUES 
 ('QL001', TRUE);
 
--- Insert sample data for manager
-
 -- Insert sample data for penalty_form
 INSERT INTO penalty_form (form_name, price) VALUES 
-('Late Return', 50.00), 
-('Damaged Equipment', 200.00);
+('Trừ điểm rèn luyên', 0.00), 
+('Đền bù', 200.00);
 
--- Insert sample data for penalty_ticket
-INSERT INTO penalty_ticket (staff_id, student_id, create_time, status) VALUES 
-('STF2001', 'N22DCCN127', '2024-03-11 12:00:00', 'ACCEPTED');
-
--- Insert sample data for violation
 INSERT INTO violation (violation_content, penalty_form_id) VALUES 
-('Late return of equipment', 1), 
-('Damaged equipment', 2);
-
--- Insert sample data for detail_penalty_ticket
-INSERT INTO detail_penalty_ticket (violation_id, penalty_ticket_id) VALUES 
-(1, 1), 
-(2, 1);
+('Trả thiết bị trể hạn', 1), 
+('Làm hổng thiết bị', 2);
 
 -- Insert sample data for repair_ticket
 INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES 
@@ -475,7 +462,6 @@ INSERT INTO liquidation_slip (liquidation_date, staff_id, status) VALUES
 INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id) VALUES 
 (1, 5),
 (2, 6);
-
 
 /* VIEWS */
 CREATE VIEW StudentInfo AS  
