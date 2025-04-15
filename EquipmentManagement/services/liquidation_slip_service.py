@@ -119,3 +119,15 @@ class LiquidationSlipService:
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def reject_liquidation_slip(ticket_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE liquidation_slip SET status = 'REJECTED' WHERE id = %s", (ticket_id,))
+            conn.commit()
+            return cursor.rowcount > 0  
+        finally:
+            cursor.close()
+            conn.close()

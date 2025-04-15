@@ -37,6 +37,18 @@ class PenaltyService:
             conn.close()
 
     @staticmethod
+    def get_penalty_ticket_by_status(status):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM penalty_ticket WHERE status = %s", (status,))
+            lst_violation = cursor.fetchall()
+            return lst_violation
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
     def get_history_penalty_ticket(start_time=None):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
@@ -117,6 +129,18 @@ class PenaltyService:
         cursor = conn.cursor()
         try:
             cursor.execute("UPDATE penaltyy_ticket SET status = 'ACCEPTED' WHERE id = %s", (ticket_id,))
+            conn.commit()
+            return cursor.rowcount > 0  
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def reject_penalty_ticket(ticket_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE penalty_ticket SET status = 'REJECTED' WHERE id = %s", (ticket_id,))
             conn.commit()
             return cursor.rowcount > 0  
         finally:

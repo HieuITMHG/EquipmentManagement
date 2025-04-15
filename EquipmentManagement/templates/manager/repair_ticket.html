@@ -43,7 +43,7 @@
         <div class="flex-10 flex flex-col px-6 overflow-auto">
             <div class="flex-10 space-y-3 p-4 max-h-[600px] {% if create_date %} hidden {% endif %}" id="pending">
                 {% for request in pending_requests %}
-                <form method="post" action="{{ url_for('manager.accept_repair_ticket') }}" 
+                <form method="post" action="{{ url_for('manager.repair_ticket') }}" 
                  class="h-12 w-full shadow-2xs flex items-center p-2 justify-between text-white">
                     <button class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer"
                         onclick="show_detail(this.value)"
@@ -53,9 +53,15 @@
                     </button>
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
-                    <div class="flex space-x-1">
-                        <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
-                        type="submit" name="action">Duyệt</button>
+                    <div class="flex gap-1">
+                        <div class="flex space-x-1">
+                            <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer rounded-sm"
+                            type="submit" name="action" value="1">Duyệt</button>
+                        </div>
+                        <div class="flex space-x-1">
+                            <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer rounded-sm"
+                            type="submit" name="action" value="0">Từ chối</button>
+                        </div>
                     </div>
                 </form>
                 <div 
@@ -130,7 +136,7 @@
                     {% if request.status == 'ACCEPTED' %}
                     <div class="flex space-x-1">
                         <button class="bg-blue-300 p-1 w-24 hover:bg-blue-200 cursor-pointer text-[15px]"
-                        type="submit" name="action">Finish</button>
+                        type="submit" name="action">Xong</button>
                     </div>
                     {% endif %}
                 </form>

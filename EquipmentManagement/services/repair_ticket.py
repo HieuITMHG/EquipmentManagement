@@ -141,5 +141,18 @@ class RepairTicketService:
             cursor.close()
             conn.close()
 
+    @staticmethod
+    def reject_repair_ticket(ticket_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE repair_ticket SET status = 'REJECTED' WHERE id = %s", (ticket_id,))
+            conn.commit()
+            return cursor.rowcount > 0  
+        finally:
+            cursor.close()
+            conn.close()
+
+
 
 

@@ -110,26 +110,41 @@ def delete_equipment():
     
     return redirect(('manager_manage_equipment'))
     
-@manager_blueprint.route('/manager/liquidation_slip', methods=['GET'])
+@manager_blueprint.route('/manager/liquidation_slip', methods=['GET', 'POST'])
 @login_required
 @role_required(RoleID.MANAGER.value)
 def liquidation_slip():
-    create_date = request.args.get("create_date")
-    login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
-    broken_equipment = EquipmentService.get_broken_equipment()
-    pending_requests = LiquidationSlipService.get_liquidation_slip(status='PENDING')
-    accepted_requests = LiquidationSlipService.get_history_liquidation_slip(create_date)
-    for r in pending_requests:
-        r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
-    for r in accepted_requests:
-        r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
+    if request.method == 'GET':
+        create_date = request.args.get("create_date")
+        login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
+        broken_equipment = EquipmentService.get_broken_equipment()
+        pending_requests = LiquidationSlipService.get_liquidation_slip(status='PENDING')
+        accepted_requests = LiquidationSlipService.get_history_liquidation_slip(create_date)
+        for r in pending_requests:
+            r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
+        for r in accepted_requests:
+            r['equipments'] = LiquidationSlipService.get_equipment_in_liquidation(r['id'])
 
-    return render_template('manager/liquidation_slip.html', broken_equipment=broken_equipment,
-                                                            pending_requests=pending_requests,
-                                                            accepted_requests=accepted_requests,
-                                                            login_manager=login_manager,
-                                                            create_date=create_date)  
+        return render_template('manager/liquidation_slip.html', broken_equipment=broken_equipment,
+                                                                pending_requests=pending_requests,
+                                                                accepted_requests=accepted_requests,
+                                                                login_manager=login_manager,
+                                                                create_date=create_date)  
+    action = int(request.form.get('action'))
+    request_id = request.form.get('request_id')
     
+    if action:
+        if LiquidationSlipService.accept_liquidation_slip(request_id):
+            flash("Duyệt phiếu thanh lý thành công", 'success')
+        else:
+            flash("Phiếu thanh lý không tồn tại hoặc đã duyệt", 'error')
+    else:
+        if LiquidationSlipService.reject_liquidation_slip(request_id):
+            flash("Từ chối phiếu thanh lý thành công", 'success')
+        else:
+            flash("Từ chối phiếu thanh lý thất bại", 'error')
+    return redirect('liquidation_slip') 
+        
 @manager_blueprint.route('/manager/add_liquidation_slip', methods=['POST'])
 @login_required
 @role_required(RoleID.MANAGER.value)
@@ -144,64 +159,43 @@ def add_liquidation_slip():
     
     return redirect('liquidation_slip')  
 
-@manager_blueprint.route('/manager/accept_liquidation_request', methods=['POST'])
-@login_required
-@role_required(RoleID.MANAGER.value)
-def accept_liquidation_request():
-    request_id = request.form.get('request_id')
-    if LiquidationSlipService.accept_liquidation_slip(request_id):
-        flash("Duyệt phiếu thanh lý thành công")
-    else:
-        flash("Phiếu thanh lý không tồn tại hoặc đã duyệt")
-    return redirect('liquidation_slip')  
-
-@manager_blueprint.route('/manager/accept_repair_ticket', methods=['POST'])
-@login_required
-@role_required(RoleID.MANAGER.value)
-def accept_repair_ticket():
-    request_id = request.form.get('request_id')
-    if RepairTicketService.accept_repair_ticket(request_id):
-        flash("Duyệt phiếu sửa chữa thành công")
-    else:
-        flash("Phiếu sửa chữa không tồn tại hoặc đã duyệt")
-    return redirect('repair_ticket')  
-
-@manager_blueprint.route('/manager/accept_penalty_ticket', methods=['POST'])
-@login_required
-@role_required(RoleID.MANAGER.value)
-def accept_penalty_ticket():
-    request_id = request.form.get('request_id')
-    if PenaltyService.accept_penalty_ticket(request_id):
-        flash("Duyệt phiếu phạt thành công")
-    else:
-        flash("Phiếu phạt không tồn tại hoặc đã duyệt")
-    return redirect('penalty_ticket')  
-
-@manager_blueprint.route('/manager/repair_ticket', methods=['GET'])
+@manager_blueprint.route('/manager/repair_ticket', methods=['GET', 'POST'])
 @login_required
 @role_required(RoleID.MANAGER.value)
 def repair_ticket():
-    login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
-    broken_equipment = EquipmentService.get_broken_equipment()
-    broken_equipment = EquipmentService.get_broken_equipment()
-    pending_requests = RepairTicketService.get_repair_ticket(status='PENDING')
-    create_date = request.args.get("create_date")
-    accepted_requests = RepairTicketService.get_history_repair_ticket(create_date)
-    for r in pending_requests:
-        r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
-        r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
-    for r in accepted_requests:
-        r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
-        r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
+    if request.method == 'GET':
+        login_manager = AccountService.get_account_by_person_id(session.get('account_id'))
+        broken_equipment = EquipmentService.get_broken_equipment()
+        broken_equipment = EquipmentService.get_broken_equipment()
+        pending_requests = RepairTicketService.get_repair_ticket(status='PENDING')
+        create_date = request.args.get("create_date")
+        accepted_requests = RepairTicketService.get_history_repair_ticket(create_date)
+        for r in pending_requests:
+            r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
+            r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
+        for r in accepted_requests:
+            r['equipments'] = RepairTicketService.get_equipment_in_repair_ticket(r['id'])
+            r['total_cost'] = RepairTicketService.get_total_cost(r['id'])
 
 
-    return render_template('manager/repair_ticket.html', broken_equipment=broken_equipment,
-                                                       pending_requests=pending_requests,
-                                                       accepted_requests=accepted_requests,
-                                                       login_manager=login_manager,
-                                                       create_date=create_date)  
-
-
+        return render_template('manager/repair_ticket.html', broken_equipment=broken_equipment,
+                                                        pending_requests=pending_requests,
+                                                        accepted_requests=accepted_requests,
+                                                        login_manager=login_manager,
+                                                        create_date=create_date)  
+    action = int(request.form.get('action'))
+    request_id = request.form.get('request_id')
+    if action:
+        if RepairTicketService.accept_repair_ticket(request_id):
+            flash("Duyệt phiếu sửa chữa thành công", 'success')
+        else:
+            flash("Phiếu sửa chữa không tồn tại hoặc đã duyệt", 'error')
+    else:
+        if RepairTicketService.reject_repair_ticket(request_id):
+            flash("Từ chối phiếu sủa chửa thành công", 'success')
+        else:
+            flash("Từ chối phiếu sửa chửa thất bại", 'error')
+    return redirect('repair_ticket') 
 
 @manager_blueprint.route('/manager/add_repair_ticket', methods=['POST'])
 @login_required
@@ -251,28 +245,43 @@ def finish_liquidation_slip():
         flash("Phiếu sửa chữa không tồn tại hoặc đã hoàn tất")
     return redirect('liquidation_slip') 
 
-@manager_blueprint.route('/manager/penalty_ticket', methods=['GET'])
+@manager_blueprint.route('/manager/penalty_ticket', methods=['GET', 'POST'])
 @login_required
 @role_required(RoleID.MANAGER.value)
 def penalty_ticket():
-    manager_id = session.get('account_id')
-    login_manager = AccountService.get_account_by_person_id(manager_id)
-    lst_violation = ViolationService.get_all_violation()
-    pending_penalty = PenaltyService.get_pending_penalty_ticket(manager_id)
-    
-    create_date = request.args.get("create_date")
-    history_penalties = PenaltyService.get_history_penalty_ticket(start_time=create_date)
-    for r in pending_penalty:
-        r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
-    for r in history_penalties:
-        r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
+    if request.method == 'GET':
+        manager_id = session.get('account_id')
+        login_manager = AccountService.get_account_by_person_id(manager_id)
+        lst_violation = ViolationService.get_all_violation()
+        pending_penalty = PenaltyService.get_penalty_ticket_by_status(status='PENDING')
+        
+        create_date = request.args.get("create_date")
+        history_penalties = PenaltyService.get_history_penalty_ticket(start_time=create_date)
+        for r in pending_penalty:
+            r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
+        for r in history_penalties:
+            r['violation'] = PenaltyService.get_violation_by_in_ticket(r['id'])
 
-    return render_template('manager/penalty_ticket.html',  
-                           lst_violation=lst_violation, 
-                           pending_penalty=pending_penalty,
-                           history_penalties=history_penalties,
-                           login_manager=login_manager,
-                           create_date=create_date)  
+        return render_template('manager/penalty_ticket.html',  
+                            lst_violation=lst_violation, 
+                            pending_penalty=pending_penalty,
+                            history_penalties=history_penalties,
+                            login_manager=login_manager,
+                            create_date=create_date)  
+    action = int(request.form.get('action'))
+    request_id = request.form.get('request_id')
+
+    if action:
+        if PenaltyService.accept_penalty_ticket(request_id):
+            flash("Duyệt phiếu phạt thành công", 'success')
+        else:
+            flash("Phiếu phạt không tồn tại hoặc đã duyệt", 'error')
+    else:
+        if PenaltyService.reject_penalty_ticket(request_id):
+            flash("Từ chối phiếu phạt thành công", 'success')
+        else:
+            flash("Từ chối phiếu phạt thất bại", 'error')
+    return redirect('penalty_ticket')  
 
 @manager_blueprint.route('/manager/add_penalty_ticket', methods=['POST'])
 @login_required

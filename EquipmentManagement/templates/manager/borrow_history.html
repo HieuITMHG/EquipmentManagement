@@ -43,7 +43,7 @@
                     </a>
                     <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
-                    {%if request.borrow_status == "ACCEPTED" %}
+                    {%if request.status == "ACCEPTED" %}
                     
                     <div class="flex space-x-1">
                         <button class="bg-blue-300 p-1 w-20 hover:bg-blue-200 cursor-pointer"
