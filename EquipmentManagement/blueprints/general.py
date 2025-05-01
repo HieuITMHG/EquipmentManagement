@@ -26,10 +26,9 @@ def login():
             if login_account['role_id'] == RoleID.MANAGER.value:
                 return redirect('/')
             elif login_account['role_id'] == RoleID.STAFF.value:
-                return redirect('/staff')
+                return redirect('/staff/profile')
             else:
-                return redirect('/student')
-            
+                return redirect('/borrow/profile')
         else:
             flash(messages_failure["invalid_information"], 'error')
             return render_template('general/login.html')

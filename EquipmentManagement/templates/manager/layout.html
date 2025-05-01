@@ -1,0 +1,70 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Manager
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100">
+    <div class="flex">
+        <div class="w-64 bg-gray-800 text-white h-screen p-5 border-r border-white">
+            <a class="flex items-center mb-5 cursor-pointer" href="/borrow/profile">
+                <img src="{{ url_for('static', filename='avatar/avt_man.png') }}" alt="Avatar" class="w-12 h-12 rounded-full mr-3">
+                <div>
+                    <h3 class="text-lg font-semibold">{{ login_user.last_name }} {{ login_user.first_name }}</h3>
+                    <p class="text-sm">{{ login_user.email }}</p>
+                </div>
+            </a>
+            <ul>
+                <li class="mb-3">
+                    <a href="{{ url_for('equipment.equipment', it=True) }}"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.endpoint == 'equipment.equipment' %}bg-gray-700{% endif %}">
+                        Thiết bị
+                    </a>
+                </li>
+                <li class="mb-3">
+                    <a href="{{ url_for('manager.account', page_num=1) }}"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.endpoint == 'manager.account' %}bg-gray-700{% endif %}">
+                        Tài khoản
+                    </a>
+                </li>
+                <li class="mb-3">
+                    <a href="/borrow/manage_borrow_request"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.path == '/borrow/manage_borrow_request' %}bg-gray-700{% endif %}">
+                        Yêu cầu mượn
+                    </a>
+                </li>
+                <li class="mb-3">
+                    <a href="/manager/repair_ticket"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.path == '/manager/repair_ticket' %}bg-gray-700{% endif %}">
+                        Phiếu sửa chữa
+                    </a>
+                </li>
+                <li class="mb-3">
+                    <a href="/manager/liquidation_slip"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.path == '/manager/liquidation_slip' %}bg-gray-700{% endif %}">
+                        Phiếu thanh lý
+                    </a>
+                </li>
+                <li class="mb-3">
+                    <a href="/inventory/inventory_history"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.path == '/inventory/inventory_history' %}bg-gray-700{% endif %}">
+                        Phiếu kiểm kê
+                    </a>
+                </li>
+                <li class="mb-3">
+                    <a href="/logout"
+                       class="p-2 block rounded hover:bg-gray-700 {% if request.path == '/logout' %}bg-gray-700{% endif %}">
+                        Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="flex-1">
+            {% block manager_content %}
+            <!-- Nội dung chính sẽ được chèn vào đây -->
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

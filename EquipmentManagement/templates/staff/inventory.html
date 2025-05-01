@@ -1,0 +1,122 @@
+{% extends "staff/layout.html" %}
+
+{% block staff_content %}
+<div class="flex flex-col h-screen p-6 bg-gray-50">
+    <!-- Header with Dropdown and Button -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Thống Kê Kiểm Kê</h1>
+        <form class="flex items-center space-x-4" method="get" action="/inventory/inventory_history">
+            <select id="quarterSelect" class="border border-gray-300 rounded-lg p-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+            onchange="this.form.submit()" name="quarter_id">
+                {% for quarter in quarters %}
+                <option value="{{ quarter.id }}" {% if quarter.id == quarter_id|default(1) %}selected{% endif %}>
+                    {{ quarter.year }} - Q{{ quarter.quarter_number }}
+                </option>
+                {% endfor %}
+            </select>
+            <a href="/inventory/create_form" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition duration-200">Lập Phiếu Kiểm Kê</a>
+        </form>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="h-2/5 max-h-[450px] bg-white p-4 rounded-lg shadow-md">
+        <canvas id="inventoryChart"></canvas>
+        <p class="mt-2 text-sm text-gray-600 text-center">Biểu đồ hiển thị tổng quan số lượng thiết bị theo trạng thái trong quý được chọn.</p>
+    </div>
+
+    <!-- Scrollable Table -->
+    <div class="mt-6 flex-grow overflow-y-auto bg-white rounded-lg shadow-md">
+        <table class="w-full border-collapse">
+            <thead class="bg-gray-800 text-white sticky top-0 z-10">
+                <tr>
+                    <th class="p-3 text-left border-b font-semibold">Phòng</th>
+                    <th class="p-3 text-left border-b font-semibold">Tổng Số Lượng</th>
+                    <th class="p-3 text-left border-b font-semibold">Hỏng</th>
+                    <th class="p-3 text-left border-b font-semibold">Đang Sửa Chữa</th>
+                    <th class="p-3 text-left border-b font-semibold">Đã Thanh Lý</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in room_details %}
+                <tr class="hover:bg-gray-100 transition duration-150">
+                    <td class="p-3 border-b text-gray-700">{{ detail.room_id }}</td>
+                    <td class="p-3 border-b font-medium text-gray-800">{{ detail.total_devices }}</td>
+                    <td class="p-3 border-b font-medium text-gray-800">{{ detail.broken_count }}</td>
+                    <td class="p-3 border-b font-medium text-gray-800">{{ detail.repairing_count }}</td>
+                    <td class="p-3 border-b font-medium text-gray-800">{{ detail.liquidated_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script>
+    let inventoryChart;
+
+    function fetchChartData(quarter_id) {
+        fetch(`/inventory/statistical?quarter_id=${quarter_id}`)
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('inventoryChart').getContext('2d');
+                if (inventoryChart) {
+                    inventoryChart.destroy();
+                }
+                inventoryChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Tổng Thiết Bị', 'Hỏng', 'Đang Sửa', 'Thanh Lý'],
+                        datasets: [{
+                            label: 'Thống Kê Kiểm Kê',
+                            data: [data.total_devices, data.total_broken, data.total_repairing, data.total_liquidated],
+                            backgroundColor: ['#36A2EB', '#FF6384', '#FFCD56', '#4BC0C0'],
+                            borderColor: '#fff',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return `${tooltipItem.label}: ${tooltipItem.raw}`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                color: '#fff',
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: (value, context) => value || '',
+                                anchor: 'center',
+                                align: 'center'
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            })
+            .catch(error => console.error('Lỗi khi lấy dữ liệu biểu đồ:', error));
+    }
+
+    function updateChartAndPage() {
+        const quarter_id = document.getElementById('quarterSelect').value;
+        fetchChartData(quarter_id);
+        window.location.href = `/inventory/inventory_history?quarter_id=${quarter_id}`;
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+        const quarterSelect = document.getElementById('quarterSelect');
+        fetchChartData(quarterSelect.value);
+    });
+</script>
+{% endblock %}

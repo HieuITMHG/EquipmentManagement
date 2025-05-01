@@ -1,0 +1,140 @@
+<!-- templates/equipment/edit_equipment.html -->
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Chỉstdint sửa thiết bị
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+    <button
+        onclick="goBack()"
+        class="absolute top-12 left-12 bg-blue-600 z-10 h-12 w-12 rounded-full flex items-center justify-center hover:bg-blue-700 transition duration-300">
+        <img src="{{ url_for('static', filename='icon/back_icon.svg') }}" class="w-6"/>
+    </button>
+
+    <!-- Header -->
+    <header class="bg-white shadow-md p-6">
+        <h1 class="text-3xl font-bold text-gray-800 text-center">Chỉnh sửa thiết bị</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-8 transform transition-all hover:shadow-xl">
+            <form action="/equipment/edit/{{ equipment.id }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+                <!-- Left Column -->
+                <div class="space-y-6">
+                    <!-- Equipment Name (Editable) -->
+                    <div>
+                        <label for="equipment_name" class="block text-sm font-medium text-gray-700 mb-1">Tên thiết bị</label>
+                        <input type="text" id="equipment_name" name="equipment_name" value="{{ equipment.equipment_name }}" required
+                               class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer"
+                               placeholder="Nhập tên thiết bị">
+                    </div>
+
+                    <!-- Equipment Type (Read-only) -->
+                    <div>
+                        <label for="equipment_type" class="block text-sm font-medium text-gray-700 mb-1">Loại thiết bị</label>
+                        <input type="text" id="equipment_type" value="{{ equipment.equipment_type }}" readonly
+                               class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                    </div>
+
+                    <!-- Room ID (Editable) -->
+                    <div>
+                        <label for="room_id" class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                        <select id="room_id" name="room_id" required
+                                class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer">
+                            <option value="" disabled>Chọn phòng</option>
+                            {% for room in rooms %}
+                            <option value="{{ room.id }}" {% if room.id == equipment.room_id %}selected{% endif %}>{{ room.id }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- Management Type (Read-only) -->
+                    <div>
+                        <label for="management_type" class="block text-sm font-medium text-gray-700 mb-1">Loại quản lý</label>
+                        <input type="text" id="management_type" value="{{ equipment.management_type }}" readonly
+                               class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                    </div>
+
+                    <!-- Quantity (Read-only, shown if management_type is QUANTITY) -->
+                    {% if equipment.management_type == 'QUANTITY' %}
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                        <input type="number" id="quantity" value="{{ equipment.quantity }}" readonly
+                               class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                    </div>
+                    {% endif %}
+
+                    <!-- Status (Editable) -->
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                        <select id="status" name="status" required
+                                class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer">
+                            <option value="" disabled>Chọn trạng thái</option>
+                            <option value="AVAILABLE" {% if equipment.status == 'AVAILABLE' %}selected{% endif %}>Có sẵn</option>
+                            <option value="BORROWED" {% if equipment.status == 'BORROWED' %}selected{% endif %}>Đang sử dụng</option>
+                            <option value="UNDERREPAIR" {% if equipment.status == 'UNDERREPAIR' %}selected{% endif %}>Đang sửa</option>
+                            <option value="BROKEN" {% if equipment.status == 'BROKEN' %}selected{% endif %}>Hỏng</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Image (Read-only, Full Width) -->
+                   <!-- Image Upload (Editable, Full Width) -->
+                <div class="col-span-1 md:col-span-2">
+                    <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh thiết bị</label>
+                    <div class="flex items-center gap-4">
+                        <input type="file" id="image" name="image" accept="image/*"
+                               class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer">
+                        <div class="w-32 h-32 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+                            <img id="image-preview" 
+                                 src="{% if equipment.image_url %}{{ url_for('static', filename=equipment.image_url) }}{% else %}#{% endif %}" 
+                                 class="{% if equipment.image_url %}w-full h-full object-cover{% else %}hidden{% endif %}" 
+                                 alt="Image preview">
+                            <div id="no-image" class="{% if equipment.image_url %}hidden{% else %}w-full h-full flex items-center justify-center text-gray-500{% endif %}">
+                                Không có ảnh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="col-span-1 md:col-span-2 flex justify-center">
+                    <button type="submit"
+                            class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition duration-200 font-semibold transform hover:scale-105">
+                        Cập nhật thiết bị
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<!-- JavaScript for Go Back -->
+<script>
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('image-preview');
+
+    imageInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

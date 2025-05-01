@@ -1,0 +1,151 @@
+{% extends "borrow/layout.html" %}
+
+{% block borrow_content %}
+<div class="flex flex-col h-screen">
+    <div class="bg-gray-800 p-4 text-white flex justify-between">
+        <div>
+            <form class="relative" action="{{ url_for('borrow.borrow_equipment') }}" method="get">
+                <label for="room" class="font-bold">Phòng:</label>
+                <input
+                    list="rooms"
+                    name="room"
+                    id="room"
+                    class="input_field border border-gray-300 rounded-md p-2 bg-white text-gray-800"
+                    value="{{ room_id or '' }}"
+                    placeholder="--Phòng--"
+                    onchange="this.form.submit()"
+                />
+                <datalist id="rooms">
+                    {% for r in rooms %}
+                        <option value="{{r.id}}"></option>
+                    {% endfor %}
+                </datalist>
+            </form>
+        </div>
+
+        <button class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition duration-200" 
+                type="submit"
+                form="borrow_form">
+            Mượn thiết bị
+        </button>
+    </div>
+    <div class="overflow-auto flex-grow p-4">
+        {% if borrowing_equipments %}
+        <h2 class="font-bold">
+            Thiết bị chờ duyệt
+        </h2>
+        {% endif %}
+        <div class="flex flex-col gap-4">
+            <div class="grid grid-cols-4">
+                {% for e in borrowing_equipments %}
+                <form action="{{url_for('borrow.cancel_borrow_request')}}" method="POST" class="group mr-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    
+                    <label class="relative bg-white border rounded-lg shadow-md overflow-hidden h-60 w-48 flex flex-col justify-between items-center text-gray-700 group-hover:brightness-90 transition duration-200">
+                        
+                        <input class="hidden" name="equipment_id" value="{{e.id}}" />
+    
+                        <!-- Hình ảnh -->
+                        <img src="{{ url_for('static', filename=e.image_url) }}"
+                            alt="Thiết bị"
+                            class="h-2/3 w-auto object-contain max-w-[95%]" />
+    
+                        <!-- Thông tin -->
+                        <div class="p-2 text-center">
+                            <h3 class="font-bold">{{e.equipment_name}}</h3>
+                            <p class="text-sm text-gray-600">Phòng {{e.room_id}} - Chờ duyệt</p>
+                        </div>
+    
+                        <!-- Nút Hủy -->
+                        <button type="submit"
+                                class="absolute top-2 right-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity duration-100 z-20 cursor-pointer">
+                            Hủy
+                        </button>
+                    </label>
+                </form>
+                {% endfor %}
+            </div>
+
+            {% if borrowable_equipments %}
+            <h2 class="font-bold">
+                Thiết bị có thể mượn
+            </h2>
+            {% endif %}
+
+            <form action="{{ url_for('borrow.borrow_request') }}" method="post" id="borrow_form" class="grid grid-cols-4 gap-4"> 
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="room" value="{{room_id}}"/>
+                {% for e in borrowable_equipments %}
+                <label class="device_card">
+                    <input type="checkbox" 
+                           class="hidden" 
+                           name="lst_equipment_id"
+                           value="{{e.id}}"/>
+                    <img src="{{ url_for('static', filename=e.image_url) }}" alt="Thiết bị 1" class="h-2/3 w-auto object-cover max-w-[95%]" />
+                    <div class="p-2 text-center">
+                        <h3 class="font-bold">{{e.equipment_name}}</h3>
+                        <p class="text-sm text-gray-600">{{e.room_id}} - Khả dụng</p>
+                    </div>
+                </label>
+                {% endfor %} 
+            </form>  
+            
+            {% if borrowed_equipments %}
+            <h2 class="font-bold">
+                Thiết bị đang mượn
+            </h2>
+            {% endif %}
+            <div class="grid grid-cols-4 gap-4">
+                {% for e in borrowed_equipments %}
+                <label class="device_card">
+                    <img src="{{ url_for('static', filename=e.image_url) }}" alt="Thiết bị 1" class="h-2/3 w-auto object-cover max-w-[95%]" />
+                    <div class="p-2 text-center">
+                        <h3 class="font-bold">{{e.equipment_name}}</h3>
+                        <p class="text-sm text-gray-600">Phong {{e.room_id}} - Đang mượn</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.device_card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Prevent default label behavior
+            e.preventDefault();
+
+            // Find the checkbox
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                // Manually toggle the checkbox state
+                checkbox.checked = !checkbox.checked;
+                console.log(`Checkbox ${checkbox.value} checked: ${checkbox.checked}`); // Debug
+
+                // Update background color
+                if (checkbox.checked) {
+                    this.classList.add('bg-blue-200');
+                    this.classList.remove('bg-white');
+                } else {
+                    this.classList.remove('bg-blue-200');
+                    this.classList.add('bg-white');
+                }
+            } else {
+                console.error('Checkbox not found in device_card:', this);
+            }
+        });
+    });
+
+    // Debug form submission
+    document.getElementById('borrow_form').addEventListener('submit', function() {
+        const checkboxes = this.querySelectorAll('input[type="checkbox"]');
+        const checkedValues = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        console.log('Selected equipment IDs:', checkedValues);
+    });
+});
+</script>
+{% endblock %}

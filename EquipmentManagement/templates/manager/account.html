@@ -1,4 +1,4 @@
-{% extends "manager/manager_layout.html" %}
+{% extends "manager/layout.html" %}
 
 {% block manager_content %}
 <script>
@@ -89,8 +89,9 @@
                     <td class="p-3 text-sm truncate max-w-xs" title="{{ acc.address }}">{{ acc.address }}</td>
                     <td class="p-3 text-sm whitespace-nowrap">
                         {% if acc.role_id == 1 %}Quản lý
-                        {% elif acc.role_id == 2 %}Sinh viên
-                        {% else %}Nhân viên{% endif %}
+                        {% elif acc.role_id == 2 %}Nhân viên
+                        {% elif acc.role_id == 3 %}Giảng viên
+                        {% else %}Sinh viên{% endif %}
                     </td>
                     <td class="flex items-center justify-center">
                         <a href="{{ url_for('manager.view_account', user_id=acc.person_id) }}" class=" text-blue-600 hover:text-blue-800 transition cursor-pointer" title="Xem">

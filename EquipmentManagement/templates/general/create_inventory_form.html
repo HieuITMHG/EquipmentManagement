@@ -1,0 +1,96 @@
+{% extends "general/layout.html" %}
+
+{% block content %}
+<div class="flex flex-col min-h-screen p-6 bg-gray-50">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Lập Phiếu Kiểm Kê</h1>
+    <form method="POST" action="/inventory/create_form" class="bg-white p-6 rounded-lg shadow-md" onsubmit="return validateDates()">
+        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
+        <!-- Staff ID Input -->
+        <div class="mb-4">
+            <label for="staff_id" class="block text-gray-700 font-medium mb-2">ID Người Thực Hiện</label>
+            <input type="text" id="staff_id" name="staff_id" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="Nhập ID nhân viên">
+        </div>
+
+        <!-- Start and End Dates -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="start_date" class="block text-gray-700 font-medium mb-2">Ngày Bắt Đầu</label>
+                <input type="date" id="start_date" name="start_date" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div>
+                <label for="end_date" class="block text-gray-700 font-medium mb-2">Ngày Kết Thúc</label>
+                <input type="date" id="end_date" name="end_date" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+        </div>
+
+        <!-- Room Details (Scrollable) -->
+        <div class="mb-4 max-h-96 overflow-y-auto">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Chi Tiết Phòng</h2>
+            {% for room in rooms %}
+            <div class="p-4 border border-gray-200 rounded-lg mb-4">
+                <h3 class="text-gray-700 font-medium mb-2">Phòng {{ room.id }}</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="total_devices_{{ room.id }}" class="block text-gray-700 font-medium">Tổng Số Lượng</label>
+                        <input type="number" name="total_devices_{{ room.id }}" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required min="0">
+                    </div>
+                    <div>
+                        <label for="broken_count_{{ room.id }}" class="block text-gray-700 font-medium">Hỏng</label>
+                        <input type="number" name="broken_count_{{ room.id }}" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required min="0">
+                    </div>
+                    <div>
+                        <label for="repairing_count_{{ room.id }}" class="block text-gray-700 font-medium">Đang Sửa Chữa</label>
+                        <input type="number" name="repairing_count_{{ room.id }}" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required min="0">
+                    </div>
+                    <div>
+                        <label for="liquidated_count_{{ room.id }}" class="block text-gray-700 font-medium">Đã Thanh Lý</label>
+                        <input type="number" name="liquidated_count_{{ room.id }}" class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required min="0">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-6">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition duration-200">Lưu Phiếu Kiểm Kê</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function validateDates() {
+        const startDate = new Date(document.getElementById('start_date').value);
+        const endDate = new Date(document.getElementById('end_date').value);
+
+        if (!startDate || !endDate) {
+            alert('Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.');
+            return false;
+        }
+
+        if (endDate < startDate) {
+            alert('Ngày kết thúc phải sau ngày bắt đầu.');
+            return false;
+        }
+
+        // Determine quarter boundaries (6-month periods)
+        const year = startDate.getFullYear();
+        const month = startDate.getMonth() + 1;
+        let quarterStart, quarterEnd;
+        if (month <= 6) {
+            quarterStart = new Date(year, 0, 1);
+            quarterEnd = new Date(year, 5, 30);
+        } else {
+            quarterStart = new Date(year, 6, 1);
+            quarterEnd = new Date(year, 11, 31);
+        }
+
+        if (startDate < quarterStart || startDate > quarterEnd || endDate < quarterStart || endDate > quarterEnd) {
+            alert('Ngày bắt đầu và ngày kết thúc phải nằm trong cùng một quý (6 tháng).');
+            return false;
+        }
+
+        return true;
+    }
+</script>
+{% endblock %}

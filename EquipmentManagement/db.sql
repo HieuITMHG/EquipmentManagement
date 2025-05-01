@@ -54,9 +54,9 @@ CREATE TABLE class (
 -- Tạo bảng room
 CREATE TABLE room (
     id CHAR(5) PRIMARY KEY,
-    floor_number INTEGER NOT NULL,
-    section CHAR(1) NOT NULL,
-    max_people INTEGER NOT NULL
+    floor_number INTEGER,
+    section CHAR(1),
+    max_people INTEGER
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Tạo bảng student
@@ -75,27 +75,38 @@ CREATE TABLE staff (
     FOREIGN KEY (id) REFERENCES person(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE teacher (
+    id VARCHAR(20) PRIMARY KEY,
+    is_teaching BOOLEAN NOT NULL,
+    FOREIGN KEY(id) REFERENCES person(id)
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 -- Tạo bảng equipment
 CREATE TABLE equipment (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     equipment_name VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     status ENUM('AVAILABLE', 'UNDERREPAIR', 'BORROWED', 'BROKEN', 'LIQUIDATED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    equipment_type ENUM('MOBILE', 'FIXED', 'SHARED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    equipment_type ENUM('MOBILE', 'FIXED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     room_id CHAR(5),
+    quantity int DEFAULT 1,
+    broken_quantity INT DEFAULT 0,
+    under_repair_quantity INT DEFAULT 0,
+    management_type ENUM('QUANTITY', 'INDIVIDUAL'),
+    image_url varchar(200),
     FOREIGN KEY (room_id) REFERENCES room(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Tạo bảng borrow_request
 CREATE TABLE borrow_request (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    student_id CHAR(10) NOT NULL,
+    person_id CHAR(10) NOT NULL,
     staff_id CHAR(10),
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','RETURNED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
+    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
     room_id CHAR(5) NOT NULL,
     borrowing_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expect_returning_time DATETIME NOT NULL,
     actual_returning_time DATETIME,
-    FOREIGN KEY (student_id) REFERENCES student(id),
+    FOREIGN KEY (person_id) REFERENCES person(id),
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
@@ -104,43 +115,9 @@ CREATE TABLE borrow_item (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     borrow_request_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
+    quantity INT DEFAULT 1,
     FOREIGN KEY (borrow_request_id) REFERENCES borrow_request(id),
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
-) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
-
--- Tạo bảng penalty_form
-CREATE TABLE penalty_form (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    form_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    price DOUBLE
-) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
-
--- Tạo bảng penalty_ticket
-CREATE TABLE penalty_ticket (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    staff_id CHAR(10) NOT NULL,
-    student_id CHAR(10) NOT NULL,
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    FOREIGN KEY (staff_id) REFERENCES staff(id),
-    FOREIGN KEY (student_id) REFERENCES student(id)
-) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
-
--- Tạo bảng violation
-CREATE TABLE violation (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    violation_content VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    penalty_form_id INTEGER NOT NULL,
-    FOREIGN KEY (penalty_form_id) REFERENCES penalty_form(id)
-) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
-
--- Tạo bảng detail_penalty_ticket
-CREATE TABLE detail_penalty_ticket (
-    violation_id INTEGER NOT NULL,
-    penalty_ticket_id INTEGER NOT NULL,
-    PRIMARY KEY (violation_id, penalty_ticket_id),
-    FOREIGN KEY (violation_id) REFERENCES violation(id),
-    FOREIGN KEY (penalty_ticket_id) REFERENCES penalty_ticket(id) ON DELETE CASCADE
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Tạo bảng repair_ticket
@@ -148,7 +125,7 @@ CREATE TABLE repair_ticket (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     start_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_date DATETIME,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    status ENUM('PREPARING','PENDING', 'ACCEPTED', 'REJECTED','COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
@@ -157,7 +134,9 @@ CREATE TABLE repair_ticket (
 CREATE TABLE detail_repair_ticket (
     repair_ticket_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
-    price INTEGER,
+    quantity INT DEFAULT 1,
+    description VARCHAR(255),
+    price DOUBLE,
     PRIMARY KEY (repair_ticket_id, equipment_id),
     FOREIGN KEY (repair_ticket_id) REFERENCES repair_ticket(id) ON DELETE CASCADE,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
@@ -167,7 +146,7 @@ CREATE TABLE detail_repair_ticket (
 CREATE TABLE liquidation_slip (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     liquidation_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    status ENUM('PREPARING','PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     staff_id CHAR(10) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
@@ -176,18 +155,51 @@ CREATE TABLE liquidation_slip (
 CREATE TABLE detail_liquidation_slip (
     liquidation_slip_id INTEGER NOT NULL,
     equipment_id INTEGER NOT NULL,
+    quantity INT DEFAULT 1,
+    description VARCHAR(255),
+    price DOUBLE,
     PRIMARY KEY (liquidation_slip_id, equipment_id),
     FOREIGN KEY (liquidation_slip_id) REFERENCES liquidation_slip(id) ON DELETE CASCADE,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE quarter (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    year INT,
+    quarter_number TINYINT CHECK (quarter_number BETWEEN 1 AND 4),
+    start_date DATE,
+    end_date DATE
+);
+
+CREATE TABLE inventory_form (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    start_date DATE,
+    end_date DATE,
+    staff_id VARCHAR(20),
+    quarter_id INT,
+    FOREIGN KEY (staff_id) REFERENCES staff(id),
+    FOREIGN KEY (quarter_id) REFERENCES quarter(id)
+);
+
+CREATE TABLE detail_inventory_form (
+    inventory_form_id INT AUTO_INCREMENT,
+    room_id CHAR(5),
+    total_devices INT,
+    broken_count INT,
+    repairing_count INT,
+    liquidated_count INT,
+    PRIMARY KEY (inventory_form_id, room_id),
+    FOREIGN KEY (inventory_form_id) REFERENCES inventory_form(id),
+    FOREIGN KEY (room_id) REFERENCES room(id)
+);
 
 /* INSERT SAMPLE DATA */
 -- Insert sample data for role
 INSERT INTO role (role_name) VALUES 
 ('Quản lý'), 
-('Sinh viên'), 
-('Nhân viên');
+('Sinh viên'),
+('Giảng viên'), 
+('Sinh viên');
 
 -- Insert sample data for department
 INSERT INTO department (department_name) VALUES 
@@ -208,197 +220,176 @@ INSERT INTO room (id, floor_number, section, max_people) VALUES
 ('2E21', 2, 'E', 50), 
 ('2B11', 1, 'B', 50),
 ('2B22', 2, 'B', 50),
-('2E22', 2, 'E', 80);
+('2E22', 2, 'E', 80),
+('HVCS', NULL, NULL, NULL);
 
 -- Thiết bị cố định cho phòng 2E22
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E22'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2E22'),
-('Bàn', 'AVAILABLE', 'FIXED', '2E22'),
-('Ghế', 'AVAILABLE', 'FIXED', '2E22'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2E22'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2E22');
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, quantity, management_type) VALUES 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E22', 3, 'QUANTITY'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2E22', 4, 'QUANTITY'),
+('Bàn', 'AVAILABLE', 'FIXED', '2E22', 20, 'QUANTITY'),
+('Ghế', 'AVAILABLE', 'FIXED', '2E22', 20, 'QUANTITY'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2E22', 2,'QUANTITY'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2E22', 1,'INDIVIDUAL');
 
 -- Thiết bị cố định cho phòng 2B22
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B22'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2B22'),
-('Bàn', 'AVAILABLE', 'FIXED', '2B22'),
-('Ghế', 'BROKEN', 'FIXED', '2B22'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2B22'),
-('Máy chiếu', 'UNDERREPAIR', 'FIXED', '2B22');
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, quantity, management_type) VALUES 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B22', 3, 'QUANTITY'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B22', 4, 'QUANTITY'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B22', 20, 'QUANTITY'),
+('Ghế', 'AVAILABLE', 'FIXED', '2B22', 20, 'QUANTITY'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B22', 2, 'QUANTITY'),
+('Máy chiếu', 'UNDERREPAIR', 'FIXED', '2B22', 1, 'INDIVIDUAL');
 
 -- Thiết bị cố định cho phòng 2B11
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B11'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2B11'),
-('Bàn', 'AVAILABLE', 'FIXED', '2B11'),
-('Ghế', 'AVAILABLE', 'FIXED', '2B11'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2B11'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2B11');
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, quantity, management_type) VALUES 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B11', 3, 'QUANTITY'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2B11', 4, 'QUANTITY'),
+('Bàn', 'AVAILABLE', 'FIXED', '2B11', 20, 'QUANTITY'),
+('Ghế', 'AVAILABLE', 'FIXED', '2B11', 20, 'QUANTITY'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2B11', 2, 'QUANTITY'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2B11', 1, 'INDIVIDUAL');
+
+-- Phòng 2A16
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, quantity, management_type) VALUES 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2A16', 3, 'QUANTITY'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2A16', 4, 'QUANTITY'),
+('Bàn', 'AVAILABLE', 'FIXED', '2A16', 20, 'QUANTITY'),
+('Ghế', 'AVAILABLE', 'FIXED', '2A16', 20, 'QUANTITY'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2A16', 2, 'QUANTITY'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2A16', 1, 'INDIVIDUAL');
+
+
+-- Phòng 2E21
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, quantity, management_type) VALUES 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E21', 3, 'QUANTITY'),
+('Quạt trần', 'AVAILABLE', 'FIXED', '2E21', 4, 'QUANTITY'),
+('Bàn', 'AVAILABLE', 'FIXED', '2E21', 20, 'QUANTITY'),
+('Ghế', 'AVAILABLE', 'FIXED', '2E21', 20, 'QUANTITY'),
+('Bảng đen', 'AVAILABLE', 'FIXED', '2E21', 2, 'QUANTITY'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', '2E21', 1, 'INDIVIDUAL');
 
 -- Thiết bị cố định cho tất cả các phòng
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
--- Phòng 2B25
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B25'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2B25'),
-('Bàn', 'AVAILABLE', 'FIXED', '2B25'),
-('Ghế', 'AVAILABLE', 'FIXED', '2B25'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2B25'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2B25'),
-
--- Phòng 2A16
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2A16'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2A16'),
-('Bàn', 'AVAILABLE', 'FIXED', '2A16'),
-('Ghế', 'AVAILABLE', 'FIXED', '2A16'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2A16'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2A16'),
-
--- Phòng 2E21
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E21'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2E21'),
-('Bàn', 'AVAILABLE', 'FIXED', '2E21'),
-('Ghế', 'AVAILABLE', 'FIXED', '2E21'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2E21'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2E21'),
-
--- Phòng 2E22
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2E22'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2E22'),
-('Bàn', 'AVAILABLE', 'FIXED', '2E22'),
-('Ghế', 'AVAILABLE', 'FIXED', '2E22'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2E22'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2E22'),
-
--- Phòng 2B22
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B22'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2B22'),
-('Bàn', 'AVAILABLE', 'FIXED', '2B22'),
-('Ghế', 'AVAILABLE', 'FIXED', '2B22'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2B22'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2B22'),
-
--- Phòng 2B11
-('Máy điều hòa', 'AVAILABLE', 'FIXED', '2B11'),
-('Quạt trần', 'AVAILABLE', 'FIXED', '2B11'),
-('Bàn', 'AVAILABLE', 'FIXED', '2B11'),
-('Ghế', 'AVAILABLE', 'FIXED', '2B11'),
-('Bảng đen', 'AVAILABLE', 'FIXED', '2B11'),
-('Máy chiếu', 'AVAILABLE', 'FIXED', '2B11');
-
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, quantity, management_type) VALUES 
+('Máy điều hòa', 'AVAILABLE', 'FIXED', 'HVCS', 3, 'QUANTITY'),
+('Quạt trần', 'AVAILABLE', 'FIXED', 'HVCS',4, 'QUANTITY'),
+('Bàn', 'AVAILABLE', 'FIXED', 'HVCS',20, 'QUANTITY'),
+('Ghế', 'AVAILABLE', 'FIXED', 'HVCS',20, 'QUANTITY'),
+('Bảng đen', 'AVAILABLE', 'FIXED', 'HVCS',2, 'QUANTITY'),
+('Máy chiếu', 'AVAILABLE', 'FIXED', 'HVCS',1, 'INDIVIDUAL');
 
 -- Thiết bị di động phòng 2E22
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22'),
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2E22'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2E22');
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/remote.png'),
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E22','INDIVIDUAL', 'img/lazer_pen.png');
 
 -- Thiết bị di động phòng 2B22
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
-('Điều khiển máy chiếu', 'BROKEN', 'MOBILE', '2B22'),
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
-('Điều khiển máy chiếu', 'BROKEN', 'MOBILE', '2B22'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B22');
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/remote.png'),
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/lazer_pen.png');
 
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
+-- Thiết bị di động phòng 2B11
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/remote.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/lazer_pen.png');
 
 -- Thiết bị di động cho mỗi phòng
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
 -- 2B25
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B25'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B25'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B25'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B25'),
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B25', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B25', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B25', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B25', 'INDIVIDUAL', 'img/lazer_pen.png');
 
 -- 2A16
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2A16'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2A16'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2A16'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2A16'),
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2A16', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2A16', 'INDIVIDUAL', 'img/remote.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2A16', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2A16', 'INDIVIDUAL', 'img/lazer_pen.png');
 
 -- 2E21
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2E21'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E21'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2E21'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E21'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2E21'),
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/lazer_pen.png');
 
--- 2E22
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2E22'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2E22'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2E22'),
+-- 2E22 (bạn đã có đoạn này rồi, mình skip)
 
--- 2B22
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B22'),
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22'),
+-- 2B22 (lặp lại)
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/remote.png');
 
--- 2B11
-('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B11'),
-('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11'),
-('Bút laser', 'AVAILABLE', 'MOBILE', '2B11');
-
+-- 2B11 (lặp lại)
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/lazer_pen.png');
 
 -- Thiết bị dùng chung
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
-('Micro không dây', 'AVAILABLE', 'SHARED', NULL),
-('Điều khiển máy chiếu', 'AVAILABLE', 'SHARED', NULL),
-('Bút laser', 'AVAILABLE', 'SHARED', NULL),
-('Micro không dây', 'AVAILABLE', 'SHARED', NULL),
-('Điều khiển máy chiếu', 'AVAILABLE', 'SHARED', NULL),
-('Bút laser', 'AVAILABLE', 'SHARED', NULL),
-('Micro không dây', 'AVAILABLE', 'SHARED', NULL),
-('Điều khiển máy chiếu', 'AVAILABLE', 'SHARED', NULL),
-('Bút laser', 'AVAILABLE', 'SHARED', NULL);
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
+('Micro không dây', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE','MOBILE','HVCS', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Micro không dây', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE', 'HVCS', 'INDIVIDUAL', 'img/lazer_pen.png'),
+('Micro không dây', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/micro.png'),
+('Điều khiển máy chiếu', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/remote.png'),
+('Bút laser', 'AVAILABLE', 'MOBILE','HVCS', 'INDIVIDUAL', 'img/lazer_pen.png');
 
-INSERT INTO equipment (equipment_name, status, equipment_type, room_id) VALUES 
+INSERT INTO equipment (equipment_name, status, equipment_type, room_id, management_type, image_url) VALUES 
 -- Phòng 2B25
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B25'),
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B25'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B25', 'INDIVIDUAL', 'img/key.png'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B25', 'INDIVIDUAL', 'img/key.png'),
 
 -- Phòng 2A16
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2A16'),
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2A16'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2A16', 'INDIVIDUAL', 'img/key.png'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2A16', 'INDIVIDUAL', 'img/key.png'),
 
 -- Phòng 2E21
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E21'),
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E21'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/key.png'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E21', 'INDIVIDUAL', 'img/key.png'),
 
 -- Phòng 2E22
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E22'),
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E22'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/key.png'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2E22', 'INDIVIDUAL', 'img/key.png'),
 
 -- Phòng 2B22
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B22'),
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B22'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/key.png'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B22', 'INDIVIDUAL', 'img/key.png'),
 
 -- Phòng 2B11
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B11'),
-('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B11');
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/key.png'),
+('Chìa khóa', 'AVAILABLE', 'MOBILE', '2B11', 'INDIVIDUAL', 'img/key.png');
 
 
 -- Chèn tài khoản cho sinh viên
 INSERT INTO account (password, role_id, is_active) VALUES 
-('student123', 2, TRUE),  -- Tài khoản cho 'N22DCCN127'
-('student456', 2, TRUE);  -- Tài khoản cho 'N22DCCN078'
+('student123', 4, TRUE),  -- Tài khoản cho 'N22DCCN127'
+('student456', 4, TRUE);  -- Tài khoản cho 'N22DCCN078'
 
 -- Chèn tài khoản cho nhân viên
 INSERT INTO account (password, role_id, is_active) VALUES 
-('staff123', 3, TRUE),  -- Tài khoản cho 'STF2001'
-('staff456', 3, TRUE);  -- Tài khoản cho 'STF2002'
+('staff123', 2, TRUE),  -- Tài khoản cho 'STF2001'
+('staff456', 2, TRUE);  -- Tài khoản cho 'STF2002'
 
 -- Chèn thông tin cá nhân cho sinh viên
 INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, address, account_id) VALUES 
@@ -427,32 +418,6 @@ INSERT INTO person (id, cccd, first_name, last_name, gender, email, phone, addre
 INSERT INTO staff (id, is_working) VALUES 
 ('QL001', TRUE);
 
--- Insert sample data for penalty_form
-INSERT INTO penalty_form (form_name, price) VALUES 
-('Trừ điểm rèn luyên', 0.00), 
-('Đền bù', 200.00);
-
-INSERT INTO violation (violation_content, penalty_form_id) VALUES 
-('Trả thiết bị trể hạn', 1), 
-('Làm hổng thiết bị', 2);
-
--- Insert sample data for repair_ticket
-INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES 
-('2024-03-15 10:00:00', NULL, 'PENDING', 'STF2002'); 
-
--- Insert sample data for detail_repair_ticket
-INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) VALUES 
-(1, 3, 100);
-
-INSERT INTO repair_ticket (start_date, end_date, status, staff_id) VALUES 
-('2024-04-01 09:30:00', '2024-04-05 15:00:00', 'COMPLETED', 'STF2001'),
-('2025-05-01 09:45:00', '2025-05-02 15:00:00', 'ACCEPTED', 'STF2001');
-
--- Insert sample data for detail_repair_ticket (assumes this ticket has id = 2)
-INSERT INTO detail_repair_ticket (repair_ticket_id, equipment_id, price) VALUES 
-(2, 5, 150),
-(3, 7, 898831);
-
 -- Insert sample data for disposal_form
 INSERT INTO liquidation_slip (liquidation_date, staff_id, status) VALUES 
 ('2024-03-15', 'STF2001', 'ACCEPTED'),
@@ -462,6 +427,46 @@ INSERT INTO liquidation_slip (liquidation_date, staff_id, status) VALUES
 INSERT INTO detail_liquidation_slip (liquidation_slip_id, equipment_id) VALUES 
 (1, 5),
 (2, 6);
+
+INSERT INTO quarter (year, quarter_number, start_date, end_date) VALUES
+(2023, 2, '2023-07-01', '2023-12-31'),
+(2024, 1, '2024-01-01', '2024-06-30'),
+(2024, 2, '2024-07-01', '2024-12-31');
+INSERT INTO inventory_form (start_date, end_date, staff_id, quarter_id) VALUES
+('2023-07-05', '2023-07-10', 'STF2001', 1),
+('2024-01-07', '2024-01-12', 'STF2001', 2),
+('2024-07-01', '2024-07-05', 'STF2001', 3);
+
+-- Quý 1
+INSERT INTO detail_inventory_form (inventory_form_id, room_id, total_devices, broken_count, repairing_count, liquidated_count) VALUES
+(1, '2B25', 80, 2, 1, 0),
+(1, '2A16', 100, 0, 0, 1),
+(1, '2E21', 50, 1, 0, 0),
+(1, '2B11', 50, 0, 1, 1),
+(1, '2B22', 50, 0, 0, 0),
+(1, '2E22', 80, 1, 1, 0),
+(1, 'HVCS', 0, 0, 0, 0);
+
+-- Quý 2
+INSERT INTO detail_inventory_form(inventory_form_id, room_id, total_devices, broken_count, repairing_count, liquidated_count) VALUES
+(2, '2B25', 80, 1, 1, 1),
+(2, '2A16', 100, 0, 0, 0),
+(2, '2E21', 50, 0, 2, 0),
+(2, '2B11', 50, 0, 0, 0),
+(2, '2B22', 50, 1, 0, 0),
+(2, '2E22', 80, 2, 1, 1),
+(2, 'HVCS', 0, 0, 0, 0);
+
+-- Quý 3
+INSERT INTO detail_inventory_form (inventory_form_id, room_id, total_devices, broken_count, repairing_count, liquidated_count) VALUES
+(3, '2B25', 80, 0, 0, 0),
+(3, '2A16', 100, 1, 0, 0),
+(3, '2E21', 50, 0, 0, 1),
+(3, '2B11', 50, 0, 1, 0),
+(3, '2B22', 50, 0, 0, 0),
+(3, '2E22', 80, 1, 0, 1),
+(3, 'HVCS', 0, 0, 0, 0);
+
 
 /* VIEWS */
 CREATE VIEW StudentInfo AS  
@@ -504,7 +509,7 @@ INNER JOIN account AS a ON p.account_id = a.id;
 CREATE VIEW BorrowDetails AS
 SELECT 
     br.id AS borrow_request_id,
-    br.student_id,
+    br.person_id,
     br.staff_id,
     br.status AS borrow_status,
     br.borrowing_time,
@@ -516,30 +521,11 @@ SELECT
     e.equipment_name,
     e.status AS equipment_status,
     e.equipment_type,
-    e.room_id
+    e.room_id,
+    e.image_url
 FROM borrow_request br
 JOIN borrow_item bi ON br.id = bi.borrow_request_id
 JOIN equipment e ON bi.equipment_id = e.id;
-
-CREATE VIEW PenaltyDetails AS
-SELECT 
-    pt.id AS penalty_ticket_id,
-    pt.staff_id,
-    pt.student_id,
-    pt.create_time,
-    pt.status AS ticket_status,
-
-    v.id AS violation_id,
-    v.violation_content,
-
-    pf.id AS penalty_form_id,
-    pf.form_name,
-    pf.price
-
-FROM penalty_ticket pt
-JOIN detail_penalty_ticket dpt ON pt.id = dpt.penalty_ticket_id
-JOIN violation v ON dpt.violation_id = v.id
-JOIN penalty_form pf ON v.penalty_form_id = pf.id;
 
 CREATE VIEW v_liquidation_full_details AS
 SELECT 
@@ -548,6 +534,10 @@ SELECT
     ls.status AS liquidation_status,
     ls.staff_id,
     dls.equipment_id,
+    dls.price AS income,
+    dls.description,
+    dls.quantity,
+    e.id AS e_id,
     e.equipment_name,
     e.status AS equipment_status,
     e.equipment_type,
@@ -572,10 +562,14 @@ SELECT
     rt.staff_id,
     drt.equipment_id,
     drt.price AS repair_price,
+    drt.description,
+    drt.quantity,
+    e.id AS e_id,
     e.equipment_name,
     e.status AS equipment_status,
     e.equipment_type,
-    e.room_id
+    e.room_id,
+    e.image_url
 FROM 
     repair_ticket rt
 INNER JOIN 
@@ -587,55 +581,34 @@ INNER JOIN
 ON 
     drt.equipment_id = e.id;
 
+CREATE VIEW inventory_summary AS
+SELECT
+    q.id AS quarter_id,
+    q.year AS quarter_year,
+    q.quarter_number AS quarter_number,
+    q.start_date AS quarter_start_date,
+    q.end_date AS quarter_end_date,
+    i.id AS inventory_form_id,
+    i.start_date AS inventory_start_date,
+    i.end_date AS inventory_end_date,
+    i.staff_id,
+    d.room_id,
+    d.total_devices,
+    d.broken_count,
+    d.repairing_count,
+    d.liquidated_count
+FROM
+    quarter q
+JOIN
+    inventory_form i ON q.id = i.quarter_id
+JOIN
+    detail_inventory_form d ON i.id = d.inventory_form_id;
+
+
 
 /* PROCEDURE */
 
 DELIMITER $$  
-
-CREATE PROCEDURE CreateBorrowRequestWithItems(
-    IN p_student_id VARCHAR(20),
-    IN p_equipment_ids TEXT,  -- Danh sách các equipment_id, phân tách bằng dấu phẩy
-    IN p_expect_returning_time DATETIME,
-    IN p_room_id CHAR(5)
-)
-BEGIN  
-    DECLARE v_borrow_request_id INTEGER;
-    DECLARE v_equipment_id INTEGER;
-    DECLARE v_equipment_list TEXT;
-    DECLARE v_equipment_pos INT;
-    DECLARE v_equipment_len INT;
-    
-    -- 1. Tạo borrow_request
-    INSERT INTO borrow_request (student_id, expect_returning_time, room_id) VALUES (p_student_id, p_expect_returning_time, p_room_id);
-    SET v_borrow_request_id = LAST_INSERT_ID();
-
-    -- 2. Duyệt từng equipment_id trong p_equipment_ids
-    SET v_equipment_list = p_equipment_ids;
-
-    WHILE LENGTH(v_equipment_list) > 0 DO
-        -- Tìm vị trí dấu phẩy
-        SET v_equipment_pos = LOCATE(',', v_equipment_list);
-        
-        IF v_equipment_pos = 0 THEN
-            -- Nếu không còn dấu phẩy, lấy giá trị cuối cùng
-            SET v_equipment_id = CAST(v_equipment_list AS UNSIGNED);
-            SET v_equipment_list = '';
-        ELSE
-            -- Cắt lấy phần tử đầu tiên
-            SET v_equipment_id = CAST(LEFT(v_equipment_list, v_equipment_pos - 1) AS UNSIGNED);
-            SET v_equipment_list = SUBSTRING(v_equipment_list, v_equipment_pos + 1);
-        END IF;
-        
-        -- Chèn vào borrow_item
-        INSERT INTO borrow_item (borrow_request_id, equipment_id)
-        VALUES (v_borrow_request_id, v_equipment_id);
-
-        -- Cập nhật trạng thái của thiết bị thành 'PENDING'
-        UPDATE equipment
-        SET status = 'BORROWED'
-        WHERE id = v_equipment_id;
-    END WHILE;
-END $$ 
 
 CREATE PROCEDURE AddEquipmentsToBorrowRequest(
     IN p_borrow_request_id INTEGER,
@@ -731,60 +704,53 @@ BEGIN
 END$$
 
 
-CREATE PROCEDURE change_equi_info(
-    IN new_id INT,
-    IN new_name CHAR(50),
-    IN new_room CHAR(5)
-)
-BEGIN
-    -- Cập nhật thiết bị
-    UPDATE equipment e
-    SET e.equipment_name = new_name, e.room_id = new_room
-    WHERE  e.id=new_id;
-
-END$$
-
-CREATE PROCEDURE add_equipment(
+CREATE PROCEDURE update_equipment_info (
+    IN p_id INT,
     IN p_equipment_name VARCHAR(50),
     IN p_status ENUM('AVAILABLE', 'UNDERREPAIR', 'BORROWED', 'BROKEN', 'LIQUIDATED'),
-    IN p_equipment_type ENUM('MOBILE', 'FIXED', 'SHARED'),
-    IN p_room_id CHAR(5)
+    IN p_room_id CHAR(5),
+    IN p_image_url VARCHAR(200)
 )
 BEGIN
-    -- Thêm thiết bị vào bảng equipment
-    INSERT INTO equipment (equipment_name, status, equipment_type, room_id)
-    VALUES (p_equipment_name, p_status, p_equipment_type, p_room_id);
-END $$
+    UPDATE equipment
+    SET
+        equipment_name = p_equipment_name,
+        status = p_status,
+        room_id = p_room_id,
+        image_url = COALESCE(p_image_url, image_url)
+    WHERE id = p_id;
+END$$
 
-
-CREATE PROCEDURE delete_equipment_by_id(
-    IN p_equipment_id INT
+CREATE PROCEDURE create_equipment (
+    IN p_equipment_name VARCHAR(50),
+    IN p_equipment_type ENUM('MOBILE', 'FIXED'),
+    IN p_management_type ENUM('QUANTITY', 'INDIVIDUAL'),
+    IN p_room_id CHAR(5),
+    IN p_quantity INT,
+    IN p_image_url VARCHAR(200)
 )
 BEGIN
-    DECLARE max_id INT;
-
-    -- Xóa thiết bị theo ID
-    DELETE FROM equipment WHERE id = p_equipment_id;
-
-    -- Cập nhật lại ID của các thiết bị còn lại để duy trì thứ tự liên tục
-    UPDATE equipment 
-    SET id = id - 1
-    WHERE id > p_equipment_id;
-
-    -- Lấy ID lớn nhất còn lại
-    SELECT MAX(id) INTO max_id FROM equipment;
-
-    -- Đặt lại AUTO_INCREMENT cho bảng equipment
-    IF max_id IS NOT NULL THEN
-        SET @query = CONCAT('ALTER TABLE equipment AUTO_INCREMENT = ', max_id + 1);
-        PREPARE stmt FROM @query;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    ELSE
-        -- Nếu bảng trống, đặt AUTO_INCREMENT về 1
-        ALTER TABLE equipment AUTO_INCREMENT = 1;
-    END IF;
-
+    INSERT INTO equipment (
+        equipment_name,
+        status,
+        equipment_type,
+        management_type,
+        room_id,
+        quantity,
+        broken_quantity,
+        under_repair_quantity,
+        image_url
+    ) VALUES (
+        p_equipment_name,
+        'AVAILABLE',             -- Status mặc định là AVAILABLE khi mới thêm
+        p_equipment_type,
+        p_management_type,       -- Bây giờ thêm cả management_type
+        p_room_id,
+        p_quantity,
+        0,                       -- broken_quantity mặc định 0
+        0,                       -- under_repair_quantity mặc định 0
+        p_image_url
+    );
 END $$
 
 CREATE PROCEDURE return_equi(
@@ -799,7 +765,7 @@ BEGIN
 
     -- Cập nhật trạng thái của yêu cầu mượn thành 'RETURNED'
     UPDATE borrow_request br
-    SET br.status = 'RETURNED',
+    SET br.status = 'COMPLETED',
         br.actual_returning_time = CURRENT_TIMESTAMP
     WHERE br.id = request_id;
     
@@ -924,58 +890,6 @@ BEGIN
         SET status = 'LIQUIDATED'
         WHERE id = v_equipment_id;
     END WHILE;
-END $$
-
-CREATE PROCEDURE CreatePenaltyTicket(
-    IN in_student_id CHAR(10),
-    IN in_staff_id CHAR(10),
-    IN in_violation_ids TEXT,
-    IN p_role VARCHAR(20)
-)
-BEGIN
-    DECLARE new_ticket_id INT;
-    DECLARE current_violation_id INT;
-    DECLARE ticket_status VARCHAR(20);
-
-    -- Tắt yêu cầu khóa chính trong phiên làm việc
-    SET SESSION sql_require_primary_key = 0;
-
-    -- Xác định status dựa vào role
-    IF p_role = 'manager' THEN
-        SET ticket_status = 'ACCEPTED';
-    ELSE
-        SET ticket_status = 'PENDING';
-    END IF;
-
-    -- Xoá bảng tạm nếu đã tồn tại, rồi tạo mới
-    DROP TEMPORARY TABLE IF EXISTS temp_violation_ids;
-    CREATE TEMPORARY TABLE temp_violation_ids (id INT);
-
-    -- Chèn các violation_id từ chuỗi TEXT vào bảng tạm
-    WHILE LENGTH(in_violation_ids) > 0 DO
-        SET current_violation_id = CAST(SUBSTRING_INDEX(in_violation_ids, ',', 1) AS UNSIGNED);
-        INSERT INTO temp_violation_ids (id) VALUES (current_violation_id);
-        
-        -- Cắt phần tử đầu khỏi chuỗi
-        IF LOCATE(',', in_violation_ids) > 0 THEN
-            SET in_violation_ids = SUBSTRING(in_violation_ids, LOCATE(',', in_violation_ids) + 1);
-        ELSE
-            SET in_violation_ids = '';
-        END IF;
-    END WHILE;
-
-    -- Tạo phiếu phạt mới
-    INSERT INTO penalty_ticket (student_id, staff_id, status)
-    VALUES (in_student_id, in_staff_id, ticket_status);
-
-    SET new_ticket_id = LAST_INSERT_ID();
-
-    -- Thêm chi tiết vi phạm
-    INSERT INTO detail_penalty_ticket (violation_id, penalty_ticket_id)
-    SELECT id, new_ticket_id FROM temp_violation_ids;
-
-    -- Xoá bảng tạm
-    DROP TEMPORARY TABLE IF EXISTS temp_violation_ids;
 END $$
 
 CREATE PROCEDURE CompleteRepairTicket(IN in_repair_ticket_id INT)
@@ -1208,5 +1122,22 @@ BEGIN
     WHERE drt.repair_ticket_id = OLD.id;
 END //
 
+CREATE TRIGGER equipment_status_update
+BEFORE UPDATE ON equipment
+FOR EACH ROW
+BEGIN
+    IF NEW.management_type = 'INDIVIDUAL' THEN
+        IF NEW.status = 'BROKEN' THEN
+            SET NEW.broken_quantity = 1;
+            SET NEW.under_repair_quantity = 0;
+        ELSEIF NEW.status = 'UNDERREPAIR' THEN
+            SET NEW.under_repair_quantity = 1;
+            SET NEW.broken_quantity = 0;
+        ELSE
+            SET NEW.broken_quantity = 0;
+            SET NEW.under_repair_quantity = 0;
+        END IF;
+    END IF;
+END;//
 
 DELIMITER ;

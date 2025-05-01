@@ -1,17 +1,30 @@
-# Lệnh khởi động Flask
-python -m flask run
-
-# Lệnh tạo migration
-python -m flask db migrate -m "Mô tả thay đổi"
-
-# Lệnh cập nhật database
-python -m flask db upgrade
-
-# Lệnh rollback migration
-python -m flask db downgrade
-
-# Kiểm tra version hiện tại của database
-python -m flask db current
-
-# Lệnh chạy tailwind
 npx @tailwindcss/cli -i ./static/src/input.css -o ./static/src/output.css --watch
+
+Table PhieuKiemKe {
+  ID int [pk]
+  NgayKiemKe date
+  NgayKetThuc date
+  NhanVienID varchar(20) [ref: - NhanVien.ID]
+}
+
+Table ChiTietPhieuKiemKe {
+  PhieuKiemKeID int [ref: - PhieuKiemKe.ID]
+  PhongID char(5) [ref: - Phong.ID]
+  TongSo int
+  SoLuongHong int
+  SoLuongDangSua int
+  SoLuongThanhLy int
+}
+CREATE TABLE room (
+    id CHAR(5) PRIMARY KEY,
+    floor_number INTEGER,
+    section CHAR(1),
+    max_people INTEGER
+) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;INSERT INTO room (id, floor_number, section, max_people) VALUES 
+('2B25', 2, 'B', 80), 
+('2A16', 1, 'A', 100),
+('2E21', 2, 'E', 50), 
+('2B11', 1, 'B', 50),
+('2B22', 2, 'B', 50),
+('2E22', 2, 'E', 80),
+('HVCS', NULL, NULL, NULL); 

@@ -20,4 +20,13 @@
     .acc_label {
         @apply text-gray-700
     }
+
+    .device_card {
+        @apply bg-white border rounded-lg shadow-md overflow-hidden h-60 w-48 cursor-pointer hover:shadow-lg transition-shadow duration-200 
+        flex flex-col justify-between items-center text-gray-700
+    }
+
+    .statistical_card {
+        @apply bg-white w-52 h-32 border-2 border-black rounded-md
+    }
 }

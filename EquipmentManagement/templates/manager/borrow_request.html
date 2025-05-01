@@ -1,55 +1,253 @@
-{% extends "manager/manager_layout.html" %}
+{% extends "manager/layout.html" %}
 
 {% block manager_content %}
-<div class="flex flex-1 p-3">
+<div class="flex flex-1 p-3 h-screen">
     <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
         <div class=" flex-1 flex px-6 justify-between items-center">
-            <div class="h-full w-full border-b-2 border-gray-500 flex items-center">
-                <h2 class="font-bold text-3xl">Yêu cầu mượn</h2>
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-3xl">Lịch sử mượn</h2>
+                </div>
+                <form action="{{url_for('borrow.manage_borrow_request')}}" method="get">
+                    <input type="text" name="person_id" value="{{ request.args.get('person_id', '') }}"
+                    placeholder="Mã người mượn"
+                    class="w-32 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+
+                    <input type="date" name="borrow_time" value="{{borrow_date}}"
+                    class="w-32 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+
+                    <button type="submit"
+                    class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                        Tìm
+                    </button>
+                    <a href="{{ url_for('borrow.manage_borrow_request') }}"
+                    class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        Xóa
+                    </a>
+                </form>
             </div>
         </div>  
         <div class="flex-10 flex flex-col px-6 overflow-auto text-white">
-            <div class="flex-10 space-y-3 p-4 max-h-[600px]">
+            <!-- Pending Requests -->
+            <div class="flex-1 space-y-3 p-4 max-h-[600px] overflow-y-auto {% if create_date %} hidden {% endif %}" id="pending">
                 {% for request in lst_request %}
-                <form method="post" action="{{ url_for('manager.manager_borrow_request') }}" 
-                 class="h-12 w-full shadow-2xs flex items-center p-2 justify-between">
-                    <a class="bg-blue-300 p-1 rounded-sm hover:bg-blue-200 cursor-pointer" type="submit"
-                        href="{{ url_for('manager.manager_borrow_request', request_id=request.id) }}">
-                        {{request.student_id}} - {{request.borrowing_time.strftime('%d/%m/%Y %H:%M')}}
-                    </a>
-                    <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
-                    <input type="hidden" name="request_id" value = "{{ request.id }}" /> 
-                    <div class="flex space-x-1">
-                        <button class="bg-blue-300 p-1 hover:bg-blue-200 cursor-pointer"
-                        type="submit" value="0" name="action">Duyệt</button>
-                        <button class="bg-blue-300 p-1 hover:bg-blue-200 cursor-pointer"
-                        type="submit" value="1" name="action">Từ chối</button>
+                <form method="post" action="{{ url_for('borrow.manage_borrow_request') }}" 
+                      class="h-12 w-full shadow-sm flex items-center p-2 justify-between bg-gray-100 rounded-lg">
+                    <button class="bg-blue-500 p-2 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
+                            onclick="show_detail('detail-{{request.id}}')"
+                            type="button">
+                            {{request.person_id}} - {{request.borrowing_time.strftime('%d/%m/%Y %H:%M')}}
+                    </button>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /> 
+                    <input type="hidden" name="request_id" value="{{ request.id }}" /> 
+                    <div class="flex space-x-2">
+                        <button class="bg-blue-500 p-2 w-20 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
+                                type="submit" name="action" value="1">Đồng ý</button>
+                        <button class="bg-red-500 p-2 w-20 rounded-md hover:bg-red-600 cursor-pointer text-sm font-semibold text-white transition-colors"
+                                type="submit" name="action" value="0">Từ chối</button>
                     </div>
                 </form>
-                {% endfor %}
-            </div>   
+                <!-- Modal for Repair Ticket Details -->
+                <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center hidden transition-opacity duration-300"
+                id="detail-{{request.id}}">
+                <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl flex flex-col relative max-h-[90vh] overflow-hidden">
+                <!-- Close Button -->
+                <button class="absolute right-4 top-4 text-gray-500 hover:text-gray-700 z-10"
+                        value="detail-{{request.id}}" 
+                        onclick="close_detail('detail-{{request.id}}')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <!-- Modal Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <h2 class="font-bold text-2xl text-gray-800 mb-6">Chi tiết phiếu mượn</h2>
+                    <!-- Ticket Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="font-semibold text-gray-700">Mã người mượn:</label>
+                            <p class="text-gray-600">{{request.person_id}}</p>
+                        </div>
+                        <div>
+                            <label class="font-semibold text-gray-700">Ngày tạo:</label>
+                            <p class="text-gray-600">{{ request.borrowing_time.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                        </div>
+                        <div>
+                            <label class="font-semibold text-gray-700">Thời gian dự trả:</label>
+                            <p class="text-gray-600">{{request.expect_returning_time.strftime('%d/%m/%Y %H:%M:%S')}}</p>
+                        </div>
+                        {% if request.actual_returning_time %}
+                        <div>
+                            <label class="font-semibold text-gray-700">Thời gian dự trả:</label>
+                            <p class="text-gray-600">{{request.actual_returning_time.strftime('%d/%m/%Y %H:%M:%S')}}</p>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <label class="font-semibold text-gray-700">Trạng thái phiếu:</label>
+                            <p class="text-gray-600">{{request.status}}</p>
+                        </div>
+                    </div>
+                    <!-- Equipment List -->
+                    <div class="border-t-2 border-gray-300 pt-4">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-4">Danh sách thiết bị</h3>
+                        <div class="space-y-4 max-h-[300px] overflow-y-auto">
+                            {% for e in request.equipments %}
+                            <div class="relative flex items-start gap-4 p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                <!-- Equipment Image -->
+                                <div class="flex-shrink-0">
+                                    {% if e.image_url %}
+                                        <img src="{{ url_for('static', filename=e.image_url) }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
+                                    {% else %}
+                                        <img src="{{ url_for('static', filename='img/repair_img.png') }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh mặc định" />
+                                    {% endif %}
+                                </div>
+                                <!-- Equipment Details -->
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">{{e.equipment_name}}</div>
+                                    <div class="text-sm text-gray-600">ID: {{e.equipment_id}}</div>
+                                    <div class="text-sm text-gray-600">Phòng: {% if e.room_id %}{{e.room_id}}{% else %}Học viện{% endif %}</div>
+                                    <div class="text-sm text-gray-600">Loại: {{e.equipment_type}}</div>
+                                    <div class="text-sm text-gray-600">Trạng thái: {{e.equipment_status}}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                </div>
+                </div>
+                {% endfor %} 
+            </div>  
         </div>
     </div>
-    <div class="flex-1 flex flex-col bg-white rounded-md">
+    <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
         <div class=" flex-1 flex px-6 justify-between items-center">
-            <div>
-                <h2 class="font-bold text-3xl">Chi tiết yêu cầu mượn</h2>
+            <div class="h-full w-full border-b-2 border-gray-500 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-3xl">Lịch sử mượn</h2>
+                </div>
+                <form action="{{url_for('borrow.manage_borrow_request')}}" method="get">
+                    <input type="text" name="hperson_id" value="{{ request.args.get('hperson_id', '') }}"
+                    placeholder="Mã người mượn"
+                    class="w-32 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+
+                    <input type="date" name="hborrow_time" value="{{hborrow_time}}"
+                    class="w-32 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+
+                    <button type="submit"
+                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                        Tìm
+                    </button>
+                    <a href="{{ url_for('borrow.manage_borrow_request') }}"
+                       class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        Xóa
+                    </a>
+                </form>
             </div>
-        </div>
-        <form class="flex-10 flex flex-col px-6" method="post" action="/student/borrow">
-            <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
-            <div class="flex-10 border-t-2 border-gray-500 p-4 overflow-auto max-h-[260px] md:max-h-[400px] lg:max-h-[600px] ">
-                <div class="space-y-3 ">
-                {% for equipment in lst_borrow_equipment %}
-                    <div class="h-12 w-full bg-blue-300 rounded-md text-white shadow-2xs flex items-center p-2 hover:bg-blue-200">
-                        <label class="flex items-center cursor-pointer">
-                            {{equipment.equipment_id}} - {{equipment.equipment_name}} - {% if equipment.room_id %}{{equipment.room_id}}{% else %}Học viện{% endif %}
-                        </label>
+        </div>  
+        <div class="flex-10 flex flex-col px-6 overflow-auto text-white">
+            <!-- Pending Requests -->
+            <div class="flex-1 space-y-3 p-4 max-h-[600px] overflow-y-auto {% if create_date %} hidden {% endif %}" id="pending">
+                {% for request in lst_history %}
+                <form method="post" action="{{ url_for('borrow.finish_borrow_request') }}" 
+                      class="h-12 w-full shadow-sm flex items-center p-2 justify-between bg-gray-100 rounded-lg">
+                    <button class="bg-blue-500 p-2 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
+                            onclick="show_detail('detail-{{request.id}}')"
+                            type="button">
+                            {{request.person_id}} - {{request.borrowing_time.strftime('%d/%m/%Y %H:%M')}}
+                    </button>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /> 
+                    <input type="hidden" name="request_id" value="{{ request.id }}" /> 
+                    <div class="flex space-x-2">
+                        {% if request.status == 'ACCEPTED' %}
+                        <button class="bg-blue-500 p-2 w-20 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
+                                type="submit" name="action" value="1">Duyệt trả</button>
+                        {% endif %}
                     </div>
-                {% endfor %}
-                </div>       
-            </div>
-        </form>
+                </form>
+                <!-- Modal for Repair Ticket Details -->
+                <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center hidden transition-opacity duration-300"
+                id="detail-{{request.id}}">
+                <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl flex flex-col relative max-h-[90vh] overflow-hidden">
+                <!-- Close Button -->
+                <button class="absolute right-4 top-4 text-gray-500 hover:text-gray-700 z-10"
+                        value="detail-{{request.id}}" 
+                        onclick="close_detail('detail-{{request.id}}')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <!-- Modal Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <h2 class="font-bold text-2xl text-gray-800 mb-6">Chi tiết phiếu mượn</h2>
+                    <!-- Ticket Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="font-semibold text-gray-700">Mã người mượn:</label>
+                            <p class="text-gray-600">{{request.person_id}}</p>
+                        </div>
+                        <div>
+                            <label class="font-semibold text-gray-700">Ngày tạo:</label>
+                            <p class="text-gray-600">{{ request.borrowing_time.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                        </div>
+                        <div>
+                            <label class="font-semibold text-gray-700">Thời gian dự trả:</label>
+                            <p class="text-gray-600">{{request.expect_returning_time.strftime('%d/%m/%Y %H:%M:%S')}}</p>
+                        </div>
+                        {% if request.actual_returning_time %}
+                        <div>
+                            <label class="font-semibold text-gray-700">Thời gian dự trả:</label>
+                            <p class="text-gray-600">{{request.actual_returning_time.strftime('%d/%m/%Y %H:%M:%S')}}</p>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <label class="font-semibold text-gray-700">Trạng thái phiếu:</label>
+                            <p class="text-gray-600">{{request.status}}</p>
+                        </div>
+                    </div>
+                    <!-- Equipment List -->
+                    <div class="border-t-2 border-gray-300 pt-4">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-4">Danh sách thiết bị</h3>
+                        <div class="space-y-4 max-h-[300px] overflow-y-auto">
+                            {% for e in request.equipments %}
+                            <div class="relative flex items-start gap-4 p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                <!-- Equipment Image -->
+                                <div class="flex-shrink-0">
+                                    {% if e.image_url %}
+                                        <img src="{{ url_for('static', filename=e.image_url) }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
+                                    {% else %}
+                                        <img src="{{ url_for('static', filename='img/repair_img.png') }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh mặc định" />
+                                    {% endif %}
+                                </div>
+                                <!-- Equipment Details -->
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">{{e.equipment_name}}</div>
+                                    <div class="text-sm text-gray-600">ID: {{e.equipment_id}}</div>
+                                    <div class="text-sm text-gray-600">Phòng: {% if e.room_id %}{{e.room_id}}{% else %}Học viện{% endif %}</div>
+                                    <div class="text-sm text-gray-600">Loại: {{e.equipment_type}}</div>
+                                    <div class="text-sm text-gray-600">Trạng thái: {{e.equipment_status}}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                </div>
+                </div>
+                {% endfor %} 
+            </div>  
+        </div>
     </div>
 </div>
+<script>
+    function show_detail(id) {
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById(id).classList.add('flex');
+    }
+
+    function close_detail(id) {
+        document.getElementById(id).classList.remove('flex');
+        document.getElementById(id).classList.add('hidden');
+    }
+</script>
 {% endblock %}
