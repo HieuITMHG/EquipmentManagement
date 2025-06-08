@@ -10,19 +10,19 @@ borrow_blueprint = Blueprint('borrow', __name__)
 
 @borrow_blueprint.route("/borrow/borrow_equipment", methods=["GET"])
 @login_required
-@role_required(RoleID.TEACHER.value, RoleID.STUDENT.value)
+@role_required(RoleID.STUDENT.value)
 def borrow_equipment():
     user_id = session.get("account_id")
-    login_user = AccountService.get_account_by_person_id(user_id)
+    login_user = AccountService.get_user_info(user_id)
     phong_id = request.args.get("room")
-    rooms = RoomService.get_all_room()
+    rooms = RoomService.get_available_room()
     borrowed_equipments = EquipmentService.get_borrowed_equipment(user_id) 
     borrowing_equipments = EquipmentService.get_borrowing_equipment(user_id)
     if len(borrowed_equipments) > 0:
-        phong_id = borrowed_equipments[0]['room_id']
+        phong_id = borrowed_equipments[0]['phong_id']
         rooms = []
     if len(borrowing_equipments) > 0:
-        phong_id = borrowing_equipments[0]['room_id']
+        phong_id = borrowing_equipments[0]['phong_id']
         rooms = []
     borrowable_equipments = EquipmentService.get_borrowable_equipment_by_room(phong_id) 
     borrowable_equipments = [e for e in borrowable_equipments if e not in borrowing_equipments]
@@ -36,10 +36,9 @@ def borrow_equipment():
 
 @borrow_blueprint.route("/borrow/borrow_request", methods=["POST"])
 @login_required
-@role_required(RoleID.TEACHER.value, RoleID.STUDENT.value)
+@role_required(RoleID.STUDENT.value)
 def borrow_request():
     login_user_id = session.get("account_id")
-    phong_id = request.form.get("room")
     existing_borrow_request = BorrowService.get_existing_borrow_request(login_user_id)
     lst_equipmment_id = request.form.getlist("lst_equipment_id")
     if existing_borrow_request:
@@ -50,7 +49,7 @@ def borrow_request():
             flash("Có lỗi xảy ra. Vui lòng thử lại sau!", 'error')
             return redirect(url_for("borrow.borrow_equipment"))
     else:
-        if(BorrowService.create_borrow_request_with_details(login_user_id, phong_id, lst_equipmment_id)):
+        if(BorrowService.create_borrow_request_with_details(login_user_id, lst_equipmment_id)):
             flash("Yêu cầu mượn thiết bị thành công!", 'success')
         else:
             flash("Có lỗi xảy ra. Vui lòng thử lại sau!", 'error')
@@ -58,7 +57,7 @@ def borrow_request():
 
 @borrow_blueprint.route("/borrow/borrow_history", methods=["GET"])
 @login_required
-@role_required(RoleID.TEACHER.value, RoleID.STUDENT.value)
+@role_required(RoleID.STUDENT.value)
 def history_borrow():
     user_id = session.get("account_id")
     login_user = AccountService.get_account_by_person_id(user_id)
@@ -70,12 +69,10 @@ def history_borrow():
 
 @borrow_blueprint.route("/borrow/cancel_borrow_request", methods=["POST"])
 @login_required
-@role_required(RoleID.TEACHER.value, RoleID.STUDENT.value)
+@role_required(RoleID.STUDENT.value)
 def cancel_borrow_request():
     e_id = request.form.get("equipment_id")
-    print(e_id)
     re = BorrowService.get_existing_borrow_request(session.get("account_id"))
-    print(re['id'])
     if BorrowService.remove_equipment_from_request(e_id=e_id, request_id=re['id']):
         if BorrowService.count_equipment_in_request(request_id=re['id']) == 0:
             BorrowService.delete_borrow_request(re['id'])
@@ -83,12 +80,13 @@ def cancel_borrow_request():
     else:
         flash("Có lỗi xảy ra. Vui lòng thử lại sau!", 'error')
     return redirect(url_for("borrow.borrow_equipment"))
+
 @borrow_blueprint.route("/borrow/profile", methods=["GET"])
+@role_required(RoleID.STUDENT.value)
 @login_required
-@role_required(RoleID.TEACHER.value, RoleID.STUDENT.value)
 def profile():
     user_id = session.get("account_id")
-    login_user = AccountService.get_account_by_person_id(user_id)
+    login_user = AccountService.get_user_info(user_id)
     return render_template("borrow/profile.html", login_user=login_user)
 
 @borrow_blueprint.route('/borrow/manage_borrow_request', methods=['GET', 'POST'])
@@ -101,17 +99,17 @@ def manage_borrow_request():
         hperson_id = request.args.get('hperson_id')
         borrow_time = request.args.get('borrow_time')
         person_id = request.args.get('person_id')
-        lst_request = BorrowService.get_pending_borrow_request(person_id, borrow_time)
-        lst_history = BorrowService.get_staff_borrow_history(hperson_id, hborrow_time)
+        lst_request = BorrowService.get_pending_borrow_requests()
+        accepted_requests = BorrowService.get_accepted_borrow_requests()
         for r in lst_request:
             r['equipments'] = BorrowService.get_equipment_in_borrow_request(r['id'])
-        for r in lst_history:
+        for r in accepted_requests:
             r['equipments'] = BorrowService.get_equipment_in_borrow_request(r['id'])
-        if login_user['role_id'] == RoleID.STAFF.value:
+        if login_user['vai_tro_id'] == RoleID.STAFF.value:
             return render_template('staff/borrow_request.html', 
                                 login_user=login_user,
                                 lst_request=lst_request, 
-                                lst_history = lst_history,
+                                accepted_requests = accepted_requests,
                                 borrow_time=borrow_time,
                                 person_id=person_id,
                                 hperson_id=hperson_id,
@@ -119,7 +117,7 @@ def manage_borrow_request():
         return render_template('manager/borrow_request.html', 
                                 login_user=login_user,
                                 lst_request=lst_request, 
-                                lst_history = lst_history,
+                                accepted_requests = accepted_requests,
                                 borrow_time=borrow_time,
                                 person_id=person_id,
                                 hperson_id=hperson_id,
@@ -128,9 +126,16 @@ def manage_borrow_request():
     borrow_request_id = int(request.form.get('request_id'))
     action = int(request.form.get('action'))
     if action == 1:
-        BorrowService.accept_borrow_request(borrow_request_id, session.get('account_id'))
+        if BorrowService.accept_borrow_request(borrow_request_id, session.get('account_id')):
+            flash("Đã chấp nhận yêu cầu mượn")
+        else:
+            flash("Chấp nhận yêu cầu mượn thất bại")
     else:
-        BorrowService.reject_borrow_request(borrow_request_id, session.get('account_id'))
+        if BorrowService.reject_borrow_request(borrow_request_id):
+            flash("Đã từ tối yêu cầu mượn")
+
+        else:
+            flash("Từ chối yêu cầu mượn thất bại")
     return redirect("manage_borrow_request")
 
 @borrow_blueprint.route('/borrow/finish_borrow_request', methods=['POST'])
@@ -143,4 +148,26 @@ def finish_borrow_request():
     else:
         flash("Có lỗi xảy ra. Vui lòng thử lại sau!", 'error')
     return redirect("manage_borrow_request")
+
+@borrow_blueprint.route('/manage_equipment', methods=['POST'])
+@role_required(RoleID.STAFF.value, RoleID.MANAGER.value)
+@login_required
+def manage_equipment():
+    equipment_id = request.form.get('equipment_id')
+    action = request.form.get('action')
+    if action == 'approve':
+        BorrowService.accept_one_equipment(equipment_id)
+        flash("Duyệt yêu cầu mượt thành công")
+    elif action == 'reject':
+        BorrowService.reject_one_equipment(equipment_id)
+        flash("Từ chối thiết bị thành công")
+    elif action == 'return':
+        flash("Trả thiết bị thành công")
+    elif action == 'lost':
+        flash("Xác nhận thiết bị bị mất thành công")
+    else:
+        flash("Xác nhận thiết bị bị hư hại thành công")
+    
+    return redirect(url_for('borrow.manage_borrow_request'))
+
 

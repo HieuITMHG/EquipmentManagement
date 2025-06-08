@@ -7,7 +7,7 @@ def get_connection():
         port='3306',
         user='root',
         password='123456',
-        database='defaultdb',
+        database='thiet_bi_hvcs',
         charset="utf8mb4",
         collation="utf8mb4_unicode_ci"
     )

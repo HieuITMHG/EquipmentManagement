@@ -1,42 +1,30 @@
-import mysql.connector
 from models.database import get_connection 
-from helpers.helpers import get_expect_returning_time 
 
 class BorrowService:
     @staticmethod
-    def create_borrow_request_with_details(student_id, room_id, equipment_ids):
+    def create_borrow_request_with_details(student_id, equipment_ids):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            # Bắt đầu transaction
-            conn.start_transaction()
-
-            # 1. Tạo phiếu mượn
-            except_returning_time = get_expect_returning_time()
-            cursor.execute(
-                'INSERT INTO borrow_request (person_id, room_id, expect_returning_time) VALUES (%s, %s, %s)',
-                (student_id, room_id, except_returning_time)
-            )
-
-            # Lấy ID của phiếu mượn vừa tạo
-            borrow_id = cursor.lastrowid
-
-            # 2. Tạo các chi tiết mượn
-            for equipment_id in equipment_ids:
-                cursor.execute(
-                    "INSERT INTO borrow_item (borrow_request_id, equipment_id) VALUES (%s, %s)",
-                    (borrow_id, equipment_id)
-                )
-
-            # Commit tất cả nếu không lỗi
-            conn.commit()
-            return True
-
-        except Exception as e:
-            # Rollback nếu có lỗi
+            equipment_ids_str = ",".join(str(eid) for eid in equipment_ids)
+            cursor.callproc("lap_phieu_muon", [equipment_ids_str, student_id])
+            for result in cursor.stored_results():
+                res = result.fetchone()
+                if res:
+                    success, error_code, message = res[0], res[1], res[2]
+                    if success == 1:
+                        conn.commit()
+                        return True, None, None
+                    else:
+                        print(f"[lap_phieu_muon] {error_code}: {message}")
+                        conn.rollback()
+                        return False, message, error_code
             conn.rollback()
-            return False
-
+            return False, "Không xác định lỗi khi tạo phiếu mượn", "UNKNOWN"
+        except Exception as e:
+            conn.rollback()
+            print("❌ Lỗi khi gọi procedure lap_phieu_muon:", str(e))
+            return False, str(e), "EXCEPTION"
         finally:
             cursor.close()
             conn.close()
@@ -58,14 +46,17 @@ class BorrowService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM borrow_request WHERE person_id = %s", (person_id,))
+            cursor.execute("SELECT * FROM phieu_muon WHERE sinh_vien_id = %s", (person_id,))
             re = cursor.fetchall()
             for r in re:
-                cursor.execute("SELECT equipment_id FROM borrow_item WHERE borrow_request_id = %s", (r['id'],))
-                lst_e_id = [x['equipment_id'] for x in cursor.fetchall()]
-                query = "SELECT * FROM equipment WHERE id IN (%s)"% ','.join(['%s'] * len(lst_e_id))
-                cursor.execute(query, lst_e_id)
-                r['equipments'] = cursor.fetchall()
+                cursor.execute("SELECT thiet_bi_id FROM chi_tiet_muon WHERE phieu_muon_id = %s", (r['id'],))
+                lst_e_id = [x['thiet_bi_id'] for x in cursor.fetchall()]
+                if lst_e_id:
+                    query = "SELECT * FROM thiet_bi WHERE id IN (%s)" % ','.join(['%s'] * len(lst_e_id))
+                    cursor.execute(query, lst_e_id)
+                    r['equipments'] = cursor.fetchall()
+                else:
+                    r['equipments'] = []
             return re
         finally:
             cursor.close()
@@ -76,15 +67,17 @@ class BorrowService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM borrow_request WHERE person_id = %s AND DATE(borrowing_time) = %s", (person_id, bdate))
+            cursor.execute("SELECT * FROM phieu_muon WHERE sinh_vien_id = %s AND DATE(ca) = %s", (person_id, bdate))
             re = cursor.fetchall()
-            print(re)
             for r in re:
-                cursor.execute("SELECT equipment_id FROM borrow_item WHERE borrow_request_id = %s", (r['id'],))
-                lst_e_id = [x['equipment_id'] for x in cursor.fetchall()]
-                query = "SELECT * FROM equipment WHERE id IN (%s)"% ','.join(['%s'] * len(lst_e_id))
-                cursor.execute(query, lst_e_id)
-                r['equipments'] = cursor.fetchall()
+                cursor.execute("SELECT thiet_bi_id FROM chi_tiet_muon WHERE phieu_muon_id = %s", (r['id'],))
+                lst_e_id = [x['thiet_bi_id'] for x in cursor.fetchall()]
+                if lst_e_id:
+                    query = "SELECT * FROM thiet_bi WHERE id IN (%s)" % ','.join(['%s'] * len(lst_e_id))
+                    cursor.execute(query, lst_e_id)
+                    r['equipments'] = cursor.fetchall()
+                else:
+                    r['equipments'] = []
             return re
         finally:
             cursor.close()
@@ -96,13 +89,17 @@ class BorrowService:
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
-            SELECT * FROM borrow_request
-            WHERE person_id = %s AND status = 'PENDING'
+            SELECT * FROM phieu_muon
+            WHERE sinh_vien_id = %s
+            AND DATE(ca) = CURDATE()
+            AND (
+                (TIME(NOW()) BETWEEN '06:00:00' AND '10:15:00' AND TIME(ca) = '06:00:00')
+                OR
+                (TIME(NOW()) BETWEEN '12:00:00' AND '16:15:00' AND TIME(ca) = '12:00:00')
+            )
             """
-            # Bọc student_id trong tuple bằng cách thêm dấu phẩy
             cursor.execute(query, (student_id,))
-            lst_borrow = cursor.fetchone()
-            return lst_borrow
+            return cursor.fetchone()
         finally:
             cursor.close()
             conn.close()
@@ -110,20 +107,32 @@ class BorrowService:
     @staticmethod
     def add_equipment_to_request(equipment_ids, request_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            for id in equipment_ids:
-                cursor.execute("INSERT INTO borrow_item(borrow_request_id, equipment_id) VALUES(%s,%s)",(request_id,id))
-            conn.commit()
-            return True
-        except Exception as e:
-            print(e)
+            equipment_id_str = ",".join(str(id) for id in equipment_ids)
+            print(equipment_id_str)
+            print(request_id)
+            cursor.callproc('them_thiet_bi_vao_phieu_muon', [request_id, equipment_id_str])
+            for result in cursor.stored_results():
+                res = result.fetchone()
+                if res:
+                    success, error_code, message = res[0], res[1], res[2]
+                    if success == 1:
+                        conn.commit()
+                        return True, None, None
+                    else:
+                        print(f"[them_thiet_bi_vao_phieu_muon] {error_code}: {message}")
+                        conn.rollback()
+                        return False, message, error_code
             conn.rollback()
-            return False
+            return False, "Không xác định lỗi khi thêm thiết bị vào phiếu mượn", "UNKNOWN"
+        except Exception as e:
+            print(f"Lỗi trong Python: {e}")
+            conn.rollback()
+            return False, str(e), "EXCEPTION"
         finally:
             cursor.close()
             conn.close()
-
 
     @staticmethod
     def get_equipment_by_request_id(request_id):
@@ -138,22 +147,65 @@ class BorrowService:
             conn.close()
 
     @staticmethod
-    def get_pending_borrow_request(person_id=None, borrowing_date=None):
+    def get_pending_borrow_requests():
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            query = "SELECT * FROM borrow_request WHERE status = 'PENDING'"
-            params = []
+            query = """SELECT DISTINCT pm.*
+                    FROM phieu_muon pm
+                    JOIN chi_tiet_muon ctm ON pm.id = ctm.phieu_muon_id
+                    JOIN thiet_bi tb ON ctm.thiet_bi_id = tb.id
+                    WHERE tb.trang_thai = 'CO_SAN'
+                    AND (
+                        (TIME(pm.ca) BETWEEN '06:00:00' AND '10:15:00')
+                        OR (TIME(pm.ca) BETWEEN '12:00:00' AND '16:15:00')
+                    )
+                    AND DATE(pm.ca) = CURRENT_DATE()
+                    """
+            cursor.execute(query)
+            requests = cursor.fetchall()
+            for req in requests:
+                req['equipments'] = BorrowService.get_equipment_in_borrow_request(req['id'])
+            return requests
+        finally:
+            cursor.close()
+            conn.close()
 
-            if person_id:
-                query += " AND person_id = %s"
-                params.append(person_id)
+    @staticmethod
+    def get_accepted_borrow_requests():
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+            SELECT id, sinh_vien_id, nhan_vien_id, phong_id, ca, 
+                   thoi_gian_tra_du_kien, trang_thai
+            FROM phieu_muon
+            WHERE trang_thai = 'DA_DUYET'
+              AND (
+                  (TIME(ca) BETWEEN '06:00:00' AND '10:15:00')
+                  OR (TIME(ca) BETWEEN '12:00:00' AND '16:15:00')
+              )
+              AND DATE(ca) = CURDATE()
+            """)
+            requests = cursor.fetchall()
+            for req in requests:
+                req['equipments'] = BorrowService.get_equipment_in_borrow_request(req['id'])
+            return requests
+        finally:
+            cursor.close()
+            conn.close()
 
-            if borrowing_date:
-                query += " AND DATE(borrowing_time) = %s"
-                params.append(borrowing_date)
-
-            cursor.execute(query, tuple(params))
+    @staticmethod
+    def get_equipment_in_borrow_request(request_id):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT ctm.*, tb.*
+                FROM chi_tiet_muon ctm
+                JOIN thiet_bi tb ON ctm.thiet_bi_id = tb.id
+                WHERE ctm.phieu_muon_id = %s
+            """, (request_id,))
             return cursor.fetchall()
         finally:
             cursor.close()
@@ -164,15 +216,15 @@ class BorrowService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            query = "SELECT * FROM borrow_request WHERE status IN ('ACCEPTED', 'COMPLETED')"
+            query = "SELECT * FROM phieu_muon WHERE trang_thai = 'DA_DUYET'"
             params = []
 
             if person_id:
-                query += " AND person_id = %s"
+                query += " AND sinh_vien_id = %s"
                 params.append(person_id)
 
             if borrowing_date:
-                query += " AND DATE(borrowing_time) = %s"
+                query += " AND DATE(ca) = %s"
                 params.append(borrowing_date)
 
             cursor.execute(query, tuple(params))
@@ -181,78 +233,44 @@ class BorrowService:
             cursor.close()
             conn.close()
 
-
     @staticmethod
     def accept_borrow_request(request_id, staff_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            # Gọi stored procedure để chấp nhận yêu cầu mượn
-            cursor.callproc('accept_borrow_request', [request_id, staff_id])
-            conn.commit()
+        cursor = conn.cursor(dictionary=True)  # Use dictionary cursor for result set
+        try:            
+            cursor.callproc('xac_nhan_phieu_muon', (request_id, staff_id,))
 
-            cursor.execute("SELECT * FROM borrow_item WHERE borrow_request_id=%s", (request_id,)) 
-            lst_e_id = [x['equipment_id'] for x in cursor.fetchall()]
+            result = next(cursor.stored_results()).fetchall()[0]
             
-            # Update status equipment
-            for id in lst_e_id:
-                cursor.execute("UPDATE equipment SET status='BORROWED' WHERE id=%s", (id,))
-            conn.commit()  # Chỉ commit 1 lần sau nhiều câu lệnh
-
-            # Update các yêu cầu khác thành REJECTED nếu thiết bị đã mượn
-            if lst_e_id:
-                placeholders = ','.join(['%s'] * len(lst_e_id))
-                query = f"SELECT borrow_request_id FROM borrow_item WHERE equipment_id IN ({placeholders})"
-                cursor.execute(query, tuple(lst_e_id))
-                lst_re_id = [x['borrow_request_id'] for x in cursor.fetchall()]
-
-                for id in lst_re_id:
-                    cursor.execute("UPDATE borrow_request SET status='REJECTED' WHERE id=%s AND status='PENDING'", (id,))
-                conn.commit()  # Commit 1 lần luôn
-
-            return True
+            # Check the procedure's success status
+            if result['success'] == 1:
+                conn.commit()
+                return True
+            else:
+                conn.rollback()
+                print(f"Error logic: {result['error_code']} - {result['message']}")
+                return False
+                
         except Exception as e:
             conn.rollback()
-            print(f"Error: {e}")
-            return False
-        finally:
-            cursor.close()
-            conn.close()
-            
-    @staticmethod
-    def reject_borrow_request(request_id, staff_id):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            # Gọi stored procedure để từ chối yêu cầu mượn
-            cursor.callproc('reject_borrow_request', [request_id, staff_id])
-
-            # Commit để xác nhận thay đổi
-            conn.commit()
-            return True
-        except Exception as e:
-            # Nếu có lỗi, rollback transaction
-            conn.rollback()
-            print(f"Error: {e}")
+            print(f"Error code: {e}")
             return False
         finally:
             cursor.close()
             conn.close()
 
     @staticmethod
-    def get_accepted_or_returned_borrow_request():
+    def reject_borrow_request(request_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            cursor.execute("""
-            SELECT borrow_request_id, student_id, staff_id, borrow_status, 
-                   borrowing_time, expect_returning_time
-            FROM BorrowDetails
-            WHERE borrow_status = 'ACCEPTED' OR borrow_status = 'RETURNED'
-            GROUP BY borrow_request_id
-        """)  
-            lst_borrow = cursor.fetchall()
-            return lst_borrow
+            cursor.execute("DELETE FROM phieu_muon WHERE id=%s", (request_id,))
+            conn.commit()
+            return True
+        except Exception as e:
+            conn.rollback()
+            print(f"Error: {e}")
+            return False
         finally:
             cursor.close()
             conn.close()
@@ -269,24 +287,6 @@ class BorrowService:
             print(f"Error: {e}")
             conn.rollback()
             return False
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def get_accepted_borrow_request():
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT borrow_request_id, student_id, staff_id, borrow_status, 
-                    borrowing_time, expect_returning_time
-                FROM BorrowDetails
-                WHERE borrow_status = 'ACCEPTED'
-                GROUP BY borrow_request_id
-            """)  
-            lst_borrow = cursor.fetchall()
-            return lst_borrow
         finally:
             cursor.close()
             conn.close()
@@ -365,9 +365,9 @@ class BorrowService:
     @staticmethod
     def remove_equipment_from_request(e_id, request_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            cursor.execute("DELETE FROM borrow_item WHERE borrow_request_id=%s AND equipment_id=%s",(request_id,e_id))
+            cursor.execute("DELETE FROM chi_tiet_muon WHERE phieu_muon_id=%s AND thiet_bi_id=%s", (request_id, e_id))
             conn.commit()
             return True
         except Exception as e:
@@ -381,11 +381,11 @@ class BorrowService:
     @staticmethod
     def count_equipment_in_request(request_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            cursor.execute("SELECT COUNT(*) AS quantity FROM borrow_item WHERE borrow_request_id = %s", (request_id,))
+            cursor.execute("SELECT COUNT(*) AS quantity FROM chi_tiet_muon WHERE phieu_muon_id = %s", (request_id,))
             result = cursor.fetchone()
-            return result['quantity'] if result else 0
+            return result[0] if result else 0
         except Exception as e:
             print(e)
             return 0
@@ -396,9 +396,9 @@ class BorrowService:
     @staticmethod
     def delete_borrow_request(request_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            cursor.execute("DELETE FROM borrow_request WHERE ID = %s",(request_id,))
+            cursor.execute("DELETE FROM phieu_muon WHERE id = %s", (request_id,))
             conn.commit()
             return True
         except Exception as e:
@@ -410,12 +410,33 @@ class BorrowService:
             conn.close()
 
     @staticmethod
-    def get_equipment_in_borrow_request(request_id):
+    def accept_one_equipment(equipment_id):
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
-            cursor.execute("SELECT * FROM BorrowDetails WHERE borrow_request_id = %s", (request_id,))
-            return cursor.fetchall()
+            cursor.callproc('duyet_mot_thiet_bi', [equipment_id])
+            conn.commit()
+            return True
+        except Exception as e:
+            print("Error approving equipment borrow:", e)
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def reject_one_equipment(equipment_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.callproc('tu_choi_mot_thiet_bi', [equipment_id])
+            conn.commit()
+            return True
+        except Exception as e:
+            print("Error deleting equipment borrow detail:", e)
+            conn.rollback()
+            return False
         finally:
             cursor.close()
             conn.close()

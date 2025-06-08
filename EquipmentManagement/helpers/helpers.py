@@ -40,7 +40,7 @@ def role_required(*roles):
                 session.clear()
                 return redirect("/login")
                 
-            if current_account["role_id"] not in roles:
+            if current_account["vai_tro_id"] not in roles:
                 flash("you do not have access to this side!", "error")
                 return redirect("/login")
                 

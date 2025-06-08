@@ -1,42 +1,6 @@
 {% extends "staff/layout.html" %}
 
 {% block staff_content %}
-<style>
-    .checkbox-custom {
-        background-color: transparent;
-        transition: background-color 0.3s, border-color 0.3s;
-    }
-
-    .checkbox:checked + label .checkbox-custom {
-        background-color: white;
-        border-color: blue;
-    }
-
-    .checkbox:checked + label .checkbox-custom .checkmark {
-        display: flex;
-    }
-
-    .checkbox-custom:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .checkbox {
-        display: none;
-    }
-
-    .checkbox-custom .checkmark {
-        display: none;
-    }
-
-    .checkbox:checked + label .checkbox-custom .checkmark {
-        display: block;
-    }
-
-    .checkbox:checked + label .checkbox-custom {
-        background-color: #ffffff;
-        color: #000000;
-    }
-</style>
 
 <div class="flex flex-1 p-3 h-screen">
     <div class="mr-3 flex-1 bg-white flex flex-col rounded-md">
@@ -78,7 +42,7 @@
                 </form>
                 <!-- Modal for Repair Ticket Details -->
                 <!-- Modal for Repair Ticket Details -->
-                <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center hidden transition-opacity duration-300"
+                <div class="fixed inset-0 bg-gray-600/50 z-50 items-center justify-center hidden transition-opacity duration-300"
                 id="detail-{{request.id}}">
                 <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl flex flex-col relative max-h-[90vh] overflow-hidden">
                 <!-- Close Button -->
@@ -190,7 +154,7 @@
                     {% endif %}
                 </form>
                 <!-- Modal for Repair Ticket Details -->
-                <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center hidden transition-opacity duration-300"
+                <div class="fixed inset-0 bg-gray-600/50 z-50 items-center justify-center hidden transition-opacity duration-300"
                      id="detail-{{request.id}}">
                     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl flex flex-col relative max-h-[90vh] overflow-hidden">
                         <!-- Close Button -->
@@ -298,7 +262,7 @@
                         <!-- Button -->
                         <div>
                             <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200"
-                                    onclick="showRepairModal('{{ equipment.id }}', '{{ equipment.image_url }}', '{{ equipment.broken_quantity }}', '{{ equipment.equipment_name|replace('\'', '\\\'') }}')">
+                                    onclick="showRepairModal('{{ equipment.id }}', '{{ equipment.image_url }}', '{{ equipment.broken_quantity }}', '{{ equipment.equipment_name}}')">
                                 Sửa
                             </button>
                         </div>
@@ -310,7 +274,7 @@
     </div>
 
     <!-- Repair Modal -->
-    <div class="fixed inset-0 bg-gray-600/50 z-50 hidden flex items-center justify-center transition-opacity duration-300" id="add_repair">
+    <div class="fixed inset-0 bg-gray-600/50 z-50 hidden items-center justify-center transition-opacity duration-300" id="add_repair">
         <div class="bg-white w-full max-w-md rounded-lg shadow-xl p-6 relative">
             <!-- Close Button -->
             <button onclick="hideRepairModal()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
@@ -412,7 +376,7 @@
         document.getElementById('broken_quantity').value = broken_quantity;
         document.getElementById('equipment_id_display').textContent = equipmentId;
         document.getElementById('equipment_name').textContent = equipmentName;
-        document.getElementById('equipment_image').src = imageUrl ? '{{ url_for('static', filename='') }}' + imageUrl : '{{ url_for('static', filename='img/repair_img.png') }}';
+        document.getElementById('equipment_image').src = imageUrl != 'None' ? "{{ url_for('static', filename='') }}" + imageUrl : "{{ url_for('static', filename='img/repair_img.png') }}";
         const add_repair = document.getElementById('add_repair');
         add_repair.classList.remove('hidden');
         add_repair.classList.add('flex');

@@ -12,18 +12,35 @@ class AccountService:
             cursor.close()
             conn.close()
 
-
     @staticmethod
     def get_account_by_person_id(user_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM AccountInfo WHERE person_id = %s", (user_id,))
+            cursor.execute("SELECT * FROM tai_khoan WHERE id = %s", (user_id,))
             account = cursor.fetchone()
             return account if account else None  
         finally:
             cursor.close()
             conn.close()
+
+    @staticmethod
+    def get_user_info(user_id):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM tai_khoan WHERE id = %s", (user_id,))
+            account = cursor.fetchone()
+
+            if account['vai_tro_id'] == 3:
+                cursor.execute("SELECT * FROM tai_khoan JOIN sinh_vien ON sinh_vien.id = tai_khoan.id WHERE tai_khoan.id = %s", (user_id,))
+            else:
+                cursor.execute("SELECT * FROM tai_khoan JOIN nhan_vien ON nhan_vien.id = tai_khoan.id WHERE tai_khoan.id = %s", (user_id,))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            conn.close()
+
 
     @staticmethod
     def get_account_by_email(email):

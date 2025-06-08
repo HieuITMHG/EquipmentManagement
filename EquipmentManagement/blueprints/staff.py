@@ -14,7 +14,8 @@ staff_blueprint = Blueprint('staff', __name__)
 @role_required(RoleID.STAFF.value)
 def profile():
     if request.method == "GET":
-        login_user = AccountService.get_account_by_person_id(session.get('account_id'))
+        login_user = AccountService.get_user_info(session.get('account_id'))
+        print(login_user)
         return render_template('staff/profile.html', login_user = login_user)
 
 @staff_blueprint.route('/staff/delete_equipment', methods=['GET'])

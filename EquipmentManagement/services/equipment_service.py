@@ -1,4 +1,5 @@
 from models.database import get_connection
+from services.borrow_service import BorrowService
 
 class EquipmentService:
     @staticmethod
@@ -51,7 +52,7 @@ class EquipmentService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM equipment WHERE room_id = %s AND status='AVAILABLE' AND equipment_type='MOBILE'", (room_id,))
+            cursor.execute("SELECT * FROM thiet_bi WHERE phong_id = %s AND trang_thai='CO_SAN' AND loai_thiet_bi='DI_DONG'", (room_id,))
             return cursor.fetchall()
         finally:
             cursor.close()
@@ -182,17 +183,16 @@ class EquipmentService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM borrow_request WHERE person_id = %s AND status = 'PENDING'", (nguoi_id,))
-            phieu_muon = cursor.fetchone()
+            phieu_muon = BorrowService.get_existing_borrow_request(nguoi_id)
             if phieu_muon:
                 id_phieu_muon = phieu_muon['id']
-                cursor.execute("SELECT * FROM borrow_item WHERE borrow_request_id = %s", (id_phieu_muon,))
-                lst_equipment_id = [x['equipment_id'] for x in cursor.fetchall()]
+                cursor.execute("SELECT * FROM chi_tiet_muon WHERE phieu_muon_id = %s", (id_phieu_muon,))
+                lst_equipment_id = [x['thiet_bi_id'] for x in cursor.fetchall()]
                 if not lst_equipment_id:
                     return []  # Nếu không có thiết bị thì trả về mảng rỗng luôn
 
                 # Nếu có thiết bị thì mới thực thi câu query
-                query = "SELECT * FROM equipment WHERE ID IN (%s)" % ','.join(['%s'] * len(lst_equipment_id))
+                query = "SELECT * FROM thiet_bi WHERE id IN (%s) AND trang_thai = 'CO_SAN'" % ','.join(['%s'] * len(lst_equipment_id))
                 cursor.execute(query, lst_equipment_id)
                 return cursor.fetchall()
             return []
@@ -205,12 +205,12 @@ class EquipmentService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM borrow_request WHERE person_id = %s AND status = 'ACCEPTED'", (user_id,))
+            cursor.execute("SELECT * FROM phieu_muon WHERE sinh_vien_id = %s AND trang_thai = 'DA_DUYET'", (user_id,))
             request = cursor.fetchone()
             if not request:
                 return []
-            room_id = request['room_id']
-            cursor.execute("SELECT * FROM equipment WHERE room_id = %s AND status = 'BORROWED'", (room_id,))
+            room_id = request['phong_id']
+            cursor.execute("SELECT * FROM thiet_bi WHERE phong_id = %s AND trang_thai = 'DANG_MUON'", (room_id,))
             return cursor.fetchall()
         finally:
             cursor.close()
