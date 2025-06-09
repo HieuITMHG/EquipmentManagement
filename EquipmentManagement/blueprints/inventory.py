@@ -4,6 +4,7 @@ from enums.role_type import RoleID
 from services.inventory import InventoryService
 from services.account_service import AccountService
 from dateutil import parser
+from models.database import get_connection
 
 inventory_blueprint = Blueprint('inventory', __name__)
 
@@ -138,5 +139,113 @@ def create_inventory_form():
             return redirect('/inventory/create_form')
     
     rooms = InventoryService.get_all_rooms()
-    template = 'manager/create_inventory_form.html' if login_user['vai_tro_id'] == RoleID.MANAGER.value else 'general/create_inventory_form.html'
+    template = 'general/create_inventory_form.html'
     return render_template(template, rooms=rooms, login_user=login_user)
+
+@inventory_blueprint.route('/inventory/edit_form/<int:phieu_kiem_ke_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(RoleID.MANAGER.value)
+def edit_inventory_form(phieu_kiem_ke_id):
+    staff_id = session.get('account_id')
+    login_user = AccountService.get_account_by_person_id(staff_id)
+
+    # Fetch the inventory check to edit
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT id, nhan_vien_id, thoi_gian_bat_dau AS start_date, thoi_gian_ket_thuc AS end_date
+            FROM phieu_kiem_ke
+            WHERE id = %s
+            """,
+            (phieu_kiem_ke_id,)
+        )
+        inventory = cursor.fetchone()
+        if not inventory:
+            flash('Phiếu kiểm kê không tồn tại.', 'error')
+            return redirect('/inventory/inventory_history')
+
+        # Format dates for datetime-local input
+        inventory['start_date'] = inventory['start_date'].strftime('%Y-%m-%dT%H:%M') if inventory['start_date'] else ''
+        inventory['end_date'] = inventory['end_date'].strftime('%Y-%m-%dT%H:%M') if inventory['end_date'] else ''
+    except Exception as e:
+        flash(f'Có lỗi xảy ra khi lấy thông tin phiếu kiểm kê: {str(e)}', 'error')
+        return redirect('/inventory/inventory_history')
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
+
+    room_details = InventoryService.get_room_detail_by_inventory(phieu_kiem_ke_id)
+    rooms = InventoryService.get_all_rooms()
+
+    if request.method == 'POST':
+        try:
+            start_date = request.form.get('start_date')
+            end_date = request.form.get('end_date')
+
+            if not all([start_date, end_date]):
+                flash('Vui lòng điền đầy đủ ngày bắt đầu và ngày kết thúc.', 'error')
+                return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+
+            try:
+                start_date = parser.parse(start_date)
+                end_date = parser.parse(end_date)
+                if end_date < start_date:
+                    flash('Ngày kết thúc phải sau ngày bắt đầu.', 'error')
+                    return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+            except ValueError:
+                flash('Định dạng ngày không hợp lệ.', 'error')
+                return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+
+            updated_room_details = []
+            for room in rooms:
+                room_id = room['id']
+                total_devices = request.form.get(f'total_devices_{room_id}')
+                broken_count = request.form.get(f'broken_count_{room_id}')
+                repairing_count = request.form.get(f'repairing_count_{room_id}')
+                liquidated_count = request.form.get(f'liquidated_count_{room_id}')
+
+                if not all([total_devices, broken_count, repairing_count, liquidated_count]):
+                    flash(f'Vui lòng điền đầy đủ thông tin cho phòng {room_id}.', 'error')
+                    return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+
+                try:
+                    total = int(total_devices)
+                    broken = int(broken_count)
+                    repairing = int(repairing_count)
+                    liquidated = int(liquidated_count)
+                    if total < 0 or broken < 0 or repairing < 0 or liquidated < 0 or (broken + repairing + liquidated > total):
+                        flash(f'Dữ liệu số lượng cho phòng {room_id} không hợp lệ.', 'error')
+                        return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+                    updated_room_details.append({
+                        'room_id': room_id,
+                        'total_devices': total,
+                        'broken_count': broken,
+                        'repairing_count': repairing,
+                        'liquidated_count': liquidated
+                    })
+                except ValueError:
+                    flash(f'Dữ liệu số lượng cho phòng {room_id} phải là số nguyên hợp lệ.', 'error')
+                    return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+
+            InventoryService.update_inventory_form(phieu_kiem_ke_id, start_date, end_date, updated_room_details)
+            flash('Phiếu kiểm kê đã được cập nhật thành công.', 'success')
+            return redirect('/inventory/inventory_history')
+        
+        except Exception as e:
+            flash(f'Có lỗi xảy ra khi cập nhật phiếu kiểm kê: {str(e)}', 'error')
+            return redirect(f'/inventory/edit_form/{phieu_kiem_ke_id}')
+
+    return render_template(
+        'manager/edit_inventory_form.html',
+        login_user=login_user,
+        inventory=inventory,
+        room_details=room_details,
+        rooms=rooms,
+        phieu_kiem_ke_id=phieu_kiem_ke_id
+    )

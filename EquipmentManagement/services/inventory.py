@@ -160,3 +160,57 @@ class InventoryService:
                 cursor.close()
             if conn is not None:
                 conn.close()
+
+    @staticmethod
+    def update_inventory_form(phieu_kiem_ke_id, start_date, end_date, room_details):
+        conn = None
+        cursor = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Validate phieu_kiem_ke_id exists
+            cursor.execute("SELECT id FROM phieu_kiem_ke WHERE id = %s", (phieu_kiem_ke_id,))
+            if not cursor.fetchone():
+                raise ValueError("Phiếu kiểm kê không tồn tại.")
+
+            # Update phieu_kiem_ke
+            cursor.execute(
+                """
+                UPDATE phieu_kiem_ke
+                SET thoi_gian_bat_dau = %s, thoi_gian_ket_thuc = %s
+                WHERE id = %s
+                """,
+                (start_date, end_date, phieu_kiem_ke_id)
+            )
+
+            # Delete existing chi_tiet_kiem_ke records for this phieu_kiem_ke_id
+            cursor.execute("DELETE FROM chi_tiet_kiem_ke WHERE phieu_kiem_ke_id = %s", (phieu_kiem_ke_id,))
+
+            # Insert updated room details using stored procedure
+            for room in room_details:
+                cursor.execute(
+                    """
+                    CALL them_chi_tiet_kiem_ke(%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        phieu_kiem_ke_id,
+                        room['room_id'],
+                        room['total_devices'],
+                        '',  # ghi_chu
+                        room['broken_count'],
+                        room['repairing_count'],
+                        room['liquidated_count']
+                    )
+                )
+
+            conn.commit()
+        except Exception as e:
+            if conn is not None:
+                conn.rollback()
+            raise e
+        finally:
+            if cursor is not None:
+                cursor.close()
+            if conn is not None:
+                conn.close()

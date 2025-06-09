@@ -98,9 +98,6 @@ def manage_borrow_request():
         borrow_time = request.args.get('borrow_time')
         person_id = request.args.get('person_id')
         lst_request = BorrowService.get_pending_borrow_requests()
-        for r in lst_request:
-            for e in r['equipments']:
-                print(e)
         accepted_requests = BorrowService.get_accepted_borrow_requests()
         history_requests = BorrowService.get_historical_borrow_requests()
         if login_user['vai_tro_id'] == RoleID.STAFF.value:

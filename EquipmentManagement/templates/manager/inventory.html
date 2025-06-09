@@ -1,6 +1,6 @@
-{% extends "staff/layout.html" %}
+{% extends "manager/layout.html" %}
 
-{% block staff_content %}
+{% block manager_content %}
 <div class="flex flex-col h-screen p-6 bg-gray-50">
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -16,21 +16,26 @@
     <!-- Header with Dropdown and Button -->
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Thống Kê Kiểm Kê</h1>
-        <form class="flex items-center space-x-4" method="get" action="/inventory/inventory_history">
-            <select id="inventorySelect" class="border border-gray-300 rounded-lg p-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                    onchange="this.form.submit()" name="phieu_kiem_ke_id" {% if not inventories %}disabled{% endif %}>
-                {% if inventories %}
-                    {% for inventory in inventories %}
-                    <option value="{{ inventory.id }}" {% if inventory.id == phieu_kiem_ke_id %}selected{% endif %}>
-                        {{ inventory.start_date }} - {{ inventory.end_date }}
-                    </option>
-                    {% endfor %}
-                {% else %}
-                    <option value="" disabled selected>Chưa có phiếu kiểm kê</option>
-                {% endif %}
-            </select>
+        <div class="flex items-center space-x-4">
+            <form method="get" action="/inventory/inventory_history">
+                <select id="inventorySelect" class="border border-gray-300 rounded-lg p-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                        onchange="this.form.submit()" name="phieu_kiem_ke_id" {% if not inventories %}disabled{% endif %}>
+                    {% if inventories %}
+                        {% for inventory in inventories %}
+                        <option value="{{ inventory.id }}" {% if inventory.id == phieu_kiem_ke_id %}selected{% endif %}>
+                            {{ inventory.start_date }} - {{ inventory.end_date }}
+                        </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled selected>Chưa có phiếu kiểm kê</option>
+                    {% endif %}
+                </select>
+            </form>
             <a href="/inventory/create_form" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition duration-200">Lập Phiếu Kiểm Kê</a>
-        </form>
+            {% if inventories and phieu_kiem_ke_id %}
+            <a href="/inventory/edit_form/{{ phieu_kiem_ke_id }}" class="bg-yellow-600 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-700 transition duration-200">Chỉnh Sửa Phiếu</a>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Pie Chart -->
@@ -132,7 +137,6 @@
             .catch(error => console.error('Lỗi khi lấy dữ liệu biểu đồ:', error));
     }
 
-    // Initial load
     document.addEventListener('DOMContentLoaded', () => {
         const inventorySelect = document.getElementById('inventorySelect');
         if (inventorySelect && inventorySelect.value && inventorySelect.value !== '') {
