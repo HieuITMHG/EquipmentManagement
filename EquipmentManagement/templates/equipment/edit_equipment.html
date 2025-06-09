@@ -28,27 +28,27 @@
                 <div class="space-y-6">
                     <!-- Equipment Name (Editable) -->
                     <div>
-                        <label for="equipment_name" class="block text-sm font-medium text-gray-700 mb-1">Tên thiết bị</label>
-                        <input type="text" id="equipment_name" name="equipment_name" value="{{ equipment.equipment_name }}" required
+                        <label for="ten_thiet_bi" class="block text-sm font-medium text-gray-700 mb-1">Tên thiết bị</label>
+                        <input type="text" id="ten_thiet_bi" name="ten_thiet_bi" value="{{ equipment.ten_thiet_bi }}" required
                                class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer"
                                placeholder="Nhập tên thiết bị">
                     </div>
 
                     <!-- Equipment Type (Read-only) -->
                     <div>
-                        <label for="equipment_type" class="block text-sm font-medium text-gray-700 mb-1">Loại thiết bị</label>
-                        <input type="text" id="equipment_type" value="{{ equipment.equipment_type }}" readonly
+                        <label for="loai_thiet_bi" class="block text-sm font-medium text-gray-700 mb-1">Loại thiết bị</label>
+                        <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" value="{{ equipment.loai_thiet_bi }}" readonly
                                class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
                     </div>
 
                     <!-- Room ID (Editable) -->
                     <div>
-                        <label for="room_id" class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
-                        <select id="room_id" name="room_id" required
+                        <label for="phong_id" class="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                        <select id="phong_id" name="phong_id" required
                                 class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer">
                             <option value="" disabled>Chọn phòng</option>
                             {% for room in rooms %}
-                            <option value="{{ room.id }}" {% if room.id == equipment.room_id %}selected{% endif %}>{{ room.id }}</option>
+                            <option value="{{ room.id }}" {% if room.id == equipment.phong_id %}selected{% endif %}>{{ room.id }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -56,49 +56,32 @@
 
                 <!-- Right Column -->
                 <div class="space-y-6">
-                    <!-- Management Type (Read-only) -->
-                    <div>
-                        <label for="management_type" class="block text-sm font-medium text-gray-700 mb-1">Loại quản lý</label>
-                        <input type="text" id="management_type" value="{{ equipment.management_type }}" readonly
-                               class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
-                    </div>
-
-                    <!-- Quantity (Read-only, shown if management_type is QUANTITY) -->
-                    {% if equipment.management_type == 'QUANTITY' %}
-                    <div>
-                        <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                        <input type="number" id="quantity" value="{{ equipment.quantity }}" readonly
-                               class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
-                    </div>
-                    {% endif %}
-
                     <!-- Status (Editable) -->
                     <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                        <select id="status" name="status" required
+                        <label for="trang_thai" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                        <select id="trang_thai" name="trang_thai" required
                                 class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer">
                             <option value="" disabled>Chọn trạng thái</option>
-                            <option value="AVAILABLE" {% if equipment.status == 'AVAILABLE' %}selected{% endif %}>Có sẵn</option>
-                            <option value="BORROWED" {% if equipment.status == 'BORROWED' %}selected{% endif %}>Đang sử dụng</option>
-                            <option value="UNDERREPAIR" {% if equipment.status == 'UNDERREPAIR' %}selected{% endif %}>Đang sửa</option>
-                            <option value="BROKEN" {% if equipment.status == 'BROKEN' %}selected{% endif %}>Hỏng</option>
+                            <option value="CO_SAN" {% if equipment.trang_thai == 'CO_SAN' %}selected{% endif %}>Khả dụng</option>
+                            <option value="DANG_MUON" {% if equipment.trang_thai == 'DANG_MUON' %}selected{% endif %}>Đang sử dụng</option>
+                            <option value="HU_HONG" {% if equipment.trang_thai == 'HU_HONG' %}selected{% endif %}>Hỏng</option>
+                            <option value="DA_MAT" {% if equipment.trang_thai == 'DA_MAT' %}selected{% endif %}>Đã mất</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Image (Read-only, Full Width) -->
-                   <!-- Image Upload (Editable, Full Width) -->
+                <!-- Image Upload (Editable, Full Width) -->
                 <div class="col-span-1 md:col-span-2">
-                    <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh thiết bị</label>
+                    <label for="anh" class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh thiết bị</label>
                     <div class="flex items-center gap-4">
-                        <input type="file" id="image" name="image" accept="image/*"
+                        <input type="file" id="anh" name="anh" accept="image/*"
                                class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 cursor-pointer">
                         <div class="w-32 h-32 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
                             <img id="image-preview" 
-                                 src="{% if equipment.image_url %}{{ url_for('static', filename=equipment.image_url) }}{% else %}#{% endif %}" 
-                                 class="{% if equipment.image_url %}w-full h-full object-cover{% else %}hidden{% endif %}" 
+                                 src="{% if equipment.anh %}{{ url_for('static', filename=equipment.anh) }}{% else %}#{% endif %}" 
+                                 class="{% if equipment.anh %}w-full h-full object-cover{% else %}hidden{% endif %}" 
                                  alt="Image preview">
-                            <div id="no-image" class="{% if equipment.image_url %}hidden{% else %}w-full h-full flex items-center justify-center text-gray-500{% endif %}">
+                            <div id="no-image" class="{% if equipment.anh %}hidden{% else %}w-full h-full flex items-center justify-center text-gray-500{% endif %}">
                                 Không có ảnh
                             </div>
                         </div>
@@ -119,7 +102,7 @@
 
 <!-- JavaScript for Go Back -->
 <script>
-    const imageInput = document.getElementById('image');
+    const imageInput = document.getElementById('anh');
     const imagePreview = document.getElementById('image-preview');
 
     imageInput.addEventListener('change', function () {

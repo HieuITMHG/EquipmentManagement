@@ -18,11 +18,9 @@ def borrow_equipment():
     rooms = RoomService.get_available_room()
     borrowed_equipments = EquipmentService.get_borrowed_equipment(user_id) 
     borrowing_equipments = EquipmentService.get_borrowing_equipment(user_id)
-    if len(borrowed_equipments) > 0:
-        phong_id = borrowed_equipments[0]['phong_id']
-        rooms = []
-    if len(borrowing_equipments) > 0:
-        phong_id = borrowing_equipments[0]['phong_id']
+    exist_request = BorrowService.get_existing_borrow_request(user_id)
+    if exist_request:
+        phong_id = exist_request['phong_id']
         rooms = []
     borrowable_equipments = EquipmentService.get_borrowable_equipment_by_room(phong_id) 
     borrowable_equipments = [e for e in borrowable_equipments if e not in borrowing_equipments]
@@ -42,7 +40,7 @@ def borrow_request():
     existing_borrow_request = BorrowService.get_existing_borrow_request(login_user_id)
     lst_equipmment_id = request.form.getlist("lst_equipment_id")
     if existing_borrow_request:
-        if BorrowService.add_equipment_to_request(request_id=existing_borrow_request['id'], equipment_ids=lst_equipmment_id):
+        if BorrowService.add_equipment_to_request(request_id=existing_borrow_request['id'], equipment_ids=lst_equipmment_id, phong_id=existing_borrow_request['phong_id']):
             flash("Đã cập nhật yêu cầu mượn thiết bị!", 'success')
             return redirect(url_for("borrow.borrow_equipment"))
         else:
@@ -100,11 +98,11 @@ def manage_borrow_request():
         borrow_time = request.args.get('borrow_time')
         person_id = request.args.get('person_id')
         lst_request = BorrowService.get_pending_borrow_requests()
-        accepted_requests = BorrowService.get_accepted_borrow_requests()
         for r in lst_request:
-            r['equipments'] = BorrowService.get_equipment_in_borrow_request(r['id'])
-        for r in accepted_requests:
-            r['equipments'] = BorrowService.get_equipment_in_borrow_request(r['id'])
+            for e in r['equipments']:
+                print(e)
+        accepted_requests = BorrowService.get_accepted_borrow_requests()
+        history_requests = BorrowService.get_historical_borrow_requests()
         if login_user['vai_tro_id'] == RoleID.STAFF.value:
             return render_template('staff/borrow_request.html', 
                                 login_user=login_user,
@@ -113,7 +111,8 @@ def manage_borrow_request():
                                 borrow_time=borrow_time,
                                 person_id=person_id,
                                 hperson_id=hperson_id,
-                                hborrow_time=hborrow_time)
+                                hborrow_time=hborrow_time,
+                                history_requests=history_requests)
         return render_template('manager/borrow_request.html', 
                                 login_user=login_user,
                                 lst_request=lst_request, 
@@ -121,7 +120,8 @@ def manage_borrow_request():
                                 borrow_time=borrow_time,
                                 person_id=person_id,
                                 hperson_id=hperson_id,
-                                hborrow_time=hborrow_time)
+                                hborrow_time=hborrow_time,
+                                history_requests=history_requests)
         
     borrow_request_id = int(request.form.get('request_id'))
     action = int(request.form.get('action'))
@@ -133,7 +133,6 @@ def manage_borrow_request():
     else:
         if BorrowService.reject_borrow_request(borrow_request_id):
             flash("Đã từ tối yêu cầu mượn")
-
         else:
             flash("Từ chối yêu cầu mượn thất bại")
     return redirect("manage_borrow_request")
@@ -143,7 +142,7 @@ def manage_borrow_request():
 @login_required
 def finish_borrow_request():
     request_id = request.form.get('request_id')
-    if BorrowService.return_equi(request_id):
+    if BorrowService.return_equipment(request_id):
         flash("Duyệt trả thành công", 'success')
     else:
         flash("Có lỗi xảy ra. Vui lòng thử lại sau!", 'error')
@@ -156,18 +155,34 @@ def manage_equipment():
     equipment_id = request.form.get('equipment_id')
     action = request.form.get('action')
     if action == 'approve':
-        BorrowService.accept_one_equipment(equipment_id)
-        flash("Duyệt yêu cầu mượt thành công")
+        if BorrowService.accept_one_equipment(equipment_id):
+            flash("Duyệt yêu cầu mượt thành công")
     elif action == 'reject':
-        BorrowService.reject_one_equipment(equipment_id)
-        flash("Từ chối thiết bị thành công")
+        if BorrowService.reject_one_equipment(equipment_id):
+            flash("Từ chối thiết bị thành công")
     elif action == 'return':
-        flash("Trả thiết bị thành công")
+        if BorrowService.return_one_equipment(equipment_id):
+            flash("Trả thiết bị thành công") 
     elif action == 'lost':
-        flash("Xác nhận thiết bị bị mất thành công")
+        if BorrowService.update_equipment_status(equipment_id, 'DA_MAT'):
+            flash("Xác nhận thiết bị bị mất thành công")
     else:
-        flash("Xác nhận thiết bị bị hư hại thành công")
-    
+        if BorrowService.update_damaged_equipment(equipment_id):
+            flash("Xác nhận thiết bị bị hư hại thành công")
+    return redirect(url_for('borrow.manage_borrow_request'))
+
+@borrow_blueprint.route('/add_addition_equipment', methods=['GET', 'POST'])
+def add_addition_equipment():
+    if request.method == "GET":
+        request_id = request.args.get('request_id')
+        phong_id = request.args.get('phong_id')
+        lst_borrowable = EquipmentService.get_borrowable_equipment(phong_id)
+        return render_template('/borrow/add_addition_equipment.html', request_id=request_id, phong_id=phong_id, lst_borrowable=lst_borrowable)
+    request_id = request.form.get('request_id')
+    phong_id = request.form.get('phong_id')
+    equipment_ids = request.form.getlist('lst_equipment_id') 
+    if BorrowService.add_addition_equipment(equipment_ids=equipment_ids, request_id=request_id, phong_id=phong_id):
+        flash("Đã cập nhật yêu cầu mượn thiết bị!", 'success')
     return redirect(url_for('borrow.manage_borrow_request'))
 
 

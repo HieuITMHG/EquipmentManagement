@@ -2,52 +2,6 @@ from models.database import get_connection
 from services.borrow_service import BorrowService
 
 class EquipmentService:
-    @staticmethod
-    def get_all_equipment():
-        """Lấy danh sách tất cả thiết bị từ DB"""
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("SELECT * FROM equipment")
-            return cursor.fetchall()  # Trả về trực tiếp danh sách dictionary
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def get_equipment_by_mtype(mtype):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("SELECT * FROM equipment WHERE management_type = %s", (mtype,))
-            return cursor.fetchall()  # Trả về trực tiếp danh sách dictionary
-        finally:
-            cursor.close()
-            conn.close()
-    @staticmethod
-    def get_equipment_by_id(equipment_id):
-        """Lấy thiết bị theo ID"""
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("SELECT * FROM equipment WHERE id = %s", (equipment_id,))
-            equipment = cursor.fetchone()
-            return equipment if equipment else None  # Trả về None nếu không tìm thấy
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def get_equipment_by_room(room_id):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            cursor.execute("SELECT * FROM equipment WHERE room_id = %s", (room_id,))
-            return cursor.fetchall()
-        finally:
-            cursor.close()
-            conn.close()
-
     def get_borrowable_equipment_by_room(room_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
@@ -58,27 +12,31 @@ class EquipmentService:
             cursor.close()
             conn.close()
 
+    def get_borrowable_equipment(room_id):
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM thiet_bi WHERE (phong_id = %s OR phong_id = 'HVCS') AND trang_thai='CO_SAN' AND loai_thiet_bi='DI_DONG'", (room_id,))
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()
+
     @staticmethod
-    def add_equipment(new_name, new_type, new_management_type, new_room, new_quantity, new_image_url):
+    def add_equipment(ten_thiet_bi, loai_thiet_bi, phong_id, anh=None):
         """Thêm thiết bị mới vào hệ thống"""
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            # Gọi stored procedure để thêm thiết bị mới
-            cursor.callproc('create_equipment', [
-                new_name,             # p_equipment_name
-                new_type,             # p_equipment_type ('MOBILE' hoặc 'FIXED')
-                new_management_type,  # p_management_type ('QUANTITY' hoặc 'INDIVIDUAL')
-                new_room,             # p_room_id
-                new_quantity,         # p_quantity
-                new_image_url         # p_image_url (ví dụ: 'img/filename.png')
+            cursor.callproc('them_thiet_bi_moi', [
+                ten_thiet_bi,      # p_ten_thiet_bi
+                loai_thiet_bi,     # p_loai_thiet_bi
+                phong_id,          # p_phong_id
+                anh                # p_anh
             ])
-
-            # Commit để xác nhận thay đổi
             conn.commit()
             return True
         except Exception as e:
-            # Nếu có lỗi, rollback transaction
             conn.rollback()
             print(f"Error: {e}")
             return False
@@ -86,21 +44,16 @@ class EquipmentService:
             cursor.close()
             conn.close()
 
-
     @staticmethod
     def delete_equipment_by_id(equipment_id):
         """Xóa thiết bị theo ID"""
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            # Gọi stored procedure để xóa thiết bị
-            cursor.execute("DELETE FROM equipment WHERE id = %s", (equipment_id,))
-
-            # Commit để xác nhận thay đổi
+            cursor.execute("DELETE FROM thiet_bi WHERE id = %s", (equipment_id,))
             conn.commit()
             return True
         except Exception as e:
-            # Nếu có lỗi, rollback transaction
             conn.rollback()
             print(f"Error: {e}")
             return False
@@ -137,45 +90,34 @@ class EquipmentService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM equipment WHERE broken_quantity > 0")
+            cursor.execute("SELECT * FROM thiet_bi WHERE trang_thai = 'HU_HONG'")
             return cursor.fetchall()
         finally:
             cursor.close()
             conn.close()
 
     @staticmethod
-    def search_equipment(room_id=None, status=None, equipment_type=None, equipment_name=None, management_type=None):
+    def search_equipment(phong_id=None, trang_thai=None, loai_thiet_bi=None, ten_thiet_bi=None):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
-        query = "SELECT * FROM equipment WHERE 1=1"
+        query = "SELECT * FROM thiet_bi WHERE 1=1"
         params = []
-
-        if room_id:
-            query += " AND room_id LIKE %s"
-            params.append(f"%{room_id}%")
-
-        if status:
-            query += " AND status = %s"
-            params.append(status)
-
-        if equipment_type:
-            query += " AND equipment_type = %s"
-            params.append(equipment_type)
-
-        if equipment_name:
-            query += " AND equipment_name LIKE %s"
-            params.append(f"%{equipment_name}%")
-        
-        if management_type:
-            query += " AND management_type = %s"
-            params.append(management_type)
-
+        if phong_id:
+            query += " AND phong_id LIKE %s"
+            params.append(f"%{phong_id}%")
+        if trang_thai:
+            query += " AND trang_thai = %s"
+            params.append(trang_thai)
+        if loai_thiet_bi:
+            query += " AND loai_thiet_bi = %s"
+            params.append(loai_thiet_bi)
+        if ten_thiet_bi:
+            query += " AND ten_thiet_bi LIKE %s"
+            params.append(f"%{ten_thiet_bi}%")
         cursor.execute(query, params)
         results = cursor.fetchall()
-
         cursor.close()
         conn.close()
-
         return results
 
     @staticmethod
@@ -186,7 +128,7 @@ class EquipmentService:
             phieu_muon = BorrowService.get_existing_borrow_request(nguoi_id)
             if phieu_muon:
                 id_phieu_muon = phieu_muon['id']
-                cursor.execute("SELECT * FROM chi_tiet_muon WHERE phieu_muon_id = %s", (id_phieu_muon,))
+                cursor.execute("SELECT * FROM chi_tiet_muon WHERE phieu_muon_id = %s AND thoi_gian_tra_thuc_te IS NULL", (id_phieu_muon,))
                 lst_equipment_id = [x['thiet_bi_id'] for x in cursor.fetchall()]
                 if not lst_equipment_id:
                     return []  # Nếu không có thiết bị thì trả về mảng rỗng luôn
@@ -222,8 +164,8 @@ class EquipmentService:
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
-                SELECT * FROM equipment
-                WHERE equipment_name = %s AND room_id = %s
+                SELECT * FROM thiet_bi
+                WHERE ten_thiet_bi = %s AND phong_id = %s
                 LIMIT 1
             """
             cursor.execute(query, (name, room_id))
@@ -237,29 +179,11 @@ class EquipmentService:
             conn.close()
 
     @staticmethod
-    def update_quantity(equipment_id, new_quantity):
-        """Cập nhật số lượng thiết bị"""
+    def update_equipment_info(id, ten_thiet_bi, trang_thai, loai_thiet_bi, phong_id, anh=None):
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            query = "UPDATE equipment SET quantity = %s WHERE id = %s"
-            cursor.execute(query, (new_quantity, equipment_id))
-            conn.commit()
-            return True
-        except Exception as e:
-            conn.rollback()
-            print(f"Error: {e}")
-            return False
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def update_equipment_info(id, name, status, room_id, image_url=None):
-        conn = get_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.callproc('update_equipment_info', [id, name, status, room_id, image_url])
+            cursor.callproc('cap_nhat_thong_tin_thiet_bi', [id, ten_thiet_bi, trang_thai, loai_thiet_bi, phong_id])
             conn.commit()
             return True
         except Exception as e:
@@ -271,23 +195,12 @@ class EquipmentService:
             conn.close()
 
     @staticmethod
-    def update_equipment_quantities(equipment_id, new_quantity, new_broken_quantity):
+    def get_equipment_by_id(equipment_id):
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
-            query = """
-                UPDATE equipment
-                SET quantity = %s,
-                    broken_quantity = %s
-                WHERE id = %s
-            """
-            cursor.execute(query, (new_quantity, new_broken_quantity, equipment_id))
-            conn.commit()
-            return True
-        except Exception as e:
-            conn.rollback()
-            print(f"Error updating quantities: {e}")
-            return False
+            cursor.execute("SELECT * FROM thiet_bi WHERE id = %s", (equipment_id,))
+            return cursor.fetchone()
         finally:
             cursor.close()
             conn.close()
@@ -295,153 +208,30 @@ class EquipmentService:
     @staticmethod
     def get_statistical_number():
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
             r = {}
+            cursor.execute("SELECT COUNT(*) AS total FROM thiet_bi")
+            r['total'] = cursor.fetchone()['total']
 
-            cursor.execute("SELECT COUNT(*) AS so_don_le FROM equipment WHERE management_type = 'INDIVIDUAL'")
-            so_don_le = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS broken FROM thiet_bi WHERE trang_thai = 'HU_HONG'")
+            r['broken'] = cursor.fetchone()['broken']
 
-            cursor.execute("SELECT SUM(quantity) AS so_nhieu FROM equipment WHERE management_type = 'QUANTITY'")
-            so_nhieu = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS liquidated FROM thiet_bi WHERE trang_thai = 'DA_THANH_LY'")
+            r['liquidated'] = cursor.fetchone()['liquidated']
 
-            r['total'] = int(so_don_le + so_nhieu)
+            cursor.execute("SELECT COUNT(*) AS lost FROM thiet_bi WHERE trang_thai = 'DA_MAT'")
+            r['lost'] = cursor.fetchone()['lost']
 
-            cursor.execute("SELECT SUM(broken_quantity) AS so_hong FROM equipment")
-            r['broken_quantity'] = int(cursor.fetchone()[0])
-
-            cursor.execute("SELECT SUM(under_repair_quantity) AS so_sua FROM equipment")
-            r['under_repair_quantity'] = int(cursor.fetchone()[0])
-
-            cursor.execute("SELECT COUNT(borrow_item_id) AS so_muon FROM BorrowDetails WHERE borrow_status = 'ACCEPTED'")
-            r['borrowing_quantity'] = int(cursor.fetchone()[0])
+            cursor.execute("SELECT COUNT(*) AS borrowed FROM thiet_bi WHERE trang_thai = 'DANG_MUON'")
+            r['borrowed'] = cursor.fetchone()['borrowed']
 
             return r
         except Exception as e:
             print(f"Error getting equipment statistics: {e}")
-            return False
+            return {}
         finally:
             cursor.close()
             conn.close()
-    @staticmethod
-    def allocate_equipment(equipment_id, allocate_quantity):
-        if allocate_quantity <= 0:
-            return False, "Số lượng cấp phải lớn hơn 0"
 
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            # Fetch the equipment to get its equipment_name
-            cursor.execute(
-                "SELECT equipment_name FROM equipment WHERE id = %s",
-                (equipment_id,)
-            )
-            equipment = cursor.fetchone()
-            
-            if not equipment:
-                return False, "Không tìm thấy thiết bị"
-
-            # Fetch warehouse equipment (same equipment_name, room_id='HVCS')
-            cursor.execute(
-                "SELECT id, quantity FROM equipment WHERE equipment_name = %s AND room_id = %s",
-                (equipment['equipment_name'], 'HVCS')
-            )
-            warehouse_equipment = cursor.fetchone()
-            
-            if not warehouse_equipment:
-                return False, "Không tìm thấy thiết bị trong kho (HVCS)"
-            
-            if warehouse_equipment['quantity'] < allocate_quantity:
-                return False, "Số lượng trong kho không đủ để cấp"
-            
-            # Increase quantity of the target equipment
-            cursor.execute(
-                "UPDATE equipment SET quantity = quantity + %s WHERE id = %s",
-                (allocate_quantity, equipment_id)
-            )
-            
-            # Decrease quantity in the warehouse
-            cursor.execute(
-                "UPDATE equipment SET quantity = quantity - %s WHERE id = %s",
-                (allocate_quantity, warehouse_equipment['id'])
-            )
-            
-            # Commit transaction
-            conn.commit()
-            return True, "Cấp thiết bị thành công"
-            
-        except Exception as e:
-            conn.rollback()
-            return False, f"Lỗi khi cấp thiết bị: {str(e)}"
-        finally:
-            cursor.close()
-            conn.close()
     
-    @staticmethod
-    def retrieve_equipment(equipment_id, available_quantity, broken_quantity, under_repair_quantity):
-        if available_quantity < 0 or broken_quantity < 0 or under_repair_quantity < 0:
-            return False, "Số lượng thu hồi phải lớn hơn hoặc bằng 0"
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-        try:
-            # Fetch the equipment to get its equipment_name and quantities
-            cursor.execute(
-                "SELECT equipment_name, quantity, broken_quantity, under_repair_quantity FROM equipment WHERE id = %s",
-                (equipment_id,)
-            )
-            equipment = cursor.fetchone()
-            
-            if not equipment:
-                return False, "Không tìm thấy thiết bị"
-
-            # Check if room has enough quantities
-            if (equipment['quantity'] < available_quantity or
-                equipment['broken_quantity'] < broken_quantity or
-                equipment['under_repair_quantity'] < under_repair_quantity):
-                return False, "Số lượng trong phòng không đủ để thu hồi"
-
-            # Fetch warehouse equipment (same equipment_name, room_id='HVCS')
-            cursor.execute(
-                "SELECT id, quantity, broken_quantity, under_repair_quantity FROM equipment WHERE equipment_name = %s AND room_id = %s",
-                (equipment['equipment_name'], 'HVCS')
-            )
-            warehouse_equipment = cursor.fetchone()
-            
-            if not warehouse_equipment:
-                return False, "Không tìm thấy thiết bị trong kho (HVCS)"
-
-            # Decrease quantities in the room
-            cursor.execute(
-                """
-                UPDATE equipment 
-                SET quantity = quantity - %s,
-                    broken_quantity = broken_quantity - %s,
-                    under_repair_quantity = under_repair_quantity - %s
-                WHERE id = %s
-                """,
-                (available_quantity, broken_quantity, under_repair_quantity, equipment_id)
-            )
-
-            # Increase quantities in the warehouse
-            cursor.execute(
-                """
-                UPDATE equipment 
-                SET quantity = quantity + %s,
-                    broken_quantity = broken_quantity + %s,
-                    under_repair_quantity = under_repair_quantity + %s
-                WHERE id = %s
-                """,
-                (available_quantity, broken_quantity, under_repair_quantity, warehouse_equipment['id'])
-            )
-
-            # Commit transaction
-            conn.commit()
-            return True, "Thu hồi thiết bị thành công"
-            
-        except Exception as e:
-            conn.rollback()
-            return False, f"Lỗi khi thu hồi thiết bị: {str(e)}"
-        finally:
-            cursor.close()
-            conn.close()

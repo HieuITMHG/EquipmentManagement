@@ -6,7 +6,7 @@ class ClassService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM class")
+            cursor.execute("SELECT * FROM lop")
             return cursor.fetchall()  
         finally:
             cursor.close()
@@ -17,7 +17,7 @@ class ClassService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM class WHERE id = %s", (class_id,))
+            cursor.execute("SELECT * FROM lop WHERE id = %s", (class_id,))
             return cursor.fetchall()  
         finally:
             cursor.close()

@@ -39,10 +39,10 @@ def delete_equipment():
 def liquidation_slip():
     staff_id = session.get('account_id')
     create_date = request.args.get("create_date") 
-    login_user = AccountService.get_account_by_person_id(staff_id)
+    login_user = AccountService.get_user_info(staff_id)
     broken_equipment = EquipmentService.get_broken_equipment()
     pending_requests = LiquidationSlipService.get_my_liquidation_slip(staff_id=staff_id)
-    processed_equipment_id = LiquidationSlipService.get_all_processed_equipment()
+    processed_equipment_id = LiquidationSlipService.get_all_processing_equipment()
     broken_equipment = [e for e in broken_equipment if e['id'] not in processed_equipment_id]
     accepted_requests = LiquidationSlipService.get_history_liquidation_slip(create_date)
     for r in pending_requests:
@@ -66,36 +66,25 @@ def add_liquidation_slip():
     equipment_id = request.form.get('equipment_id')
     issue_description = request.form.get('issue_description')
     repair_cost = request.form.get('repair_cost')
-    broken_quantity = request.form.get('broken_quantity')
-    existing_request = LiquidationSlipService.get_existing_ticket(staff_id)
-    if existing_request:
-        if LiquidationSlipService.add_equipment_to_ticket(ticket_id = existing_request['id'], 
+
+    if LiquidationSlipService.add_equipment_to_ticket( staff_id=staff_id,
                                                        equipment_id=equipment_id, 
-                                                       quantity=broken_quantity,
-                                                       description=issue_description,
-                                                       price=repair_cost):
-            flash("Thêm thiết bị vào phiếu thanh lý thành công", 'sucesss')
-        else:
-            flash("Thêm thiết bị vào phiếu thanh lý thất bại", 'error')
+                                                        price=repair_cost,
+                                                       description=issue_description):
+        flash("Thêm thiết bị vào phiếu thanh lý thành công", 'sucesss')
     else:
-        if LiquidationSlipService.create_liquidation_slip_with_equipment(staff_id=staff_id,
-                                                                   equipment_id=equipment_id,
-                                                                   quantity=broken_quantity,
-                                                                   description=issue_description,
-                                                                   price=repair_cost):
-            flash("Tạo phiếu thanh lý thành công", 'success')
-        else:
-            flash("Tạo phiếu thanh lý thất bại", 'error')
-    return redirect(url_for('staff.liquidation_slip')) 
+        flash("Thêm thiết bị vào phiếu thanh lý thất bại", 'error')
+    return redirect(url_for('staff.liquidation_slip'))
 
 @staff_blueprint.route('/staff/handle_liquidation_slip', methods=['POST'])
 @login_required
 @role_required(RoleID.STAFF.value)
 def handle_liquidation_slip():
+    login_user = AccountService.get_user_info(session.get('account_id'))
     action = int(request.form['action'])
-    request_id = request.form['request_id']
+    request_id = request.form['phieu_thanh_ly_id']
     if action:
-        if LiquidationSlipService.confirm_liquidation_slip(request_id):
+        if LiquidationSlipService.confirm_liquidation_slip(request_id, int(login_user['vai_tro_id'])):
             flash("Lâp phiếu sửa chửa thành công", 'success')
         else:
             flash("Lập phiếu sửa chửa thất bại", 'error')
@@ -111,10 +100,11 @@ def handle_liquidation_slip():
 @login_required
 @role_required(RoleID.STAFF.value)
 def handle_repair_ticket():
+    login_user = AccountService.get_user_info(session.get('account_id'))
     action = int(request.form['action'])
     request_id = request.form['request_id']
     if action:
-        if RepairTicketService.confirm_repair_ticket(request_id):
+        if RepairTicketService.confirm_repair_ticket(request_id, int(login_user['vai_tro_id'])):
             flash("Lâp phiếu sửa chửa thành công", 'success')
         else:
             flash("Lập phiếu sửa chửa thất bại", 'error')
@@ -132,7 +122,7 @@ def repair_ticket():
     staff_id = session.get('account_id')
     login_user = AccountService.get_account_by_person_id(staff_id)
     broken_equipment = EquipmentService.get_broken_equipment()
-    processed_equipment_id = RepairTicketService.get_all_processed_equipment()
+    processed_equipment_id =LiquidationSlipService.get_all_processing_equipment()
     pending_requests = RepairTicketService.get_my_repair_ticket(staff_id=staff_id)
     broken_equipment = [e for e in broken_equipment if e['id'] not in processed_equipment_id]
     create_date = request.args.get("create_date")
@@ -154,29 +144,14 @@ def repair_ticket():
 @role_required(RoleID.STAFF.value)
 def add_repair_ticket():
     staff_id = session.get('account_id')
-    equipment_id = request.form.get('equipment_id')
+    equipment_id = int(request.form.get('equipment_id'))
     issue_description = request.form.get('issue_description')
     repair_cost = request.form.get('repair_cost')
-    broken_quantity = request.form.get('broken_quantity')
-    existing_request = RepairTicketService.get_existing_ticket(staff_id)
-    if existing_request:
-        if RepairTicketService.add_equipment_to_ticket(ticket_id = existing_request['id'], 
-                                                       equipment_id=equipment_id, 
-                                                       quantity=broken_quantity,
-                                                       description=issue_description,
-                                                       price=repair_cost):
-            flash("Thêm thiết bị vào phiếu sửa chửa thành công", 'sucesss')
-        else:
-            flash("Thêm thiết bị vào phiếu sửa chửa thất bại", 'error')
+    print(equipment_id)
+    if RepairTicketService.add_equipment_to_repair_ticket(staff_id, equipment_id, issue_description, repair_cost):
+        flash("Thêm thiết bị vào phiếu sửa chửa thành công", 'sucesss')
     else:
-        if RepairTicketService.create_repair_ticket_with_equipment(staff_id=staff_id,
-                                                                   equipment_id=equipment_id,
-                                                                   quantity=broken_quantity,
-                                                                   description=issue_description,
-                                                                   price=repair_cost):
-            flash("Tạo phiếu sửa chửa thành công", 'success')
-        else:
-            flash("Tạo phiếu sửa chửa thất bại", 'error')
+        flash("Thêm thiết bị vào phiếu sửa chửa thất bại", 'error')
     return redirect('repair_ticket') 
 
 @staff_blueprint.route('/staff/remove_repair_equipment', methods=['POST'])
@@ -193,13 +168,10 @@ def remove_repair_equipment():
         
         result = RepairTicketService.remove_equipment_from_ticket(repair_ticket_id, equipment_id)
         
-        if result['success']:
-            if result['ticket_deleted']:
-                flash('Equipment removed and repair ticket deleted as no equipment remains.', 'success')
-            else:
-                flash('Equipment removed from repair ticket successfully.', 'success')
+        if result:
+            flash('Đã xóa thiết bị khỏi danh sách', 'success')
         else:
-            flash(f'Failed to remove equipment: {result["error"]}', 'error')
+            flash(f'Xóa thiết bị khỏi danh sách thất bại: {result["error"]}', 'error')
         
         return redirect(url_for('staff.repair_ticket'))
     
@@ -212,23 +184,20 @@ def remove_repair_equipment():
 @role_required(RoleID.STAFF.value)
 def remove_liqui_equipment():
     try:       
-        repair_ticket_id = int(request.form.get('repair_ticket_id'))
+        repair_ticket_id = int(request.form.get('liquidation_id'))
         equipment_id = int(request.form.get('equipment_id'))
         
         result = LiquidationSlipService.remove_equipment_from_slip(repair_ticket_id, equipment_id)
         
-        if result['success']:
-            if result['ticket_deleted']:
-                flash('Equipment removed and repair ticket deleted as no equipment remains.', 'success')
-            else:
-                flash('Equipment removed from repair ticket successfully.', 'success')
+        if result:
+            flash('Đã xóa thiết bị khỏi danh sách', 'success')
         else:
-            flash(f'Failed to remove equipment: {result["error"]}', 'error')
+            flash(f'Thất bại: {result["error"]}', 'error')
         
         return redirect(url_for('staff.liquidation_slip'))
     
     except Exception as e:
-        flash(f'Error removing equipment: {str(e)}', 'error')
+        flash(f'Lỗi xóa thiết bị khỏi danh sách: {str(e)}', 'error')
         return redirect(url_for('staff.liquidation_slip'))
 
 @staff_blueprint.route('/staff/finish_repair_ticket', methods=['POST'])
@@ -237,17 +206,6 @@ def remove_liqui_equipment():
 def finish_repair_ticket():
     request_id = request.form.get('request_id')
     if RepairTicketService.complete_repair_ticket(request_id):
-        flash("Hoàn tất phiếu sửa chữa thành công")
-    else:
-        flash("Phiếu sửa chữa không tồn tại hoặc đã hoàn tất")
-    return redirect('repair_ticket') 
-
-@staff_blueprint.route('/staff/finish_liquidation_slip', methods=['POST'])
-@login_required
-@role_required(RoleID.STAFF.value)
-def finish_liquidation_slip():
-    request_id = request.form.get('request_id')
-    if LiquidationSlipService.complete_liquidation_slip(request_id):
         flash("Hoàn tất phiếu sửa chữa thành công")
     else:
         flash("Phiếu sửa chữa không tồn tại hoặc đã hoàn tất")

@@ -1,0 +1,85 @@
+{% extends "general/layout.html" %}
+
+{% block title %}
+    Add additon equipment
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50">
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
+            <h1 class="text-lg font-bold">Thêm thiết bị cho phiếu #{{ request_id }} - Phòng: {{ phong_id }}</h1>
+            <div class="flex gap-4">
+                <a href="javascript:history.back()" class="bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-700 transition duration-200">
+                    Quay lại
+                </a>
+                <button class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition duration-200" 
+                        type="submit"
+                        form="add_equipment_form">
+                    Thêm thiết bị
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="overflow-auto flex-grow p-4 max-w-7xl mx-auto">
+            {% if lst_borrowable %}
+            <h2 class="font-bold text-xl text-gray-800 mb-4">Thiết bị có thể mượn</h2>
+            <form action="{{ url_for('borrow.add_addition_equipment') }}" method="post" id="add_equipment_form" class="grid grid-cols-4 gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="request_id" value="{{ request_id }}"/>
+                <input type="hidden" name="phong_id" value="{{ phong_id }}"/>
+                {% for e in lst_borrowable %}
+                <label class="device_card bg-white border rounded-lg shadow-md overflow-hidden h-60 w-48 flex flex-col justify-between items-center text-gray-700 hover:brightness-90 transition duration-200 cursor-pointer">
+                    <input type="checkbox" 
+                           class="hidden" 
+                           name="lst_equipment_id"
+                           value="{{ e.id }}"/>
+                    <img src="{{ url_for('static', filename=e.anh) if e.anh else url_for('static', filename='images/default-equipment.jpg') }}" 
+                         alt="{{ e.ten_thiet_bi }}" 
+                         class="h-2/3 w-auto object-contain max-w-[95%]" />
+                    <div class="p-2 text-center">
+                        <h3 class="font-bold">{{ e.ten_thiet_bi }}</h3>
+                        <p class="text-sm text-gray-600">Phòng {{ e.phong_id }} - Khả dụng</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </form>
+            {% else %}
+            <div class="text-gray-500 text-center py-6">Không có thiết bị nào có thể mượn trong phòng {{ phong_id }}.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.device_card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        this.classList.add('bg-blue-200');
+                        this.classList.remove('bg-white');
+                    } else {
+                        this.classList.remove('bg-blue-200');
+                        this.classList.add('bg-white');
+                    }
+                }
+            });
+        });
+
+        // Debug form submission
+        document.getElementById('add_equipment_form').addEventListener('submit', function() {
+            const checkboxes = this.querySelectorAll('input[type="checkbox"]');
+            const checkedValues = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            console.log('Selected equipment IDs:', checkedValues);
+        });
+    });
+    </script>
+{% endblock %}

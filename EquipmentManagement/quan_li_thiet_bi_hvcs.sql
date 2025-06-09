@@ -50,7 +50,7 @@ CREATE TABLE sinh_vien (
     dia_chi VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     dang_hoc BOOLEAN DEFAULT TRUE,
     FOREIGN KEY(id) REFERENCES tai_khoan(id),
-    FOREIGN KEY(lop_id) REFERENCES lop(id)
+    FOREIGN KEY(lop_id) REFERENCES lop(id) ON DELETE CASCADE
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Tạo bảng nhan_vien
@@ -64,7 +64,7 @@ CREATE TABLE nhan_vien (
     sdt CHAR(10) UNIQUE,
     dia_chi VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     dang_lam_viec BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY(id) REFERENCES tai_khoan(id)
+    FOREIGN KEY(id) REFERENCES tai_khoan(id) ON DELETE CASCADE
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Tạo bảng thiet_bi
@@ -128,7 +128,7 @@ CREATE TABLE chi_tiet_sua_chua (
 CREATE TABLE phieu_thanh_ly (
     id INT PRIMARY KEY AUTO_INCREMENT,
     ngay_thanh_ly TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    trang_thai ENUM('CHUAN_BI','CHO_DUYET', 'DA_DUYET', 'HOAN_THANH') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'CHO_DUYET',
+    trang_thai ENUM('CHUAN_BI','CHO_DUYET', 'DA_DUYET') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'CHO_DUYET',
     nhan_vien_id VARCHAR(20) NOT NULL,
     FOREIGN KEY(nhan_vien_id) REFERENCES nhan_vien(id)
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
@@ -378,8 +378,7 @@ FOR EACH ROW
 BEGIN
     IF EXISTS (SELECT 1 FROM chi_tiet_muon WHERE thiet_bi_id = OLD.id LIMIT 1)
        OR EXISTS (SELECT 1 FROM chi_tiet_sua_chua WHERE thiet_bi_id = OLD.id LIMIT 1)
-       OR EXISTS (SELECT 1 FROM chi_tiet_thanh_ly WHERE thiet_bi_id = OLD.id LIMIT 1)
-       OR EXISTS (SELECT 1 FROM chi_tiet_kiem_ke WHERE thiet_bi_id = OLD.id LIMIT 1) THEN
+       OR EXISTS (SELECT 1 FROM chi_tiet_thanh_ly WHERE thiet_bi_id = OLD.id LIMIT 1) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Thiết bị đã được sử dụng, không thể xóa.';
     END IF;
@@ -413,7 +412,7 @@ AFTER UPDATE
 ON thiet_bi
 FOR EACH ROW
 BEGIN
-    IF OLD.trang_thai = 'DANG_MUON' AND NEW.trang_thai = 'HU_HONG' THEN
+    IF OLD.trang_thai = 'DANG_MUON' AND (NEW.trang_thai = 'HU_HONG' OR NEW.trang_thai = 'CO_SAN') THEN
         UPDATE chi_tiet_muon
         SET thoi_gian_tra_thuc_te = CURRENT_TIMESTAMP
         WHERE thiet_bi_id = NEW.id
@@ -453,6 +452,22 @@ BEGIN
     END IF;
 END //
 
+CREATE TRIGGER cap_nhat_hoan_thanh_sua_chua
+AFTER UPDATE ON phieu_sua_chua
+FOR EACH ROW
+BEGIN
+    -- Chỉ thực hiện khi trạng thái vừa chuyển sang 'DA_DUYET'
+    IF OLD.trang_thai = 'DA_DUYET' AND NEW.trang_thai = 'HOAN_THANH' THEN
+        UPDATE thiet_bi
+        SET trang_thai = 'CO_SAN'
+        WHERE id IN (
+            SELECT thiet_bi_id
+            FROM chi_tiet_sua_chua
+            WHERE phieu_sua_chua_id = NEW.id
+        );
+    END IF;
+END //
+
 CREATE TRIGGER kiem_tra_tai_khoan_da_hoat_dong
 BEFORE DELETE ON tai_khoan
 FOR EACH ROW
@@ -482,7 +497,7 @@ BEGIN
     -- Chi tiết sửa chữa
     IF (EXISTS (
         SELECT 1
-        FROM chi_tiet_sua_chua
+        FROM phieu_sua_chua
         WHERE nhan_vien_id = OLD.id
         LIMIT 1
     )) THEN
@@ -492,7 +507,7 @@ BEGIN
     -- Chi tiết thanh lý
     IF (EXISTS (
         SELECT 1
-        FROM chi_tiet_thanh_ly
+        FROM phieu_thanh_ly
         WHERE nhan_vien_id = OLD.id
         LIMIT 1
     )) THEN
@@ -502,7 +517,7 @@ BEGIN
     -- Chi tiết kiểm kê
     IF (EXISTS (
         SELECT 1
-        FROM chi_tiet_kiem_ke
+        FROM phieu_kiem_ke
         WHERE nhan_vien_id = OLD.id
         LIMIT 1
     )) THEN
@@ -514,7 +529,6 @@ BEGIN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Không thể xoá tài khoản vì đã có hoạt động.';
     END IF;
-
 END //
 
 /* PROCEDURE */
@@ -662,70 +676,94 @@ DO
     );
 
 -- 3. them_thiet_bi_vao_phieu_muon
-CREATE PROCEDURE them_thiet_bi_vao_phieu_muon (
+CREATE PROCEDURE them_thiet_bi_vao_phieu_muon(
     IN p_phieu_muon_id INT,
-    IN p_thiet_bi_ids VARCHAR(255)
+    IN v_thiet_bi_list TEXT,
+    IN v_phong_id CHAR(5)
 )
-them_thiet_bi_vao_phieu_muon:BEGIN
-    DECLARE v_phong_id CHAR(5);
-    DECLARE v_ca TIMESTAMP;
-    DECLARE v_thiet_bi_id INT;
+BEGIN
     DECLARE v_pos INT DEFAULT 1;
-    DECLARE v_comma_pos INT;
-    DECLARE v_thiet_bi_list VARCHAR(255);
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        SELECT 0 AS success, 'SQL_EXCEPTION' AS error_code, 'Lỗi hệ thống hoặc truy vấn.' AS message;
-    END;
+    DECLARE v_comma_pos INT DEFAULT 0;
+    DECLARE v_thiet_bi_id INT;
+
+    DECLARE done INT DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION 
+        BEGIN
+            ROLLBACK;
+            SELECT 0 AS success, 'DB_ERROR', 'Lỗi cơ sở dữ liệu xảy ra.' AS message;
+        END;
+
     START TRANSACTION;
-    SELECT phong_id,ca INTO v_phong_id, v_ca FROM phieu_muon WHERE id = p_phieu_muon_id;
-    IF v_phong_id IS NULL THEN
-        ROLLBACK;
-        SELECT 0 AS success, 'INVALID_BORROW', 'Phiếu mượn không tồn tại.' AS message;
-        LEAVE them_thiet_bi_vao_phieu_muon;
-    END IF;
-    IF NOT (
-        DATE(v_ca) = CURDATE()
-        AND HOUR(v_ca) = CASE
-            WHEN HOUR(CURRENT_TIME()) BETWEEN 6 AND 10 THEN 6
-            WHEN HOUR(CURRENT_TIME()) BETWEEN 12 AND 16 THEN 12
-            ELSE -1
-        END
-    ) THEN
-        ROLLBACK;
-        SELECT 0 AS success, 'INVALID_SHIFT', 'Phiếu mượn không thuộc ca hiện tại.' AS message;
-        LEAVE them_thiet_bi_vao_phieu_muon;
-    END IF;
-    SET v_thiet_bi_list = CONCAT(p_thiet_bi_ids, ',');
-    SET v_pos = 1;
-    WHILE v_pos < LENGTH(v_thiet_bi_list) DO
+
+    label_them_thiet_bi_vao_phieu_muon: WHILE v_pos <= LENGTH(v_thiet_bi_list) DO
         SET v_comma_pos = LOCATE(',', v_thiet_bi_list, v_pos);
+        IF v_comma_pos = 0 THEN
+            SET v_comma_pos = LENGTH(v_thiet_bi_list) + 1;
+        END IF;
+
         SET v_thiet_bi_id = CAST(SUBSTRING(v_thiet_bi_list, v_pos, v_comma_pos - v_pos) AS UNSIGNED);
-        SET v_pos = v_comma_pos + 1;
-        IF NOT EXISTS (
-            SELECT 1 FROM thiet_bi WHERE id = v_thiet_bi_id AND trang_thai = 'CO_SAN' AND phong_id = v_phong_id
-        ) THEN
-            ROLLBACK;
-            SELECT 0 AS success, 'INVALID_EQUIPMENT', CONCAT('Thiết bị ID ', v_thiet_bi_id, ' không tồn tại, không sẵn sàng, hoặc không thuộc phòng ', v_phong_id) AS message;
-            LEAVE them_thiet_bi_vao_phieu_muon;
-        END IF;
+
+        -- TH1: Đã có trong phiếu và đã trả => reset để mượn lại
         IF EXISTS (
-            SELECT 1 FROM chi_tiet_muon WHERE phieu_muon_id = p_phieu_muon_id AND thiet_bi_id = v_thiet_bi_id
+            SELECT 1 FROM chi_tiet_muon 
+            WHERE phieu_muon_id = p_phieu_muon_id 
+              AND thiet_bi_id = v_thiet_bi_id 
+              AND thoi_gian_tra_thuc_te IS NOT NULL
+        ) THEN 
+            UPDATE chi_tiet_muon 
+            SET thoi_gian_tra_thuc_te = NULL,
+                thoi_gian_muon = CURRENT_TIMESTAMP
+            WHERE phieu_muon_id = p_phieu_muon_id 
+              AND thiet_bi_id = v_thiet_bi_id;
+
+            -- Di chuyển đến thiết bị tiếp theo
+            SET v_pos = v_comma_pos + 1;
+            ITERATE label_them_thiet_bi_vao_phieu_muon;
+        END IF;
+
+        -- TH2: Chưa có thiết bị hoặc thiết bị đang mượn
+
+        -- Kiểm tra thiết bị có tồn tại và sẵn sàng trong phòng
+        IF NOT EXISTS (
+            SELECT 1 FROM thiet_bi 
+            WHERE id = v_thiet_bi_id 
+              AND trang_thai = 'CO_SAN' 
+              AND phong_id = v_phong_id
         ) THEN
             ROLLBACK;
-            SELECT 0 AS success, 'DUPLICATE_EQUIPMENT', CONCAT('Thiết bị ID ', v_thiet_bi_id, ' đã có trong phiếu mượn này.') AS message;
-            LEAVE them_thiet_bi_vao_phieu_muon;
+            SELECT 0 AS success, 'INVALID_EQUIPMENT', 
+                CONCAT('Thiết bị ID ', v_thiet_bi_id, ' không tồn tại, không sẵn sàng, hoặc không thuộc phòng ', v_phong_id) AS message;
+            LEAVE label_them_thiet_bi_vao_phieu_muon;
         END IF;
-        INSERT INTO chi_tiet_muon (phieu_muon_id, thiet_bi_id, thoi_gian_muon, thoi_gian_tra_thuc_te)
-        VALUES (p_phieu_muon_id, v_thiet_bi_id, CURRENT_TIMESTAMP, NULL);
+
+        -- Nếu đã tồn tại trong phiếu mượn (và chưa trả)
+        IF EXISTS (
+            SELECT 1 FROM chi_tiet_muon 
+            WHERE phieu_muon_id = p_phieu_muon_id 
+              AND thiet_bi_id = v_thiet_bi_id
+        ) THEN
+            ROLLBACK;
+            SELECT 0 AS success, 'DUPLICATE_EQUIPMENT', 
+                CONCAT('Thiết bị ID ', v_thiet_bi_id, ' đã có trong phiếu mượn này.') AS message;
+            LEAVE label_them_thiet_bi_vao_phieu_muon;
+        END IF;
+
+        -- TH3: Thiết bị hợp lệ => insert mới
+        INSERT INTO chi_tiet_muon (
+            phieu_muon_id, thiet_bi_id, thoi_gian_muon, thoi_gian_tra_thuc_te
+        ) VALUES (
+            p_phieu_muon_id, v_thiet_bi_id, CURRENT_TIMESTAMP, NULL
+        );
+
+        -- Tiếp tục thiết bị tiếp theo
+        SET v_pos = v_comma_pos + 1;
     END WHILE;
+
     COMMIT;
-    SELECT 1 AS success, NULL AS error_code, NULL AS message;
+    SELECT 1 AS success, 'OK' AS code, 'Thêm thiết bị thành công.' AS message;
 END //
 
 -- 4. cap_nhat_thong_tin_thiet_bi
-DROP PROCEDURE IF EXISTS cap_nhat_thong_tin_thiet_bi;
 CREATE PROCEDURE cap_nhat_thong_tin_thiet_bi (
     IN p_id INT,
     IN p_ten_thiet_bi VARCHAR(100),
@@ -756,13 +794,11 @@ BEGIN
     END IF;
 END //
 
--- 5. them_thiet_bi_moi
-DROP PROCEDURE IF EXISTS them_thiet_bi_moi;
 CREATE PROCEDURE them_thiet_bi_moi (
     IN p_ten_thiet_bi VARCHAR(100),
-    IN p_trang_thai ENUM('CO_SAN', 'DANG_BAO_TRI', 'DANG_MUON', 'HU_HONG', 'DA_THANH_LY', 'DA_MAT'),
     IN p_loai_thiet_bi ENUM('DI_DONG', 'CO_DINH'),
-    IN p_phong_id CHAR(5)
+    IN p_phong_id CHAR(5),
+    IN p_anh VARCHAR(255)
 )
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -776,10 +812,9 @@ BEGIN
         SELECT 0 AS success, 'INVALID_ROOM', 'Phòng không tồn tại!' AS message;
     ELSE
         INSERT INTO thiet_bi (
-            ten_thiet_bi, trang_thai, loai_thiet_bi, phong_id
-        )
-        VALUES (
-            p_ten_thiet_bi, p_trang_thai, p_loai_thiet_bi, p_phong_id
+            ten_thiet_bi, loai_thiet_bi, phong_id, anh
+        ) VALUES (
+            p_ten_thiet_bi, p_loai_thiet_bi, p_phong_id, p_anh
         );
         COMMIT;
         SELECT 1 AS success, NULL AS error_code, NULL AS message;
@@ -823,7 +858,6 @@ BEGIN
 END //
 
 -- 7. them_thiet_bi_thanh_ly
-DROP PROCEDURE IF EXISTS them_thiet_bi_thanh_ly;
 CREATE PROCEDURE them_thiet_bi_thanh_ly (
     IN p_nhan_vien_id VARCHAR(20),
     IN p_thiet_bi_id INT,
@@ -859,11 +893,10 @@ BEGIN
 END //
 
 -- 8. tao_tai_khoan_moi
-DROP PROCEDURE IF EXISTS tao_tai_khoan_moi;
 CREATE PROCEDURE tao_tai_khoan_moi (
     IN p_id VARCHAR(20),
     IN p_mat_khau VARCHAR(500),
-    IN p_ten_vai_tro VARCHAR(100),
+    IN p_vai_tro_id INT,
     IN p_cccd CHAR(12),
     IN p_ho VARCHAR(50),
     IN p_ten VARCHAR(50),
@@ -874,20 +907,18 @@ CREATE PROCEDURE tao_tai_khoan_moi (
     IN p_lop_id VARCHAR(20)
 )
 BEGIN
-    DECLARE v_vai_tro_id INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
         SELECT 0 AS success, 'SQL_EXCEPTION' AS error_code, 'Lỗi hệ thống hoặc truy vấn.' AS message;
     END;
     START TRANSACTION;
-    SELECT id INTO v_vai_tro_id FROM vai_tro WHERE ten_vai_tro = p_ten_vai_tro;
     INSERT INTO tai_khoan (id, mat_khau, vai_tro_id)
-    VALUES (p_id, p_mat_khau, v_vai_tro_id);
-    IF p_ten_vai_tro = 'sinh_vien' THEN
+    VALUES (p_id, p_mat_khau, p_vai_tro_id);
+    IF p_vai_tro_id = 3 THEN
         INSERT INTO sinh_vien (id, lop_id, cccd, ho, ten, gioi_tinh, email, sdt, dia_chi)
         VALUES (p_id, p_lop_id, p_cccd, p_ho, p_ten, p_gioi_tinh, p_email, p_sdt, p_dia_chi);
-    ELSEIF p_ten_vai_tro = 'nhan_vien' OR p_ten_vai_tro = 'quan_ly' THEN
+    ELSEIF p_vai_tro_id = 1 OR p_vai_tro_id = 2 THEN
         INSERT INTO nhan_vien (id, cccd, ho, ten, gioi_tinh, email, sdt, dia_chi)
         VALUES (p_id, p_cccd, p_ho, p_ten, p_gioi_tinh, p_email, p_sdt, p_dia_chi);
     END IF;
@@ -896,10 +927,8 @@ BEGIN
 END //
 
 -- 9. cap_nhat_tai_khoan
-DROP PROCEDURE IF EXISTS cap_nhat_tai_khoan;
 CREATE PROCEDURE cap_nhat_tai_khoan (
     IN p_id VARCHAR(20),
-    IN p_mat_khau VARCHAR(500),
     IN p_dang_hoat_dong BOOLEAN,
     IN p_cccd CHAR(12),
     IN p_ho VARCHAR(50),
@@ -908,49 +937,64 @@ CREATE PROCEDURE cap_nhat_tai_khoan (
     IN p_email VARCHAR(100),
     IN p_sdt CHAR(10),
     IN p_dia_chi VARCHAR(255),
-    IN p_lop_id VARCHAR(20)
+    IN p_lop_id VARCHAR(20),
+    IN p_vai_tro_id INT
 )
-BEGIN
-    DECLARE v_ten_vai_tro VARCHAR(100);
+cap_nhat_tai_khoan:BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
         SELECT 0 AS success, 'SQL_EXCEPTION' AS error_code, 'Lỗi hệ thống hoặc truy vấn.' AS message;
     END;
+
     START TRANSACTION;
-    SELECT ten_vai_tro INTO v_ten_vai_tro
-    FROM tai_khoan tk
-    JOIN vai_tro vt ON tk.vai_tro_id = vt.id
-    WHERE tk.id = p_id;
-    UPDATE tai_khoan
-    SET mat_khau = p_mat_khau,
-        dang_hoat_dong = p_dang_hoat_dong
-    WHERE id = p_id;
-    IF v_ten_vai_tro = 'sinh_vien' THEN
-        UPDATE sinh_vien
-        SET lop_id = p_lop_id,
-            cccd = p_cccd,
-            ho = p_ho,
-            ten = p_ten,
-            gioi_tinh = p_gioi_tinh,
-            email = p_email,
-            sdt = p_sdt,
-            dia_chi = p_dia_chi
+
+    -- Kiểm tra xem tài khoản có tồn tại không
+    IF EXISTS (SELECT 1 FROM tai_khoan WHERE id = p_id) THEN
+        -- Cập nhật trạng thái hoạt động
+        UPDATE tai_khoan
+        SET dang_hoat_dong = p_dang_hoat_dong
         WHERE id = p_id;
+
+        -- Nếu là sinh viên
+        IF p_vai_tro_id = 3 THEN
+            -- Kiểm tra lớp có tồn tại không (tránh lỗi foreign key)
+            IF EXISTS (SELECT 1 FROM lop WHERE id = p_lop_id) THEN
+                UPDATE sinh_vien
+                SET lop_id = p_lop_id,
+                    cccd = p_cccd,
+                    ho = p_ho,
+                    ten = p_ten,
+                    gioi_tinh = p_gioi_tinh,
+                    email = p_email,
+                    sdt = p_sdt,
+                    dia_chi = p_dia_chi
+                WHERE id = p_id;
+            ELSE
+                ROLLBACK;
+                SELECT 0 AS success, 'INVALID_CLASS' AS error_code, 'Lớp không tồn tại.' AS message;
+                LEAVE cap_nhat_tai_khoan;
+            END IF;
+        ELSE
+            -- Nếu là nhân viên
+            UPDATE nhan_vien
+            SET cccd = p_cccd,
+                ho = p_ho,
+                ten = p_ten,
+                gioi_tinh = p_gioi_tinh,
+                email = p_email,
+                sdt = p_sdt,
+                dia_chi = p_dia_chi
+            WHERE id = p_id;
+        END IF;
+
+        COMMIT;
+        SELECT 1 AS success, NULL AS error_code, 'Cập nhật thành công.' AS message;
     ELSE
-        UPDATE nhan_vien
-        SET cccd = p_cccd,
-            ho = p_ho,
-            ten = p_ten,
-            gioi_tinh = p_gioi_tinh,
-            email = p_email,
-            sdt = p_sdt,
-            dia_chi = p_dia_chi
-        WHERE id = p_id;
+        ROLLBACK;
+        SELECT 0 AS success, 'NOT_FOUND' AS error_code, 'Tài khoản không tồn tại.' AS message;
     END IF;
-    COMMIT;
-    SELECT 1 AS success, NULL AS error_code, NULL AS message;
-END //
+END//
 
 CREATE PROCEDURE them_chi_tiet_kiem_ke (
     IN p_phieu_kiem_ke_id INT,
@@ -1030,21 +1074,327 @@ BEGIN
         SET trang_thai = 'DA_DUYET'
         WHERE id = p_phieu_muon_id;
     END IF;
-END;
+END//
 
 CREATE PROCEDURE tu_choi_mot_thiet_bi(IN p_thiet_bi_id INT)
 BEGIN
+    DECLARE v_phieu_muon_id INT;
+    DECLARE done BOOLEAN DEFAULT FALSE;
+    
+    -- Declare cursor
+    DECLARE cursor_phieu_muon CURSOR FOR
+        SELECT ctm.phieu_muon_id
+        FROM chi_tiet_muon ctm
+        JOIN phieu_muon pm ON ctm.phieu_muon_id = pm.id
+        WHERE ctm.thiet_bi_id = p_thiet_bi_id
+          AND DATE(pm.ca) = CURDATE()
+          AND (
+              TIME(pm.ca) BETWEEN '06:00:00' AND '10:15:00'
+              OR TIME(pm.ca) BETWEEN '12:00:00' AND '16:15:00'
+          );
+    
+    -- Declare continue handler
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    -- Start a transaction
+    START TRANSACTION;
+    
+    -- Open cursor
+    OPEN cursor_phieu_muon;
+    
+    read_loop: LOOP
+        FETCH cursor_phieu_muon INTO v_phieu_muon_id;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        -- Delete from chi_tiet_muon
+        DELETE FROM chi_tiet_muon
+        WHERE thiet_bi_id = p_thiet_bi_id
+          AND phieu_muon_id = v_phieu_muon_id;
+        
+        -- Check if phieu_muon has any remaining chi_tiet_muon
+        IF (SELECT COUNT(*) FROM chi_tiet_muon WHERE phieu_muon_id = v_phieu_muon_id) = 0 THEN
+            DELETE FROM phieu_muon WHERE id = v_phieu_muon_id;
+        END IF;
+    END LOOP;
+    
+    -- Close cursor
+    CLOSE cursor_phieu_muon;
+    
+    -- Commit the transaction
+    COMMIT;
+END//
+
+CREATE PROCEDURE tra_thiet_bi(
+    IN p_phieu_muon_id INT
+)
+BEGIN
+    -- Cập nhật thoi_gian_tra_thuc_te cho tất cả chi tiết phiếu mượn
+    UPDATE chi_tiet_muon
+    SET thoi_gian_tra_thuc_te = NOW()
+    WHERE phieu_muon_id = p_phieu_muon_id;
+
+    -- Cập nhật trạng thái thiết bị về 'CO_SAN' nếu thiết bị đang là 'DANG_MUON'
+    UPDATE thiet_bi tb
+    JOIN chi_tiet_muon ctm ON tb.id = ctm.thiet_bi_id
+    SET tb.trang_thai = 'CO_SAN'
+    WHERE ctm.phieu_muon_id = p_phieu_muon_id
+      AND tb.trang_thai = 'DANG_MUON';
+END //
+
+CREATE PROCEDURE tu_choi_phieu_muon(IN p_phieu_muon_id INT)
+BEGIN
+    DECLARE remaining_details INT;
+    
+    -- Start a transaction
+    START TRANSACTION;
+    
+    -- Delete chi_tiet_muon records where thiet_bi.trang_thai = 'CO_SAN'
     DELETE ctm
     FROM chi_tiet_muon ctm
-    JOIN phieu_muon pm ON ctm.phieu_muon_id = pm.id
-    WHERE ctm.thiet_bi_id = p_thiet_bi_id
-      AND DATE(pm.ca) = CURDATE()
-      AND (
-        TIME(pm.ca) BETWEEN '06:00:00' AND '10:15:00'
-        OR TIME(pm.ca) BETWEEN '12:00:00' AND '16:15:00'
-      );
-END;
-//
+    JOIN thiet_bi tb ON ctm.thiet_bi_id = tb.id
+    WHERE ctm.phieu_muon_id = p_phieu_muon_id
+      AND tb.trang_thai = 'CO_SAN';
+    
+    -- Check if any chi_tiet_muon records remain for the phieu_muon_id
+    SELECT COUNT(*)
+    INTO remaining_details
+    FROM chi_tiet_muon
+    WHERE phieu_muon_id = p_phieu_muon_id;
+    
+    -- If no chi_tiet_muon records remain, delete the phieu_muon record
+    IF remaining_details = 0 THEN
+        DELETE FROM phieu_muon
+        WHERE id = p_phieu_muon_id;
+    END IF;
+    
+    COMMIT;
+END//
+
+CREATE PROCEDURE remove_equipment_from_repair_ticket (
+    IN p_phieu_sua_chua_id INT,
+    IN p_thiet_bi_id INT
+)
+BEGIN
+    DECLARE v_remaining_items INT;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SELECT 0 AS success, 'SQL_EXCEPTION' AS error_code, 'Lỗi hệ thống hoặc truy vấn.' AS message;
+    END;
+
+    START TRANSACTION;
+
+    -- Validate inputs
+    IF p_phieu_sua_chua_id IS NULL THEN
+        SELECT 0 AS success, 'INVALID_TICKET_ID' AS error_code, 'Mã phiếu sửa chữa không được để trống.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF p_thiet_bi_id IS NULL THEN
+        SELECT 0 AS success, 'INVALID_EQUIPMENT_ID' AS error_code, 'Mã thiết bị không được để trống.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM phieu_sua_chua WHERE id = p_phieu_sua_chua_id) THEN
+        SELECT 0 AS success, 'INVALID_TICKET' AS error_code, 'Phiếu sửa chữa không tồn tại.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM thiet_bi WHERE id = p_thiet_bi_id) THEN
+        SELECT 0 AS success, 'INVALID_EQUIPMENT' AS error_code, 'Thiết bị không tồn tại.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM chi_tiet_sua_chua 
+        WHERE phieu_sua_chua_id = p_phieu_sua_chua_id AND thiet_bi_id = p_thiet_bi_id
+    ) THEN
+        SELECT 0 AS success, 'EQUIPMENT_NOT_IN_TICKET' AS error_code, 'Thiết bị không có trong phiếu sửa chữa này.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    -- Remove from chi_tiet_sua_chua
+    DELETE FROM chi_tiet_sua_chua 
+    WHERE phieu_sua_chua_id = p_phieu_sua_chua_id AND thiet_bi_id = p_thiet_bi_id;
+
+    -- Check if any items remain in the repair ticket
+    SELECT COUNT(*) INTO v_remaining_items 
+    FROM chi_tiet_sua_chua 
+    WHERE phieu_sua_chua_id = p_phieu_sua_chua_id;
+
+    -- Delete repair ticket if no items remain
+    IF v_remaining_items = 0 THEN
+        DELETE FROM phieu_sua_chua WHERE id = p_phieu_sua_chua_id;
+    END IF;
+
+    COMMIT;
+    SELECT 1 AS success, NULL AS error_code, 
+           IF(v_remaining_items = 0, 
+              'Loại bỏ thiết bị và xóa phiếu sửa chữa thành công.', 
+              'Loại bỏ thiết bị khỏi phiếu sửa chữa thành công.') AS message;
+END //
+
+CREATE PROCEDURE remove_equipment_from_liquidation_slip (
+    IN p_phieu_thanh_ly_id INT,
+    IN p_thiet_bi_id INT
+)
+BEGIN
+    DECLARE v_remaining_items INT;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SELECT 0 AS success, 'SQL_EXCEPTION' AS error_code, 'Lỗi hệ thống hoặc truy vấn.' AS message;
+    END;
+
+    START TRANSACTION;
+
+    -- Validate inputs
+    IF p_phieu_thanh_ly_id IS NULL THEN
+        SELECT 0 AS success, 'INVALID_SLIP_ID' AS error_code, 'Mã phiếu thanh lý không được để trống.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF p_thiet_bi_id IS NULL THEN
+        SELECT 0 AS success, 'INVALID_EQUIPMENT_ID' AS error_code, 'Mã thiết bị không được để trống.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM phieu_thanh_ly WHERE id = p_phieu_thanh_ly_id) THEN
+        SELECT 0 AS success, 'INVALID_SLIP' AS error_code, 'Phiếu thanh lý không tồn tại.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM thiet_bi WHERE id = p_thiet_bi_id) THEN
+        SELECT 0 AS success, 'INVALID_EQUIPMENT' AS error_code, 'Thiết bị không tồn tại.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM chi_tiet_thanh_ly 
+        WHERE phieu_thanh_ly_id = p_phieu_thanh_ly_id AND thiet_bi_id = p_thiet_bi_id
+    ) THEN
+        SELECT 0 AS success, 'EQUIPMENT_NOT_IN_SLIP' AS error_code, 'Thiết bị không có trong phiếu thanh lý này.' AS message;
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000';
+    END IF;
+
+    -- Remove from chi_tiet_thanh_ly
+    DELETE FROM chi_tiet_thanh_ly 
+    WHERE phieu_thanh_ly_id = p_phieu_thanh_ly_id AND thiet_bi_id = p_thiet_bi_id;
+
+    -- Check if any items remain in the liquidation slip
+    SELECT COUNT(*) INTO v_remaining_items 
+    FROM chi_tiet_thanh_ly 
+    WHERE phieu_thanh_ly_id = p_phieu_thanh_ly_id;
+
+    -- Delete liquidation slip if no items remain
+    IF v_remaining_items = 0 THEN
+        DELETE FROM phieu_thanh_ly WHERE id = p_phieu_thanh_ly_id;
+    END IF;
+
+    COMMIT;
+    SELECT 1 AS success, NULL AS error_code, 
+           IF(v_remaining_items = 0, 
+              'Loại bỏ thiết bị, cập nhật trạng thái và xóa phiếu thanh lý thành công.', 
+              'Loại bỏ thiết bị và cập nhật trạng thái thành công.') AS message;
+END //
 
 DELIMITER ;
+
+CREATE VIEW view_equipment_repair_details AS
+SELECT 
+    tb.id AS thiet_bi_id,
+    tb.ten_thiet_bi,
+    tb.trang_thai AS thiet_bi_trang_thai,
+    tb.loai_thiet_bi,
+    tb.phong_id,
+    tb.anh AS thiet_bi_anh,
+    psc.id AS phieu_sua_chua_id,
+    psc.ngay_bat_dau AS repair_start_date,
+    psc.ngay_ket_thuc AS repair_end_date,
+    psc.trang_thai AS repair_status,
+    psc.nhan_vien_id AS repair_nhan_vien_id,
+    ctsc.gia AS repair_cost,
+    ctsc.ghi_chu AS repair_note
+FROM 
+    thiet_bi tb
+    LEFT JOIN chi_tiet_sua_chua ctsc ON tb.id = ctsc.thiet_bi_id
+    LEFT JOIN phieu_sua_chua psc ON ctsc.phieu_sua_chua_id = psc.id;
+
+CREATE VIEW view_equipment_liquidation_details AS
+SELECT 
+    tb.id AS thiet_bi_id,
+    tb.ten_thiet_bi,
+    tb.trang_thai AS thiet_bi_trang_thai,
+    tb.loai_thiet_bi,
+    tb.phong_id,
+    tb.anh AS thiet_bi_anh,
+    ptl.id AS phieu_thanh_ly_id,
+    ptl.ngay_thanh_ly AS liquidation_date,
+    ptl.trang_thai AS liquidation_status,
+    ptl.nhan_vien_id AS liquidation_nhan_vien_id,
+    cttl.gia AS liquidation_value,
+    cttl.ghi_chu AS liquidation_note
+FROM 
+    thiet_bi tb
+    LEFT JOIN chi_tiet_thanh_ly cttl ON tb.id = cttl.thiet_bi_id
+    LEFT JOIN phieu_thanh_ly ptl ON cttl.phieu_thanh_ly_id = ptl.id;
+
+CREATE OR REPLACE VIEW AccountInfo AS
+SELECT 
+    tk.id AS tai_khoan_id,
+    tk.mat_khau,
+    tk.vai_tro_id,
+    vt.ten_vai_tro AS ten_vai_tro,
+    tk.dang_hoat_dong,
+    'sinh_vien' AS loai_tai_khoan,
+    sv.cccd,
+    sv.ho,
+    sv.ten,
+    sv.gioi_tinh,
+    sv.email,
+    sv.sdt,
+    sv.dia_chi,
+    sv.dang_hoc AS trang_thai,
+    sv.lop_id
+FROM tai_khoan tk
+JOIN vai_tro vt ON tk.vai_tro_id = vt.id
+JOIN sinh_vien sv ON tk.id = sv.id
+
+UNION ALL
+
+SELECT 
+    tk.id AS tai_khoan_id,
+    tk.mat_khau,
+    tk.vai_tro_id,
+    vt.ten_vai_tro AS ten_vai_tro,
+    tk.dang_hoat_dong,
+    'nhan_vien' AS loai_tai_khoan,
+    nv.cccd,
+    nv.ho,
+    nv.ten,
+    nv.gioi_tinh,
+    nv.email,
+    nv.sdt,
+    nv.dia_chi,
+    nv.dang_lam_viec AS trang_thai,
+    NULL AS lop_id
+FROM tai_khoan tk
+JOIN vai_tro vt ON tk.vai_tro_id = vt.id
+JOIN nhan_vien nv ON tk.id = nv.id;
+
+
 

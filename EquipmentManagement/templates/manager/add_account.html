@@ -58,10 +58,9 @@
                     <div class="flex flex-col">
                         <label class="acc_label">Vai trò:</label>
                         <select class="input_field" id="role_input" name="role_id">
-                            <option value="1">Quản lý</option>
-                            <option value="2">Nhân viên</option>
-                            <option value="3">Giảng viên</option>
-                            <option value="4">Sinh viên</option>
+                            {% for r in lst_role %}
+                                <option value="{{ r.id}}" >{{ r.ten_vai_tro }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>
@@ -102,7 +101,7 @@
 <script>
     document.getElementById('role_input').addEventListener('change', function() {
         const classInput = document.getElementById('class_input');
-        if (this.value === '2') {
+        if (this.value === '3') {
             classInput.style.display = 'flex'; // Hiển thị class_input
         } else {
             classInput.style.display = 'none'; // Ẩn class_input

@@ -14,7 +14,7 @@ def login():
         password = request.form.get('password')
         user_id = request.form.get('user_id')
 
-        login_account = AccountService.get_account_by_person_id(user_id)
+        login_account = AccountService.get_user_info(user_id)
 
         if login_account == None:
             flash(messages_failure["invalid_information"], 'error')

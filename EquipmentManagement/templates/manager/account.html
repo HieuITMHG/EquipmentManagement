@@ -46,10 +46,10 @@
                              focus:ring-blue-500" name="role_id" onchange="this.form.submit()">
                     <option value="">Tất cả</option>
                     {% for r in lst_role %}
-                        {% if r.value == role_id  %}
-                        <option value="{{ r.value }}" selected>{{ r.name }}></option>
+                        {% if r.id == role_id  %}
+                        <option value="{{ r.id}}" selected>{{ r.ten_vai_tro }}></option>
                         {% else %}
-                        <option value="{{ r.value }}">{{ r.name }}</option>
+                        <option value="{{ r.id }}">{{ r.ten_vai_tro }}</option>
                         {% endif %}
                     {% endfor %}
                 </select>
@@ -77,30 +77,29 @@
             <tbody class="text-gray-700">
                 {% for acc in lst_account %}
                 <tr class="hover:bg-gray-50 transition duration-150">
-                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.person_id }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.tai_khoan_id }}</td>
                     <td class="p-3 text-sm whitespace-nowrap">{{ acc.cccd }}</td>
-                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.first_name }}</td>
-                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.last_name }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.ten }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.ho }}</td>
                     <td class="p-3 text-sm whitespace-nowrap">
-                        {% if acc.gender %}Nam{% else %}Nữ{% endif %}
+                        {% if acc.gioi_tinh %}Nam{% else %}Nữ{% endif %}
                     </td>
                     <td class="p-3 text-sm truncate max-w-xs" title="{{ acc.email }}">{{ acc.email }}</td>
-                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.phone }}</td>
-                    <td class="p-3 text-sm truncate max-w-xs" title="{{ acc.address }}">{{ acc.address }}</td>
+                    <td class="p-3 text-sm whitespace-nowrap">{{ acc.sdt }}</td>
+                    <td class="p-3 text-sm truncate max-w-xs" title="{{ acc.address }}">{{ acc.dia_chi }}</td>
                     <td class="p-3 text-sm whitespace-nowrap">
-                        {% if acc.role_id == 1 %}Quản lý
-                        {% elif acc.role_id == 2 %}Nhân viên
-                        {% elif acc.role_id == 3 %}Giảng viên
+                        {% if acc.vai_tro_id == 1 %}Quản lý
+                        {% elif acc.vai_tro_id == 2 %}Nhân viên
                         {% else %}Sinh viên{% endif %}
                     </td>
                     <td class="flex items-center justify-center">
-                        <a href="{{ url_for('manager.view_account', user_id=acc.person_id) }}" class=" text-blue-600 hover:text-blue-800 transition cursor-pointer" title="Xem">
+                        <a href="{{ url_for('manager.view_account', user_id=acc.tai_khoan_id) }}" class=" text-blue-600 hover:text-blue-800 transition cursor-pointer" title="Xem">
                             <img src="{{ url_for('static', filename='icon/view_icon.svg') }}" alt="View"  />
                         </a>
-                        <a href="{{ url_for('manager.edit_account', user_id=acc.person_id) }}" class=" text-green-600 hover:text-green-800 transition cursor-pointer" title="Sửa">
+                        <a href="{{ url_for('manager.edit_account', user_id=acc.tai_khoan_id) }}" class=" text-green-600 hover:text-green-800 transition cursor-pointer" title="Sửa">
                             <img src="{{ url_for('static', filename='icon/edit_icon.svg') }}" alt="Edit"  />
                         </a>
-                        <button onclick="showDeleteModal('{{ acc.person_id }}')" class=" text-red-600 hover:text-red-800 transition cursor-pointer" title="Xóa">
+                        <button onclick="showDeleteModal('{{ acc.tai_khoan_id }}')" class=" text-red-600 hover:text-red-800 transition cursor-pointer" title="Xóa">
                             <img src="{{ url_for('static', filename='icon/delete_icon.svg') }}" alt="Delete" />
                         </button>
                     </td>

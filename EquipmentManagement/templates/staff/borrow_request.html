@@ -116,7 +116,7 @@
                     <div class="bg-white rounded-lg p-6 w-full max-w-2xl animate-fade-in relative">
                         <!-- Request-Level Action Buttons (Top-Right) -->
                         <div class="absolute top-4 right-4 flex gap-2">
-                            <form method="post" action="{{ url_for('borrow.borrow_equipment') }}">
+                            <form method="post" action="{{ url_for('borrow.finish_borrow_request') }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="request_id" value="{{ request.id }}" />
                                 <button class="bg-green-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2" type="submit" name="action" value="return_all">
@@ -124,7 +124,7 @@
                                     Trả hết
                                 </button>
                             </form>
-                            <a href="#" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <a href="{{ url_for('borrow.add_addition_equipment', request_id=request.id, phong_id=request.phong_id) }}" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                 Thêm thiết bị
                             </a>
@@ -169,7 +169,7 @@
             <!-- Tab 3: Đã hoàn thành -->
             <div id="completed" class="tab-content hidden">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Phiếu mượn đã hoàn thành</h2>
-                {% for request in completed_requests %}
+                {% for request in history_requests %}
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 hover:shadow-md transition-shadow cursor-pointer" onclick="openModal('completed-{{ request.id }}')">
                     <div class="flex justify-between items-center">
                         <div>

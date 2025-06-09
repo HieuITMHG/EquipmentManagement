@@ -1,106 +1,8 @@
-
+<!-- templates/staff/equipment.html -->
 {% extends "manager/layout.html" %}
 
 {% block manager_content %}
 <script>
-    let initialAvailableQuantity = 0;
-    let initialBrokenQuantity = 0;
-    let initialUnderRepairQuantity = 0;
-    let availableQuantity = 0;
-    let brokenQuantity = 0;
-    let underRepairQuantity = 0;
-
-    function showRetrieveEquipmentModal(equipmentId, equipmentName, availableQty, brokenQty, underRepairQty) {
-        // Set modal fields
-        document.getElementById('retrieve_equipment_id').value = equipmentId;
-        document.getElementById('retrieve_equipment_name').innerText = equipmentName;
-        document.getElementById('available_quantity_input').value = 0;
-        document.getElementById('broken_quantity_input').value = 0;
-        document.getElementById('under_repair_quantity_input').value = 0;
-        document.getElementById('available_quantity_change').innerText = '0';
-        document.getElementById('broken_quantity_change').innerText = '0';
-        document.getElementById('under_repair_quantity_change').innerText = '0';
-        document.getElementById('available_quantity_current').innerText = availableQty;
-        document.getElementById('broken_quantity_current').innerText = brokenQty;
-        document.getElementById('under_repair_quantity_current').innerText = underRepairQty;
-
-        // Store initial quantities
-        initialAvailableQuantity = 0;
-        initialBrokenQuantity = 0;
-        initialUnderRepairQuantity = 0;
-        availableQuantity = parseInt(availableQty) || 0;
-        brokenQuantity = parseInt(brokenQty) || 0;
-        underRepairQuantity = parseInt(underRepairQty) || 0;
-
-        // Show modal
-        document.getElementById('retrieve_equipment').style.display = 'flex';
-    }
-
-    function hideRetrieveEquipmentModal() {
-        document.getElementById('retrieve_equipment').style.display = 'none';
-    }
-
-    function updateRetrieveQuantity(inputId, changeId, change) {
-        const input = document.getElementById(inputId);
-        const maxQuantity = inputId.includes('available') ? availableQuantity :
-                        inputId.includes('broken') ? brokenQuantity : underRepairQuantity;
-        let currentValue = parseInt(input.value) || 0;
-        let newValue = currentValue + change;
-
-        // Ensure quantity is >= 0 and <= available quantity in room
-        if (newValue >= 0 && newValue <= maxQuantity) {
-            input.value = newValue;
-            document.getElementById(changeId).innerText = newValue;
-        }
-    }
-    let initialAllocateQuantity = 0;
-    let warehouseQuantity = 0;
-    let roomQuantity = 0;
-
-    function showAllocateEquipmentModal(equipmentId, equipmentName, warehouseQty, roomQty) {
-        // Set modal fields
-        document.getElementById('allocate_equipment_id').value = equipmentId;
-        document.getElementById('allocate_equipment_name').innerText = equipmentName;
-        document.getElementById('warehouse_quantity').innerText = warehouseQty;
-        document.getElementById('room_quantity').innerText = roomQty;
-        document.getElementById('allocate_quantity_input').value = 0;
-        document.getElementById('allocate_quantity_change').innerText = '0';
-
-        // Store initial quantities
-        initialAllocateQuantity = 0;
-        warehouseQuantity = parseInt(warehouseQty) || 0;
-        roomQuantity = parseInt(roomQty) || 0;
-
-        // Show modal
-        document.getElementById('allocate_equipment').style.display = 'flex';
-    }
-
-    function hideAllocateEquipmentModal() {
-        document.getElementById('allocate_equipment').style.display = 'none';
-    }
-
-    function updateAllocateQuantity(change) {
-        const input = document.getElementById('allocate_quantity_input');
-        let currentValue = parseInt(input.value) || 0;
-        let newValue = currentValue + change;
-
-        // Ensure allocated quantity is >= 0 and does not exceed available warehouse quantity
-        if (newValue >= 0 && newValue <= warehouseQuantity) {
-            input.value = newValue;
-            document.getElementById('allocate_quantity_change').innerText = newValue - initialAllocateQuantity;
-
-            // Update displayed quantities
-            document.getElementById('warehouse_quantity').innerText = warehouseQuantity - newValue;
-            document.getElementById('room_quantity').innerText = roomQuantity + newValue;
-        }
-    }
-    function toggle_table() {
-        document.getElementById('it_he').classList.toggle('hidden');
-        document.getElementById('nhieu_he').classList.toggle('hidden');
-        document.getElementById('nutdonle').classList.toggle('bg-white');
-        document.getElementById('nutnhieu').classList.toggle('bg-white');
-    }
-
     function showDeleteModal(equipmentId) {
         document.getElementById('delete-equipment-id').value = equipmentId;
         document.getElementById('modal-delete-equipment').style.display = 'flex';
@@ -110,49 +12,15 @@
         document.getElementById('modal-delete-equipment').style.display = 'none';
         document.getElementById('delete-equipment-id').value = '';
     }
-
-    function showEditQuantityModal(equipmentId, equipmentName, quantity, brokenQuantity) {
-        // Chèn dữ liệu vào popup
-        document.getElementById('edit_equipment_id').value = equipmentId;
-        document.getElementById('edit_equipment_name').textContent = equipmentName;
-        document.getElementById('quantity_input').value = quantity;
-        document.getElementById('broken_quantity_input').value = brokenQuantity;
-        document.getElementById('quantity_change').textContent = '0';
-        document.getElementById('broken_quantity_change').textContent = '0';
-        
-        // Lưu giá trị ban đầu để tính thay đổi
-        document.getElementById('quantity_input').dataset.initial = quantity;
-        document.getElementById('broken_quantity_input').dataset.initial = brokenQuantity;
-        
-        // Hiển thị popup
-        document.getElementById('edit_quantity').style.display = 'flex';
-    }
-
-    function hideEditQuantityModal() {
-        document.getElementById('edit_quantity').style.display = 'none';
-        document.getElementById('edit_equipment_id').value = '';
-    }
-
-    function updateQuantityChange(inputId, displayId, delta) {
-        const input = document.getElementById(inputId);
-        const currentValue = parseInt(input.value) || 0;
-        const newValue = Math.max(0, currentValue + delta); // Không cho phép số âm
-        input.value = newValue;
-        
-        // Tính và hiển thị thay đổi
-        const initialValue = parseInt(input.dataset.initial) || 0;
-        const change = newValue - initialValue;
-        document.getElementById(displayId).textContent = change >= 0 ? `+${change}` : change;
-    }
 </script>
 
 <div class="flex flex-col w-full h-screen bg-gray-100 overflow-x-hidden">
     <!-- Delete Confirmation Modal -->
     <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center transition-opacity duration-300" id="modal-delete-equipment" style="display: none;">
         <div class="bg-white w-full max-w-md rounded-lg shadow-xl p-6">
-            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Xác nhận xóa</p>
+            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Xác nhận xóa</h1>
             <form action="{{ url_for('equipment.delete') }}" method="post">
-                <input type="hidden" name="equipment_id" id="delete-equipment-id" value="" />
+                <input type="hidden" name="thiet_bi_id" id="delete-equipment-id" value="" />
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <div class="flex justify-end gap-3">
                     <button type="button" onclick="hideDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">Hủy</button>
@@ -162,216 +30,69 @@
         </div>
     </div>
 
-    <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center transition-opacity duration-300" id="edit_quantity" style="display: none;">
-        <div class="bg-white w-full max-w-md rounded-lg shadow-xl p-6 relative">
-            <!-- Nút đóng (dấu X) -->
-            <button onclick="hideEditQuantityModal()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-            
-            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Chỉnh sửa số lượng</h1>
-            <p class="text-gray-600 mb-4">Thiết bị: <span id="edit_equipment_name" class="font-medium"></span></p>
-            
-            <form action="{{ url_for('equipment.edit_quantity') }}" method="POST">
-                <input type="hidden" name="equipment_id" id="edit_equipment_id" value="" />
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                
-                <!-- Số lượng -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="updateQuantityChange('quantity_input', 'quantity_change', -1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">-</button>
-                        <input type="number" name="quantity" id="quantity_input" min="0" value="0"
-                               class="w-24 px-3 py-1.5 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="button" onclick="updateQuantityChange('quantity_input', 'quantity_change', 1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">+</button>
-                        <span class="text-sm text-gray-600">Thay đổi: <span id="quantity_change">0</span></span>
-                    </div>
-                </div>
-                
-                <!-- Số lượng hỏng -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng hỏng</label>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="updateQuantityChange('broken_quantity_input', 'broken_quantity_change', -1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">-</button>
-                        <input type="number" name="broken_quantity" id="broken_quantity_input" min="0" value="0"
-                               class="w-24 px-3 py-1.5 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="button" onclick="updateQuantityChange('broken_quantity_input', 'broken_quantity_change', 1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">+</button>
-                        <span class="text-sm text-gray-600">Thay đổi: <span id="broken_quantity_change">0</span></span>
-                    </div>
-                </div>
-                
-                <!-- Nút hành động -->
-                <div class="flex justify-end gap-3">
-                    <button type="button" onclick="hideEditQuantityModal()"
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Hủy</button>
-                    <button type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Xác nhận</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Statistical Cards -->
-    <div class="flex w-full justify-evenly p-4 gap-6">
-        <div class="statistical_card flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
+    <div class="flex w-full justify-center p-4 gap-4 flex-wrap">
+        <div class="statistical_card flex-1 min-w-[180px] max-w-xs bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
             <h3 class="text-lg font-semibold">Tổng thiết bị</h3>
-            <p class="text-3xl font-bold mt-2">{{nums.total}}</p>
+            <p class="text-3xl font-bold mt-2">{{ nums.total }}</p>
         </div>
-        <div class="statistical_card flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
-            <h3 class="text-lg font-semibold">Thiết bị đang mượn</h3>
-            <p class="text-3xl font-bold mt-2">{{nums.borrowing_quantity}}</p>
+        <div class="statistical_card flex-1 min-w-[180px] max-w-xs bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
+            <h3 class="text-lg font-semibold">Đang sử dụng</h3>
+            <p class="text-3xl font-bold mt-2">{{ nums.borrowed }}</p>
         </div>
-        <div class="statistical_card flex-1 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
-            <h3 class="text-lg font-semibold">Thiết bị đang sửa chửa</h3>
-            <p class="text-3xl font-bold mt-2">{{nums.under_repair_quantity}}</p>
+        <div class="statistical_card flex-1 min-w-[180px] max-w-xs bg-gradient-to-r from-red-400 to-red-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
+            <h3 class="text-lg font-semibold">Hỏng</h3>
+            <p class="text-3xl font-bold mt-2">{{ nums.broken }}</p>
         </div>
-        <div class="statistical_card flex-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
-            <h3 class="text-lg font-semibold">Thiết bị hỏng</h3>
-            <p class="text-3xl font-bold mt-2">{{nums.broken_quantity}}</p>
+        <div class="statistical_card flex-1 min-w-[180px] max-w-xs bg-gradient-to-r from-gray-400 to-gray-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
+            <h3 class="text-lg font-semibold">Đã thanh lý</h3>
+            <p class="text-3xl font-bold mt-2">{{ nums.liquidated }}</p>
+        </div>
+        <div class="statistical_card flex-1 min-w-[180px] max-w-xs bg-gradient-to-r from-purple-400 to-purple-600 text-white rounded-xl shadow-lg p-6 transition-transform hover:scale-105">
+            <h3 class="text-lg font-semibold">Đã mất</h3>
+            <p class="text-3xl font-bold mt-2">{{ nums.lost }}</p>
         </div>
     </div>
 
-    <!-- Table -->
+    <!-- Equipment Table -->
     <div class="flex-1 p-4">
-        <div class="h-8 w-full flex justify-end mb-4">
-            <div class="flex gap-2">
-                <div class="w-40 {% if it == 'True' %}bg-white{% endif %} rounded-lg shadow px-4 py-2 text-center text-gray-700 font-medium flex items-center cursor-pointer" onclick="toggle_table()" id="nutdonle">Đơn lẻ</div>
-                <div class="w-40 {% if it == 'False' %}bg-white{% endif %} rounded-lg shadow px-4 py-2 text-center text-gray-700 font-medium flex items-center cursor-pointer" onclick="toggle_table()" id="nutnhieu">Nhiều</div>
-            </div>
-        </div>
-        <!-- Nhieu -->
-        <div class="bg-white rounded-xl shadow-lg w-full max-w-full {% if it == 'True' %}hidden{% endif %}" id="nhieu_he">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-full">
             <!-- Toolbar -->
             <div class="flex items-center justify-between p-2 border-b border-gray-200">
                 <form action="{{ url_for('equipment.equipment') }}" method="GET" class="flex items-center gap-2">
-                    <input value="False" name="it" class="hidden">
-                    <input type="text" name="equipment_name" value="{{ request.args.get('equipment_name', '') }}"
+                    <input type="text" name="ten_thiet_bi" value="{{ request.args.get('ten_thiet_bi', '') }}"
                            placeholder="Tên thiết bị"
                            class="w-32 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                    <select name="room_id"
+                    <select name="phong_id"
                             class="w-28 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         <option value="">Phòng</option>
                         {% for room in rooms %}
-                        <option value="{{ room.id }}" {% if request.args.get('room_id') == room.id|string %}selected{% endif %}>
+                        <option value="{{ room.id }}" {% if request.args.get('phong_id') == room.id|string %}selected{% endif %}>
                             {{ room.id }}
                         </option>
                         {% endfor %}
                     </select>
-                    <select name="equipment_type"
+                    <select name="loai_thiet_bi"
                             class="w-28 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         <option value="">Loại</option>
-                        <option value="MOBILE" {% if request.args.get('equipment_type') == 'MOBILE' %}selected{% endif %}>Di động</option>
-                        <option value="FIXED" {% if request.args.get('equipment_type') == 'FIXED' %}selected{% endif %}>Cố định</option>
+                        <option value="DI_DONG" {% if request.args.get('loai_thiet_bi') == 'DI_DONG' %}selected{% endif %}>Di động</option>
+                        <option value="CO_DINH" {% if request.args.get('loai_thiet_bi') == 'CO_DINH' %}selected{% endif %}>Cố định</option>
                     </select>
-                    <button type="submit"
-                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                        Tìm
-                    </button>
-                    <a href="{{ url_for('equipment.equipment', it=False) }}"
-                       class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
-                        Xóa
-                    </a>
-                </form>
-                <a href="{{ url_for('equipment.add_equipment') }}"
-                   class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                    + Thêm
-                </a>
-            </div>
-
-            <div class="overflow-y-auto max-h-[calc(100vh-300px)]">
-                <table class="w-full table-auto border-collapse">
-                    <thead class="bg-gray-200 sticky top-0 text-gray-700 z-10 text-nowrap">
-                        <tr>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-16">Phòng</th>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-1/6">Tên thiết bị</th>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-1/6">Loại thiết bị</th>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-1/12">Số lượng</th>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-1/12">Hỏng</th>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-1/12">Đang sửa</th>
-                            <th class="border-b border-gray-300 p-3 text-left font-semibold w-1/6">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for e in lst_equipments %}
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="border-b border-gray-200 p-3 text-center text-gray-600">{% if e.room_id %}{{ e.room_id }}{% else %}HVCS{% endif %}</td>
-                            <td class="border-b border-gray-200 p-3 text-gray-800">{{ e.equipment_name }}</td>
-                            <td class="border-b border-gray-200 p-3 text-gray-600">
-                                {% if e.equipment_type == 'MOBILE' %}Di động{% elif e.equipment_type == 'FIXED' %}Cố định{% endif %}
-                            </td>
-                            <td class="border-b border-gray-200 p-3">{{e.quantity}}</td>
-                            <td class="border-b border-gray-200 p-3 text-gray-600">{{e.broken_quantity}}</td>
-                            <td class="border-b border-gray-200 p-3 text-gray-600">{{e.under_repair_quantity}}</td>
-                            <td class="border-b border-gray-200 p-3">
-                                <div class="flex items-center justify-center gap-3">
-                                    {% if e.room_id != 'HVCS' %}
-                                    <button class="text-blue-600 hover:text-blue-800 transition cursor-pointer" title="Cấp"
-                                            onclick="showAllocateEquipmentModal('{{ e.id }}', '{{ e.equipment_name }}', '{{ e.hvcs }}', '{{ e.quantity }}')">
-                                        Cấp
-                                    </button>
-                                    {% endif %}
-                                    <button onclick="showEditQuantityModal('{{ e.id }}', '{{ e.equipment_name }}', '{{ e.quantity }}', '{{ e.broken_quantity }}')"
-                                            class="text-green-600 hover:text-green-800 transition cursor-pointer" title="Chỉnh sửa số lượng">
-                                        <img src="{{ url_for('static', filename='icon/edit_icon.svg') }}" alt="Edit" class="w-5 h-5" />
-                                    </button>
-                                    {% if e.room_id != 'HVCS' %}
-                                    <button class="text-red-600 hover:text-red-800 transition cursor-pointer" title="Thu hồi"
-                                            onclick="showRetrieveEquipmentModal('{{ e.id }}', '{{ e.equipment_name }}', '{{ e.quantity }}', '{{ e.broken_quantity }}', '{{ e.under_repair_quantity }}')">
-                                        Thu hồi
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- It -->
-        <div class="bg-white rounded-xl shadow-lg w-full max-w-full {% if it == 'False' %}hidden{% endif %}" id="it_he">
-            <!-- Toolbar -->
-            <div class="flex items-center justify-between p-2 border-b border-gray-200">
-                <form action="{{ url_for('equipment.equipment') }}" method="GET" class="flex items-center gap-2">
-                    <input value="True" name="it" class="hidden">
-                    <input type="text" name="equipment_name" value="{{ request.args.get('equipment_name', '') }}"
-                           placeholder="Tên thiết bị"
-                           class="w-32 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                    <select name="room_id"
-                            class="w-28 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                        <option value="">Phòng</option>
-                        {% for room in rooms %}
-                        <option value="{{ room.id }}" {% if request.args.get('room_id') == room.id|string %}selected{% endif %}>
-                            {{ room.id }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <select name="equipment_type"
-                            class="w-28 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                        <option value="">Loại</option>
-                        <option value="MOBILE" {% if request.args.get('equipment_type') == 'MOBILE' %}selected{% endif %}>Di động</option>
-                        <option value="FIXED" {% if request.args.get('equipment_type') == 'FIXED' %}selected{% endif %}>Cố định</option>
-                    </select>
-                    <select name="status"
+                    <select name="trang_thai"
                             class="w-28 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         <option value="">Trạng thái</option>
-                        <option value="AVAILABLE" {% if request.args.get('status') == 'AVAILABLE' %}selected{% endif %}>Khả dụng</option>
-                        <option value="BORROWED" {% if request.args.get('status') == 'BORROWED' %}selected{% endif %}>Được mượn</option>
-                        <option value="BROKEN" {% if request.args.get('status') == 'BROKEN' %}selected{% endif %}>Hỏng</option>
-                        <option value="UNDERREPAIR" {% if request.args.get('status') == 'UNDERREPAIR' %}selected{% endif %}>Đang sửa</option>
+                        <option value="CO_SAN" {% if request.args.get('trang_thai') == 'CO_SAN' %}selected{% endif %}>Khả dụng</option>
+                        <option value="DANG_MUON" {% if request.args.get('trang_thai') == 'DANG_MUON' %}selected{% endif %}>Được mượn</option>
+                        <option value="HU_HONG" {% if request.args.get('trang_thai') == 'HU_HONG' %}selected{% endif %}>Hỏng</option>
+                        <option value="DANG_BAO_TRI" {% if request.args.get('trang_thai') == 'DANG_BAO_TRI' %}selected{% endif %}>Đang sửa</option>
+                        <option value="DA_THANH_LY" {% if request.args.get('trang_thai') == 'DA_THANH_LY' %}selected{% endif %}>Đã thanh lý</option>
+                        <option value="DA_MAT" {% if request.args.get('trang_thai') == 'DA_MAT' %}selected{% endif %}>Đã mất</option>
                     </select>
                     <button type="submit"
                             class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
                         Tìm
                     </button>
-                    <a href="{{ url_for('equipment.equipment', it=True) }}"
+                    <a href="{{ url_for('equipment.equipment') }}"
                        class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
                         Xóa
                     </a>
@@ -399,27 +120,33 @@
                         {% for e in lst_equipment %}
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="border-b border-gray-200 p-3 text-center text-gray-600">{{ e.id }}</td>
-                            <td class="border-b border-gray-200 p-3 text-gray-800">{{ e.equipment_name }}</td>
+                            <td class="border-b border-gray-200 p-3 text-gray-800">{{ e.ten_thiet_bi }}</td>
                             <td class="border-b border-gray-200 p-3">
                                 <span class="px-3 py-1 rounded-full text-sm font-medium
-                                    {% if e.status == 'AVAILABLE' %}bg-green-100 text-green-800
-                                    {% elif e.status == 'BORROWED' %}bg-yellow-100 text-yellow-800
-                                    {% elif e.status == 'BROKEN' %}bg-red-100 text-red-800
-                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
-                                    {% if e.status == 'AVAILABLE' %}
+                                    {% if e.trang_thai == 'CO_SAN' %}bg-green-100 text-green-800
+                                    {% elif e.trang_thai == 'DANG_MUON' %}bg-yellow-100 text-yellow-800
+                                    {% elif e.trang_thai == 'HU_HONG' %}bg-red-100 text-red-800
+                                    {% elif e.trang_thai == 'DANG_BAO_TRI' %}bg-blue-100 text-blue-800
+                                    {% elif e.trang_thai == 'DA_THANH_LY' %}bg-gray-100 text-gray-800
+                                    {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                    {% if e.trang_thai == 'CO_SAN' %}
                                     Khả dụng
-                                    {% elif e.status == 'BORROWED' %}
+                                    {% elif e.trang_thai == 'DANG_MUON' %}
                                     Được mượn
-                                    {% elif e.status == 'BROKEN' %}
+                                    {% elif e.trang_thai == 'HU_HONG' %}
                                     Hỏng
-                                    {% else %}
+                                    {% elif e.trang_thai == 'DANG_BAO_TRI' %}
                                     Đang sửa
+                                    {% elif e.trang_thai == 'DA_THANH_LY' %}
+                                    Đã thanh lý
+                                    {% else %}
+                                    Đã mất
                                     {% endif %}
                                 </span>
                             </td>
-                            <td class="border-b border-gray-200 p-3 text-gray-600">{{ e.room_id }}</td>
+                            <td class="border-b border-gray-200 p-3 text-gray-600">{{ e.phong_id }}</td>
                             <td class="border-b border-gray-200 p-3 text-gray-600">
-                                {% if e.equipment_type == 'MOBILE' %}Di động{% elif e.equipment_type == 'FIXED' %}Cố định{% endif %}
+                                {% if e.loai_thiet_bi == 'DI_DONG' %}Di động{% elif e.loai_thiet_bi == 'CO_DINH' %}Cố định{% endif %}
                             </td>
                             <td class="border-b border-gray-200 p-3">
                                 <div class="flex items-center justify-center gap-3">
@@ -438,129 +165,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
-    <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center transition-opacity duration-300" id="allocate_equipment" style="display: none;">
-        <div class="bg-white w-full max-w-md rounded-lg shadow-xl p-6 relative">
-            <!-- Close button (X) -->
-            <button onclick="hideAllocateEquipmentModal()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-    
-            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Cấp thiết bị</h1>
-            <p class="text-gray-600 mb-4">Thiết bị: <span id="allocate_equipment_name" class="font-medium"></span></p>
-    
-            <form action="{{ url_for('equipment.allocate_equipment') }}" method="POST">
-                <input type="hidden" name="equipment_id" id="allocate_equipment_id" value="" />
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    
-                <!-- Warehouse Quantity -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng khả dụng trong kho</label>
-                    <span id="warehouse_quantity" class="text-gray-600"></span>
-                </div>
-    
-                <!-- Room Quantity -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng trong phòng</label>
-                    <span id="room_quantity" class="text-gray-600"></span>
-                </div>
-    
-                <!-- Allocate Quantity -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng cấp</label>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="updateAllocateQuantity(-1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">-</button>
-                        <input type="number" name="allocate_quantity" id="allocate_quantity_input" min="0" value="0"
-                               class="w-24 px-3 py-1.5 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="button" onclick="updateAllocateQuantity(1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">+</button>
-                        <span class="text-sm text-gray-600">Thay đổi: <span id="allocate_quantity_change">0</span></span>
-                    </div>
-                </div>
-    
-                <!-- Action Buttons -->
-                <div class="flex justify-end gap-3">
-                    <button type="button" onclick="hideAllocateEquipmentModal()"
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Hủy</button>
-                    <button type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Xác nhận</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="fixed inset-0 bg-gray-600/50 z-50 flex items-center justify-center transition-opacity duration-300" id="retrieve_equipment" style="display: none;">
-        <div class="bg-white w-full max-w-md rounded-lg shadow-xl p-6 relative">
-            <!-- Close button (X) -->
-            <button onclick="hideRetrieveEquipmentModal()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-    
-            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Thu hồi thiết bị</h1>
-            <p class="text-gray-600 mb-4">Thiết bị: <span id="retrieve_equipment_name" class="font-medium"></span></p>
-    
-            <form action="{{ url_for('equipment.retrieve_equipment') }}" method="POST">
-                <input type="hidden" name="equipment_id" id="retrieve_equipment_id" value="" />
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    
-                <!-- Available Quantity -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng khả dụng</label>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="updateRetrieveQuantity('available_quantity_input', 'available_quantity_change', -1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">-</button>
-                        <input type="number" name="available_quantity" id="available_quantity_input" min="0" value="0"
-                               class="w-24 px-3 py-1.5 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="button" onclick="updateRetrieveQuantity('available_quantity_input', 'available_quantity_change', 1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">+</button>
-                        <span class="text-sm text-gray-600">Thay đổi: <span id="available_quantity_change">0</span></span>
-                    </div>
-                    <span class="text-sm text-gray-600">Hiện tại: <span id="available_quantity_current"></span></span>
-                </div>
-    
-                <!-- Broken Quantity -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng hỏng</label>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="updateRetrieveQuantity('broken_quantity_input', 'broken_quantity_change', -1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">-</button>
-                        <input type="number" name="broken_quantity" id="broken_quantity_input" min="0" value="0"
-                               class="w-24 px-3 py-1.5 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="button" onclick="updateRetrieveQuantity('broken_quantity_input', 'broken_quantity_change', 1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">+</button>
-                        <span class="text-sm text-gray-600">Thay đổi: <span id="broken_quantity_change">0</span></span>
-                    </div>
-                    <span class="text-sm text-gray-600">Hiện tại: <span id="broken_quantity_current"></span></span>
-                </div>
-    
-                <!-- Under Repair Quantity -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng đang sửa chữa</label>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="updateRetrieveQuantity('under_repair_quantity_input', 'under_repair_quantity_change', -1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">-</button>
-                        <input type="number" name="under_repair_quantity" id="under_repair_quantity_input" min="0" value="0"
-                               class="w-24 px-3 py-1.5 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="button" onclick="updateRetrieveQuantity('under_repair_quantity_input', 'under_repair_quantity_change', 1)"
-                                class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">+</button>
-                        <span class="text-sm text-gray-600">Thay đổi: <span id="under_repair_quantity_change">0</span></span>
-                    </div>
-                    <span class="text-sm text-gray-600">Hiện tại: <span id="under_repair_quantity_current"></span></span>
-                </div>
-    
-                <!-- Action Buttons -->
-                <div class="flex justify-end gap-3">
-                    <button type="button" onclick="hideRetrieveEquipmentModal()"
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Hủy</button>
-                    <button type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Xác nhận</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>

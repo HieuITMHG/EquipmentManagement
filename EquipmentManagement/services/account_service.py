@@ -17,7 +17,7 @@ class AccountService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM tai_khoan WHERE id = %s", (user_id,))
+            cursor.execute("SELECT * FROM AccountInfo WHERE tai_khoan_id = %s", (user_id,))
             account = cursor.fetchone()
             return account if account else None  
         finally:
@@ -40,7 +40,6 @@ class AccountService:
         finally:
             cursor.close()
             conn.close()
-
 
     @staticmethod
     def get_account_by_email(email):
@@ -71,7 +70,7 @@ class AccountService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM AccountInfo WHERE phone = %s", (phone,))
+            cursor.execute("SELECT * FROM AccountInfo WHERE sdt = %s", (phone,))
             account = cursor.fetchone()
             return account if account else None  
         finally:
@@ -83,7 +82,7 @@ class AccountService:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT person_id FROM AccountInfo WHERE person_id = %s", (user_id,))
+            cursor.execute("SELECT person_id FROM AccountInfo WHERE tai_khoan_id = %s", (user_id,))
             account = cursor.fetchone()
             return account if account else None  
         finally:
@@ -103,82 +102,41 @@ class AccountService:
             cursor.close()
             conn.close()
 
-    @staticmethod
-    def create_new_account(cccd, first_name, last_name, gender, email, phone, address, role_id, class_id, account_code, password):
-        conn = get_connection()
-        cursor = conn.cursor()
-        try:
-            # Mã hóa password
-            hashed_password = password
-            # Gọi stored procedure
-            cursor.callproc('CreateNewAccount', (
-                cccd,
-                first_name,
-                last_name,
-                gender,
-                email,
-                phone,
-                address,
-                role_id,
-                class_id,
-                account_code,
-                hashed_password
-            ))
-            # Commit giao dịch
-            conn.commit()
-            return True
-        finally:
-            cursor.close()
-            conn.close()
-
-    @staticmethod
-    def update_account(person_id, cccd, first_name, last_name, gender, email, phone, address, role_id, class_id, is_studing, is_working):
-        conn = get_connection()
-        cursor = conn.cursor()
-        try:
-            cursor.callproc('UpdateAccount', (
-                person_id, cccd, first_name, last_name, gender, email, phone, address, role_id, class_id,
-                is_studing if is_studing is not None else False,
-                is_working if is_working is not None else False
-            ))
-            conn.commit()
-            return True
-        finally:
-            cursor.close()
-            conn.close()
 
     @staticmethod
     def delete_account(person_id):
         conn = get_connection()
         cursor = conn.cursor()
         try:
-            cursor.callproc('DeleteAccount', (person_id,))
+            cursor.execute('DELETE FROM tai_khoan WHERE id = %s', (person_id,))
             conn.commit()
             return True
         finally:
             cursor.close()
             conn.close()
+
     @staticmethod
     def search_account_info(role_id=None, first_name=None, page_num=1):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
+            query = "SELECT * FROM AccountInfo WHERE 1 = 1"
+
             # Base query for counting total records
             count_query = "SELECT COUNT(*) AS total FROM AccountInfo WHERE 1=1"
-            query = "SELECT * FROM AccountInfo WHERE 1=1"
             params = []
             count_params = []
 
             # Apply filters for both queries
             if role_id:
-                count_query += " AND role_id = %s"
-                query += " AND role_id = %s"
+                count_query += " AND vai_tro_id = %s"
+                query += " AND vai_tro_id = %s"
                 count_params.append(role_id)
                 params.append(role_id)
 
             if first_name:
-                count_query += " AND first_name LIKE %s"
-                query += " AND first_name LIKE %s"
+                count_query += " AND ten LIKE %s"
+                query += " AND ten LIKE %s"
                 count_params.append(f"%{first_name}%")
                 params.append(f"%{first_name}%")
 
@@ -200,4 +158,75 @@ class AccountService:
         finally:
             cursor.close()
             conn.close()
-    
+
+    @staticmethod
+    def create_new_account(account_id, password, role_id, cccd, first_name, last_name, gender, email, phone, address, class_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            # Mã hóa password nếu cần, ở đây để nguyên
+            hashed_password = password
+            print(role_id)
+
+            cursor.callproc('tao_tai_khoan_moi', (
+                account_id,           # p_id
+                hashed_password,      # p_mat_khau
+                int(role_id),            # p_ten_vai_tro
+                cccd,                 # p_cccd
+                first_name,           # p_ho
+                last_name,            # p_ten
+                gender,               # p_gioi_tinh
+                email,                # p_email
+                phone,                # p_sdt
+                address,              # p_dia_chi
+                class_id              # p_lop_id
+            ))
+
+            # Đọc kết quả trả về (SELECT 1 AS success, ...)
+            for result in cursor.stored_results():
+                row = result.fetchone()
+                print(row)
+                return row[0] == 1  # success = 1 -> True
+        except Exception as e:
+            print("Error: " + str(e))
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def update_account(account_id, is_active, cccd, first_name, last_name, gender, email, phone, address, class_id, role_id):
+        conn = get_connection()
+        cursor = conn.cursor()
+        print("Values sent to procedure:")
+        print("account_id:", account_id)
+        print("is_active:", int(is_active))
+        print("role_id:", int(role_id))
+        print("class_id:", class_id)
+
+        try:
+            cursor.callproc('cap_nhat_tai_khoan', (
+                account_id,           # p_id
+                is_active,            # p_dang_hoat_dong
+                cccd,                 # p_cccd
+                first_name,           # p_ho
+                last_name,            # p_ten
+                gender,               # p_gioi_tinh
+                email,                # p_email
+                phone,                # p_sdt
+                address,              # p_dia_chi
+                class_id,             # p_lop_id
+                int(role_id)               # p_vai_tro_id
+            ))
+
+            for result in cursor.stored_results():
+                row = result.fetchone()
+                print(row)
+                return row[0] == 1  # success = 1 -> True
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+

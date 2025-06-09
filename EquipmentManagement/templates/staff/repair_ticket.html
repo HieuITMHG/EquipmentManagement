@@ -27,12 +27,12 @@
                     <button class="bg-blue-500 p-2 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
                             onclick="show_detail('detail-{{request.id}}')"
                             type="button">
-                        {{request.staff_id}} - {{request.start_date.strftime('%d/%m/%Y %H:%M:%S')}}
+                        {{request.nhan_vien_id}} - {{request.ngay_bat_dau.strftime('%d/%m/%Y %H:%M:%S')}}
                     </button>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value="{{ request.id }}" /> 
                     <div class="flex space-x-2">
-                        {% if request.status == 'PREPARING'  %}
+                        {% if request.trang_thai == 'CHUAN_BI'  %}
                         <button class="bg-blue-500 p-2 w-20 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
                                 type="submit" name="action" value="1">Lập</button>
                         {% endif %}
@@ -60,11 +60,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="font-semibold text-gray-700">Mã người tạo:</label>
-                            <p class="text-gray-600">{{request.staff_id}}</p>
+                            <p class="text-gray-600">{{request.nhan_vien_id}}</p>
                         </div>
                         <div>
                             <label class="font-semibold text-gray-700">Ngày tạo:</label>
-                            <p class="text-gray-600">{{ request.start_date.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                            <p class="text-gray-600">{{ request.ngay_bat_dau.strftime('%d/%m/%Y %H:%M:%S') }}</p>
                         </div>
                         {% if request.end_date %}
                         <div>
@@ -74,7 +74,7 @@
                         {% endif %}
                         <div>
                             <label class="font-semibold text-gray-700">Trạng thái phiếu:</label>
-                            <p class="text-gray-600">{{request.status}}</p>
+                            <p class="text-gray-600">{{request.trang_thai}}</p>
                         </div>
                         <div>
                             <label class="font-semibold text-gray-700">Tổng chi phí:</label>
@@ -100,22 +100,21 @@
                                 </form>
                                 <!-- Equipment Image -->
                                 <div class="flex-shrink-0">
-                                    {% if e.image_url %}
-                                        <img src="{{ url_for('static', filename=e.image_url) }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
+                                    {% if e.anh %}
+                                        <img src="{{ url_for('static', filename=e.anh) }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
                                     {% else %}
                                         <img src="{{ url_for('static', filename='img/repair_img.png') }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh mặc định" />
                                     {% endif %}
                                 </div>
                                 <!-- Equipment Details -->
                                 <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">{{e.equipment_name}}</div>
-                                    <div class="text-sm text-gray-600">ID: {{e.equipment_id}}</div>
-                                    <div class="text-sm text-gray-600">Phòng: {% if e.room_id %}{{e.room_id}}{% else %}Học viện{% endif %}</div>
-                                    <div class="text-sm text-gray-600">Loại: {{e.equipment_type}}</div>
-                                    <div class="text-sm text-gray-600">Trạng thái: {{e.equipment_status}}</div>
-                                    <div class="text-sm text-gray-600">Mô tả: {{e.description}}</div>
-                                    <div class="text-sm text-gray-600">Số lượng: {{e.quantity}}</div>
-                                    <div class="text-sm text-gray-600 font-semibold">Giá sửa: {{e.repair_price | format_currency}} VND</div>
+                                    <div class="font-semibold text-gray-800">{{e.ten_thiet_bi}}</div>
+                                    <div class="text-sm text-gray-600">ID: {{e.thiet_bi_id}}</div>
+                                    <div class="text-sm text-gray-600">Phòng: {% if e.phong_id %}{{e.phong_id}}{% else %}Học viện{% endif %}</div>
+                                    <div class="text-sm text-gray-600">Loại: {{e.loai_thiet_bi}}</div>
+                                    <div class="text-sm text-gray-600">Trạng thái: {{e.thiet_bi_trang_thai}}</div>
+                                    <div class="text-sm text-gray-600">Mô tả: {{e.repair_note}}</div>
+                                    <div class="text-sm text-gray-600 font-semibold">Giá sửa: {{e.repair_cost | format_currency}} VND</div>
                                 </div>
                             </div>
                             {% endfor %}
@@ -142,11 +141,11 @@
                     <button class="bg-blue-500 p-2 rounded-md hover:bg-blue-600 cursor-pointer text-sm font-semibold text-white transition-colors"
                             onclick="show_detail('detail-{{request.id}}')"
                             type="button">
-                        {{request.staff_id}} - {{request.start_date.strftime('%d/%m/%Y %H:%M:%S')}}
+                        {{request.nhan_vien_id}} - {{request.ngay_bat_dau.strftime('%d/%m/%Y %H:%M:%S')}}
                     </button>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /> 
                     <input type="hidden" name="request_id" value="{{ request.id }}" /> 
-                    {% if request.status == 'ACCEPTED' %}
+                    {% if request.trang_thai == 'DA_DUYET' %}
                     <div class="flex space-x-2">
                         <button class="bg-green-500 p-2 w-24 rounded-md hover:bg-green-600 cursor-pointer text-sm font-semibold text-white transition-colors"
                                 type="submit" name="action">Xong</button>
@@ -172,11 +171,11 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label class="font-semibold text-gray-700">Mã người tạo:</label>
-                                    <p class="text-gray-600">{{request.staff_id}}</p>
+                                    <p class="text-gray-600">{{request.nhan_vien_id}}</p>
                                 </div>
                                 <div>
                                     <label class="font-semibold text-gray-700">Ngày tạo:</label>
-                                    <p class="text-gray-600">{{ request.start_date.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                                    <p class="text-gray-600">{{ request.ngay_bat_dau.strftime('%d/%m/%Y %H:%M:%S') }}</p>
                                 </div>
                                 {% if request.end_date %}
                                 <div>
@@ -186,7 +185,7 @@
                                 {% endif %}
                                 <div>
                                     <label class="font-semibold text-gray-700">Trạng thái phiếu:</label>
-                                    <p class="text-gray-600">{{request.status}}</p>
+                                    <p class="text-gray-600">{{request.trang_thai}}</p>
                                 </div>
                                 <div>
                                     <label class="font-semibold text-gray-700">Tổng chi phí:</label>
@@ -201,22 +200,21 @@
                                     <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                                         <!-- Equipment Image -->
                                         <div class="flex-shrink-0">
-                                            {% if e.image_url %}
-                                                <img src="{{ url_for('static', filename=e.image_url) }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
+                                            {% if e.anh %}
+                                                <img src="{{ url_for('static', filename=e.anh) }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
                                             {% else %}
                                                 <img src="{{ url_for('static', filename='img/repair_img.png') }}" class="h-16 w-20 rounded-md object-cover" alt="Ảnh mặc định" />
                                             {% endif %}
                                         </div>
                                         <!-- Equipment Details -->
                                         <div class="flex-1">
-                                            <div class="font-semibold text-gray-800">{{e.equipment_name}}</div>
-                                            <div class="text-sm text-gray-600">ID: {{e.equipment_id}}</div>
-                                            <div class="text-sm text-gray-600">Phòng: {% if e.room_id %}{{e.room_id}}{% else %}Học viện{% endif %}</div>
-                                            <div class="text-sm text-gray-600">Loại: {{e.equipment_type}}</div>
-                                            <div class="text-sm text-gray-600">Trạng thái: {{e.equipment_status}}</div>
-                                            <div class="text-sm text-gray-600">Mô tả: {{e.description}}</div>
-                                            <div class="text-sm text-gray-600">Số lượng: {{e.quantity}}</div>
-                                            <div class="text-sm text-gray-600 font-semibold">Giá sửa: {{e.repair_price | format_currency}} VND</div>
+                                            <div class="font-semibold text-gray-800">{{e.ten_thiet_bi}}</div>
+                                            <div class="text-sm text-gray-600">ID: {{e.thiet_bi_id}}</div>
+                                            <div class="text-sm text-gray-600">Phòng: {% if e.phong_id %}{{e.phong_id}}{% else %}Học viện{% endif %}</div>
+                                            <div class="text-sm text-gray-600">Loại: {{e.loai_thiet_bi}}</div>
+                                            <div class="text-sm text-gray-600">Trạng thái: {{e.thiet_bi_trang_thai}}</div>
+                                            <div class="text-sm text-gray-600">Mô tả: {{e.repair_note}}</div>
+                                            <div class="text-sm text-gray-600 font-semibold">Giá sửa: {{e.repair_cost | format_currency}} VND</div>
                                         </div>
                                     </div>
                                     {% endfor %}
@@ -248,21 +246,21 @@
                     <div class="w-[90%] bg-gray-50 rounded-lg shadow-md flex items-center gap-4 p-4 hover:shadow-lg transition-shadow duration-200">
                         <!-- Image -->
                         <div class="flex-shrink-0">
-                            {% if equipment.image_url and equipment.image_url|length > 0 %}
-                                <img src="{{ url_for('static', filename=equipment.image_url) }}" class="h-20 w-28 md:h-24 md:w-32 rounded-md object-cover" alt="Ảnh thiết bị" />
+                            {% if equipment.anh and equipment.anh|length > 0 %}
+                                <img src="{{ url_for('static', filename=equipment.anh) }}" class="h-20 w-28 md:h-24 md:w-32 rounded-md object-cover" alt="Ảnh thiết bị" />
                             {% else %}
                                 <img src="{{ url_for('static', filename='img/repair_img.png') }}" class="h-20 w-28 md:h-24 md:w-32 rounded-md object-cover" alt="Ảnh mặc định" />
                             {% endif %}
                         </div>
                         <!-- Details -->
                         <div class="flex-1">
-                            <div class="font-semibold text-lg text-gray-800">{{ equipment.equipment_name }}</div>
-                            <div class="text-sm text-gray-600">Phòng: {{ equipment.room_id }}</div>
+                            <div class="font-semibold text-lg text-gray-800">{{ equipment.ten_thiet_bi }}</div>
+                            <div class="text-sm text-gray-600">Phòng: {{ equipment.phong_id }}</div>
                         </div>
                         <!-- Button -->
                         <div>
                             <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200"
-                                    onclick="showRepairModal('{{ equipment.id }}', '{{ equipment.image_url }}', '{{ equipment.broken_quantity }}', '{{ equipment.equipment_name}}')">
+                                    onclick="showRepairModal('{{ equipment.id }}', '{{ equipment.anh }}','{{ equipment.ten_thiet_bi}}')">
                                 Sửa
                             </button>
                         </div>
@@ -292,7 +290,7 @@
                 <div class="flex items-center gap-4 mb-6">
                     <img id="equipment_image" src="" class="h-16 w-20 rounded-md object-cover" alt="Ảnh thiết bị" />
                     <div>
-                        <h3 class="text-lg font-bold text-gray-800" id="equipment_name">Tên thiết bị</h3>
+                        <h3 class="text-lg font-bold text-gray-800" id="ten_thiet_bi">Tên thiết bị</h3>
                         <p class="text-sm text-gray-600">ID: <span id="equipment_id_display"></span></p>
                         <p class="text-sm text-gray-600">Số lượng: <span id="broken_quantity_display"></span></p>
                     </div>
@@ -303,7 +301,6 @@
                     <label for="issue_description" class="block text-gray-700 font-semibold mb-2">Mô tả hỏng hóc</label>
                     <textarea id="issue_description" name="issue_description" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" rows="4" placeholder="Mô tả vấn đề với thiết bị" required></textarea>
                 </div>
-                <input type="number" id="broken_quantity" name="broken_quantity" class="hidden" required/>
                 <div class="mb-6">
                     <label for="repair_cost" class="block text-gray-700 font-semibold mb-2">Báo giá (VND)</label>
                     <input type="number" id="repair_cost" name="repair_cost" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Nhập chi phí sửa chữa" min="0" required />
@@ -372,10 +369,8 @@
     function showRepairModal(equipmentId, imageUrl, broken_quantity, equipmentName) {
         console.log(broken_quantity);
         document.getElementById('edit_equipment_id').value = equipmentId;
-        document.getElementById('broken_quantity_display').innerHTML = broken_quantity;
-        document.getElementById('broken_quantity').value = broken_quantity;
         document.getElementById('equipment_id_display').textContent = equipmentId;
-        document.getElementById('equipment_name').textContent = equipmentName;
+        document.getElementById('ten_thiet_bi').textContent = equipmentName;
         document.getElementById('equipment_image').src = imageUrl != 'None' ? "{{ url_for('static', filename='') }}" + imageUrl : "{{ url_for('static', filename='img/repair_img.png') }}";
         const add_repair = document.getElementById('add_repair');
         add_repair.classList.remove('hidden');
@@ -392,7 +387,7 @@
         document.getElementById('broken_quantity').value = '';
         document.getElementById('repair_cost').value = '';
         document.getElementById('equipment_id_display').textContent = '';
-        document.getElementById('equipment_name').textContent = 'Tên thiết bị';
+        document.getElementById('ten_thiet_bi').textContent = 'Tên thiết bị';
         document.getElementById('equipment_image').src = '';
     }
 </script>
